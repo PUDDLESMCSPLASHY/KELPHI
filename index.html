@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelphi</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: #0d0d14;
@@ -21,10 +16,7 @@
         /* Lock Screen */
         #lockScreen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #0d0d14 0%, #1a1a2e 100%);
             display: flex;
             flex-direction: column;
@@ -32,9 +24,7 @@
             justify-content: center;
             z-index: 1000;
         }
-
         #lockScreen.hidden { display: none; }
-
         .lock-title {
             font-size: 3rem;
             font-weight: 200;
@@ -42,7 +32,6 @@
             margin-bottom: 3rem;
             letter-spacing: 1rem;
         }
-
         .lock-input {
             background: transparent;
             border: 1px solid rgba(0,217,255,0.3);
@@ -55,18 +44,8 @@
             width: 180px;
             transition: all 0.3s;
         }
-
-        .lock-input:focus {
-            outline: none;
-            border-color: #00d9ff;
-            box-shadow: 0 0 20px rgba(0,217,255,0.1);
-        }
-
-        .lock-input.error {
-            border-color: #ff4757;
-            animation: shake 0.5s;
-        }
-
+        .lock-input:focus { outline: none; border-color: #00d9ff; box-shadow: 0 0 20px rgba(0,217,255,0.1); }
+        .lock-input.error { border-color: #ff4757; animation: shake 0.5s; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
@@ -74,12 +53,7 @@
         }
 
         /* Main App */
-        #app {
-            display: none;
-            flex-direction: column;
-            height: 100vh;
-        }
-
+        #app { display: none; flex-direction: column; height: 100vh; }
         #app.visible { display: flex; }
 
         /* Top Header */
@@ -92,18 +66,8 @@
             background: #12121c;
             border-bottom: 1px solid rgba(255,255,255,0.06);
         }
-
-        .brand {
-            font-size: 1.1rem;
-            font-weight: 300;
-            color: #00d9ff;
-            letter-spacing: 0.4rem;
-        }
-
-        .header-right {
-            font-size: 0.8rem;
-            color: #666;
-        }
+        .brand { font-size: 1.1rem; font-weight: 300; color: #00d9ff; letter-spacing: 0.4rem; }
+        .header-right { font-size: 0.8rem; color: #666; }
 
         /* Tab Navigation */
         .tab-nav {
@@ -113,7 +77,6 @@
             background: #12121c;
             border-bottom: 1px solid rgba(255,255,255,0.06);
         }
-
         .nav-tab {
             padding: 1rem 1.5rem;
             cursor: pointer;
@@ -125,127 +88,40 @@
             border-bottom: 2px solid transparent;
             margin-bottom: -1px;
         }
-
         .nav-tab:hover { color: #aaa; }
-        .nav-tab.active {
-            color: #00d9ff;
-            border-bottom-color: #00d9ff;
-        }
+        .nav-tab.active { color: #00d9ff; border-bottom-color: #00d9ff; }
 
         /* Main Content Area */
-        .main-wrapper {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 2rem;
-            transition: margin-right 0.3s;
-        }
-
-        .main-content.panel-open {
-            margin-right: 0;
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
+        .main-wrapper { flex: 1; display: flex; overflow: hidden; }
+        .main-content { flex: 1; overflow-y: auto; padding: 2rem; transition: margin-right 0.3s; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         /* Dashboard Styles */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: #16161f;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.05rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-size: 1.75rem;
-            font-weight: 300;
-            color: #fff;
-        }
-
+        .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: #16161f; border-radius: 8px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.04); }
+        .stat-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 1.75rem; font-weight: 300; color: #fff; }
         .stat-value.cyan { color: #00d9ff; }
         .stat-value.green { color: #00d98f; }
         .stat-value.orange { color: #ffaa00; }
 
-        .dashboard-columns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .dashboard-card {
-            background: #16161f;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.04);
-            overflow: hidden;
-        }
-
-        .card-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.05rem;
-        }
-
+        .dashboard-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .dashboard-card { background: #16161f; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); overflow: hidden; }
+        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05rem; }
         .card-body { padding: 0; }
-
-        .card-item {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
+        .card-item { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
         .card-item:hover { background: rgba(0,217,255,0.03); }
         .card-item:last-child { border-bottom: none; }
-
         .item-name { font-size: 0.9rem; color: #e0e0e0; }
         .item-meta { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
         .item-value { font-size: 0.9rem; color: #00d9ff; font-weight: 500; }
 
-        .item-badge {
-            font-size: 0.7rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            background: rgba(0,217,255,0.1);
-            color: #00d9ff;
-        }
-
+        .item-badge { font-size: 0.7rem; padding: 0.25rem 0.5rem; border-radius: 4px; background: rgba(0,217,255,0.1); color: #00d9ff; }
         .item-badge.working { background: rgba(136,136,136,0.1); color: #888; }
         .item-badge.tentative { background: rgba(255,170,0,0.1); color: #ffaa00; }
         .item-badge.contract-out { background: rgba(138,43,226,0.1); color: #b366ff; }
@@ -253,225 +129,64 @@
         .item-badge.completed { background: rgba(0,100,200,0.1); color: #66b3ff; }
         .item-badge.lost { background: rgba(255,71,87,0.1); color: #ff4757; }
 
-        .section-header {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.05rem;
-            margin-bottom: 1rem;
-        }
-
-        .arrivals-list {
-            background: #16161f;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
-
-        .arrival-item {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            display: grid;
-            grid-template-columns: 100px 1fr 120px 100px;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .arrival-item:last-child { border-bottom: none; }
-        .arrival-date { font-size: 0.85rem; color: #888; }
-        .arrival-name { font-size: 0.9rem; color: #e0e0e0; }
-        .arrival-type { font-size: 0.75rem; color: #666; }
-        .arrival-revenue { font-size: 0.9rem; color: #00d9ff; text-align: right; }
+        .section-header { font-size: 0.8rem; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 1rem; }
 
         /* Leads Tab Styles */
-        .leads-toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .leads-filters {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .filter-select {
+        .leads-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .leads-filters { display: flex; gap: 1rem; align-items: center; }
+        .filter-select, .search-input {
             background: #16161f;
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 4px;
             padding: 0.5rem 1rem;
             color: #e0e0e0;
             font-size: 0.85rem;
-            cursor: pointer;
         }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #00d9ff;
-        }
-
-        .search-input {
-            background: #16161f;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 4px;
-            padding: 0.5rem 1rem;
-            color: #e0e0e0;
-            font-size: 0.85rem;
-            width: 250px;
-        }
-
+        .search-input { width: 250px; }
         .search-input::placeholder { color: #555; }
-        .search-input:focus {
-            outline: none;
-            border-color: #00d9ff;
-        }
+        .filter-select:focus, .search-input:focus { outline: none; border-color: #00d9ff; }
 
         /* Leads Table */
-        .leads-table {
-            width: 100%;
-            background: #16161f;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.04);
-            border-collapse: collapse;
-            overflow: hidden;
-        }
-
-        .leads-table th {
-            text-align: left;
-            padding: 1rem 1.5rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.05rem;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            background: #12121c;
-        }
-
-        .leads-table td {
-            padding: 1rem 1.5rem;
-            font-size: 0.9rem;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-
+        .leads-table { width: 100%; background: #16161f; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); border-collapse: collapse; overflow: hidden; }
+        .leads-table th { text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.05rem; border-bottom: 1px solid rgba(255,255,255,0.06); background: #12121c; }
+        .leads-table td { padding: 1rem 1.5rem; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .leads-table tr:last-child td { border-bottom: none; }
-
-        .leads-table tbody tr {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
+        .leads-table tbody tr { cursor: pointer; transition: background 0.2s; }
         .leads-table tbody tr:hover { background: rgba(0,217,255,0.03); }
         .leads-table tbody tr.selected { background: rgba(0,217,255,0.08); }
-
-        .lead-name-cell {
-            color: #00d9ff;
-            font-weight: 500;
-        }
-
+        .lead-name-cell { color: #00d9ff; font-weight: 500; }
         .lead-revenue { color: #00d9ff; }
 
         /* Lead Detail Panel */
         .lead-panel {
-            width: 500px;
+            width: 550px;
             background: #12121c;
             border-left: 1px solid rgba(255,255,255,0.06);
             display: none;
             flex-direction: column;
             overflow: hidden;
         }
-
         .lead-panel.open { display: flex; }
-
-        .panel-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .panel-title {
-            font-size: 1.1rem;
-            font-weight: 400;
-            color: #fff;
-            margin-bottom: 0.25rem;
-        }
-
-        .panel-subtitle {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .panel-close {
-            background: none;
-            border: none;
-            color: #666;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-
+        .panel-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: flex-start; }
+        .panel-title { font-size: 1.1rem; font-weight: 400; color: #fff; margin-bottom: 0.25rem; }
+        .panel-subtitle { font-size: 0.8rem; color: #666; }
+        .panel-close { background: none; border: none; color: #666; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
         .panel-close:hover { color: #fff; }
 
         /* Panel Vertical Tabs */
-        .panel-body {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .panel-tabs {
-            width: 140px;
-            background: #0d0d14;
-            padding: 1rem 0;
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .panel-tab {
-            padding: 0.75rem 1rem;
-            font-size: 0.8rem;
-            color: #666;
-            cursor: pointer;
-            border-left: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
+        .panel-body { display: flex; flex: 1; overflow: hidden; }
+        .panel-tabs { width: 130px; background: #0d0d14; padding: 1rem 0; display: flex; flex-direction: column; gap: 0.25rem; overflow-y: auto; }
+        .panel-tab { padding: 0.6rem 0.8rem; font-size: 0.75rem; color: #666; cursor: pointer; border-left: 2px solid transparent; transition: all 0.2s; }
         .panel-tab:hover { color: #aaa; background: rgba(255,255,255,0.02); }
-        .panel-tab.active {
-            color: #00d9ff;
-            border-left-color: #00d9ff;
-            background: rgba(0,217,255,0.05);
-        }
-
-        .panel-content {
-            flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
+        .panel-tab.active { color: #00d9ff; border-left-color: #00d9ff; background: rgba(0,217,255,0.05); }
+        .panel-tab.hidden { display: none; }
+        .panel-content { flex: 1; padding: 1.5rem; overflow-y: auto; }
         .panel-section { display: none; }
         .panel-section.active { display: block; }
 
         /* Form Styles */
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.75rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.03rem;
-            margin-bottom: 0.5rem;
-        }
-
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.03rem; margin-bottom: 0.5rem; }
         .form-input, .form-select, .form-textarea {
             width: 100%;
             background: #1a1a24;
@@ -482,124 +197,36 @@
             font-size: 0.85rem;
             transition: border-color 0.2s;
         }
-
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: #00d9ff;
-        }
-
-        .form-textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .form-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: #aaa;
-            cursor: pointer;
-        }
-
-        .form-checkbox input {
-            width: 16px;
-            height: 16px;
-            accent-color: #00d9ff;
-        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #00d9ff; }
+        .form-input:disabled, .form-select:disabled { opacity: 0.5; cursor: not-allowed; }
+        .form-textarea { resize: vertical; min-height: 100px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+        .form-checkbox { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #aaa; cursor: pointer; margin-bottom: 1rem; }
+        .form-checkbox input { width: 16px; height: 16px; accent-color: #00d9ff; }
+        .form-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 1.5rem 0; }
+        .form-section-title { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 1rem; }
+        .calculated-field { background: #0d0d14; border-color: rgba(0,217,255,0.3); color: #00d9ff; }
 
         /* Buttons */
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-            font-weight: 400;
-        }
-
-        .btn-primary {
-            background: #00d9ff;
-            color: #0d0d14;
-        }
-
+        .btn { padding: 0.6rem 1.2rem; border-radius: 4px; border: none; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; font-weight: 400; }
+        .btn-primary { background: #00d9ff; color: #0d0d14; }
         .btn-primary:hover { background: #00c4e6; }
-
-        .btn-ghost {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #888;
-        }
-
-        .btn-ghost:hover {
-            border-color: rgba(255,255,255,0.2);
-            color: #fff;
-        }
-
-        .panel-actions {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-        }
+        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; }
+        .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
+        .panel-actions { padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 0.75rem; justify-content: flex-end; }
 
         /* Goals Tab - Rainbow Progress */
-        .goal-progress-container {
-            background: #16161f;
-            border-radius: 8px;
-            padding: 2rem;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
-
-        .goal-progress-bar {
-            height: 24px;
-            border-radius: 12px;
-            background: #1a1a24;
-            overflow: hidden;
-        }
-
-        .goal-progress-fill {
-            height: 100%;
-            border-radius: 12px;
-            background: linear-gradient(90deg, 
-                #ff6b6b 0%, #ffa502 20%, #ffdd59 40%, 
-                #2ed573 60%, #1e90ff 80%, #a55eea 100%
-            );
-            transition: width 0.5s ease;
-        }
-
-        .goal-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-        }
-
+        .goal-progress-container { background: #16161f; border-radius: 8px; padding: 2rem; border: 1px solid rgba(255,255,255,0.04); }
+        .goal-progress-bar { height: 24px; border-radius: 12px; background: #1a1a24; overflow: hidden; }
+        .goal-progress-fill { height: 100%; border-radius: 12px; background: linear-gradient(90deg, #ff6b6b 0%, #ffa502 20%, #ffdd59 40%, #2ed573 60%, #1e90ff 80%, #a55eea 100%); transition: width 0.5s ease; }
+        .goal-labels { display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.85rem; }
         .goal-current { color: #00d9ff; font-weight: 500; }
         .goal-target { color: #666; }
 
         /* Empty States */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #444;
-        }
-
-        .empty-state h3 {
-            font-weight: 400;
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-            color: #666;
-        }
-
+        .empty-state { text-align: center; padding: 4rem 2rem; color: #444; }
+        .empty-state h3 { font-weight: 400; font-size: 1rem; margin-bottom: 0.5rem; color: #666; }
         .empty-state p { font-size: 0.85rem; }
     </style>
 </head>
@@ -649,23 +276,17 @@
                             <div class="stat-value" id="stat-leads">0</div>
                         </div>
                     </div>
-
                     <div class="dashboard-columns">
                         <div class="dashboard-card">
                             <div class="card-header">Needs Attention</div>
                             <div class="card-body" id="needs-attention">
-                                <div class="card-item" style="color: #666; justify-content: center;">
-                                    No items need attention
-                                </div>
+                                <div class="card-item" style="color: #666; justify-content: center;">No items need attention</div>
                             </div>
                         </div>
-
                         <div class="dashboard-card">
                             <div class="card-header">Top Leads by Revenue</div>
                             <div class="card-body" id="top-leads">
-                                <div class="card-item" style="color: #666; justify-content: center;">
-                                    No leads yet
-                                </div>
+                                <div class="card-item" style="color: #666; justify-content: center;">No leads yet</div>
                             </div>
                         </div>
                     </div>
@@ -697,7 +318,6 @@
                         </div>
                         <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
                     </div>
-
                     <table class="leads-table">
                         <thead>
                             <tr>
@@ -709,26 +329,18 @@
                                 <th>Revenue</th>
                             </tr>
                         </thead>
-                        <tbody id="leadsTableBody">
-                            <!-- Leads will be rendered here -->
-                        </tbody>
+                        <tbody id="leadsTableBody"></tbody>
                     </table>
                 </div>
 
                 <!-- Contracts Tab -->
                 <div class="tab-content" id="tab-contracts">
-                    <div class="empty-state">
-                        <h3>Contracts</h3>
-                        <p>Coming soon — generate, preview, and download contracts</p>
-                    </div>
+                    <div class="empty-state"><h3>Contracts</h3><p>Coming soon</p></div>
                 </div>
 
                 <!-- Handover Tab -->
                 <div class="tab-content" id="tab-handover">
-                    <div class="empty-state">
-                        <h3>Handover Checklists</h3>
-                        <p>Coming soon — track from Tentative to Definite</p>
-                    </div>
+                    <div class="empty-state"><h3>Handover Checklists</h3><p>Coming soon</p></div>
                 </div>
 
                 <!-- Goals Tab -->
@@ -747,10 +359,7 @@
 
                 <!-- Post Booking Tab -->
                 <div class="tab-content" id="tab-wrapup">
-                    <div class="empty-state">
-                        <h3>Post Booking Wrap Up</h3>
-                        <p>Coming soon — final checklists for completed bookings</p>
-                    </div>
+                    <div class="empty-state"><h3>Post Booking Wrap Up</h3><p>Coming soon</p></div>
                 </div>
             </main>
 
@@ -764,9 +373,11 @@
                     <button class="panel-close" id="panelClose">&times;</button>
                 </div>
                 <div class="panel-body">
-                    <div class="panel-tabs">
+                    <div class="panel-tabs" id="panelTabs">
                         <div class="panel-tab active" data-section="booking">Booking Info</div>
-                        <div class="panel-tab" data-section="contract">Contract Info</div>
+                        <div class="panel-tab hidden" data-section="guestroom" id="tabGuestroom">Guestroom Info</div>
+                        <div class="panel-tab hidden" data-section="event" id="tabEvent">Event Info</div>
+                        <div class="panel-tab" data-section="contract">Contract Details</div>
                         <div class="panel-tab" data-section="billing">Billing</div>
                         <div class="panel-tab" data-section="notes">Notes</div>
                     </div>
@@ -826,14 +437,98 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Anticipated Revenue</label>
-                                <input type="number" class="form-input" id="lead-revenue" placeholder="0">
+                        </div>
+
+                        <!-- Guestroom Info Section -->
+                        <div class="panel-section" id="section-guestroom">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Number of Nights</label>
+                                    <input type="number" class="form-input" id="lead-numNights" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Peak Rooms</label>
+                                    <input type="number" class="form-input" id="lead-peakRooms" min="1">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Total Rooms</label>
+                                    <input type="number" class="form-input" id="lead-totalRooms" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Avg Nightly Rate</label>
+                                    <input type="number" class="form-input" id="lead-nightlyRate" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="form-divider"></div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Anticipated Room Revenue</label>
+                                    <input type="number" class="form-input calculated-field" id="lead-roomRevenue" placeholder="Auto-calculated or enter manually">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Forecasted (80%)</label>
+                                    <input type="number" class="form-input calculated-field" id="lead-forecastedRevenue" disabled>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Contract Info Section -->
+                        <!-- Event Info Section -->
+                        <div class="panel-section" id="section-event">
+                            <div class="form-group">
+                                <label class="form-label">Event Name</label>
+                                <input type="text" class="form-input" id="lead-eventName">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Event Start Date</label>
+                                    <input type="date" class="form-input" id="lead-eventStart">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Event End Date</label>
+                                    <input type="date" class="form-input" id="lead-eventEnd">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Function Room</label>
+                                    <select class="form-select" id="lead-functionRoom">
+                                        <option value="">Select...</option>
+                                        <option value="dogwood">Dogwood Ballroom</option>
+                                        <option value="eddy">The Eddy</option>
+                                        <option value="field-notes">Field Notes</option>
+                                        <option value="sestina">Sestina</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Headcount</label>
+                                    <input type="number" class="form-input" id="lead-headcount" min="1">
+                                </div>
+                            </div>
+                            <div class="form-divider"></div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Room Rental</label>
+                                    <input type="number" class="form-input" id="lead-roomRental" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">F&B Minimum</label>
+                                    <input type="number" class="form-input" id="lead-fbMinimum" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Anticipated Event Revenue</label>
+                                <input type="number" class="form-input calculated-field" id="lead-eventRevenue" disabled>
+                            </div>
+                        </div>
+
+                        <!-- Contract Details Section -->
                         <div class="panel-section" id="section-contract">
+                            <label class="form-checkbox">
+                                <input type="checkbox" id="lead-sameAsContact">
+                                Same as booking contact
+                            </label>
                             <div class="form-group">
                                 <label class="form-label">Signer Name</label>
                                 <input type="text" class="form-input" id="lead-signerName">
@@ -842,47 +537,63 @@
                                 <label class="form-label">Signer Email</label>
                                 <input type="email" class="form-input" id="lead-signerEmail">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Signer Phone</label>
-                                <input type="text" class="form-input" id="lead-signerPhone">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Signer Address</label>
-                                <input type="text" class="form-input" id="lead-signerAddress">
-                            </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Reservation Procedure</label>
-                                    <select class="form-select" id="lead-resProcedure">
-                                        <option value="">Select...</option>
-                                        <option value="rooming-list">Rooming List</option>
-                                        <option value="individual">Individual Reservations</option>
-                                    </select>
+                                    <label class="form-label">Signer Phone</label>
+                                    <input type="text" class="form-input" id="lead-signerPhone">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Room Payment</label>
-                                    <select class="form-select" id="lead-roomPayment">
-                                        <option value="">Select...</option>
-                                        <option value="individual">Individual Pays Own</option>
-                                        <option value="room-tax">Room & Tax to Master</option>
-                                        <option value="all-master">All Charges to Master</option>
-                                    </select>
+                                    <label class="form-label">Signer Address</label>
+                                    <input type="text" class="form-input" id="lead-signerAddress">
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Cut-off Date</label>
-                                    <input type="date" class="form-input" id="lead-cutoff">
+
+                            <!-- Room-specific fields (hidden for events only) -->
+                            <div id="roomContractFields">
+                                <div class="form-divider"></div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Reservation Procedure</label>
+                                        <select class="form-select" id="lead-resProcedure">
+                                            <option value="">Select...</option>
+                                            <option value="rooming-list">Rooming List</option>
+                                            <option value="individual">Individual Reservations</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Room Payment</label>
+                                        <select class="form-select" id="lead-roomPayment">
+                                            <option value="">Select...</option>
+                                            <option value="individual">Individual Pays Own</option>
+                                            <option value="room-tax">Room & Tax to Master</option>
+                                            <option value="all-master">All Charges to Master</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Commission %</label>
-                                    <input type="number" class="form-input" id="lead-commission" placeholder="0">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Cut-off Date</label>
+                                        <input type="date" class="form-input" id="lead-cutoff">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Commission %</label>
+                                        <input type="number" class="form-input" id="lead-commission" placeholder="0" min="0" max="100">
+                                    </div>
                                 </div>
                             </div>
-                            <label class="form-checkbox">
-                                <input type="checkbox" id="lead-waiveRental">
-                                Waive Room Rental Fee
-                            </label>
+
+                            <!-- Event-specific fields -->
+                            <div id="eventContractFields">
+                                <div class="form-divider"></div>
+                                <label class="form-checkbox">
+                                    <input type="checkbox" id="lead-waiveRental">
+                                    Waive Room Rental Fee
+                                </label>
+                                <label class="form-checkbox">
+                                    <input type="checkbox" id="lead-fbCombined">
+                                    F&B Minimum Combined (single total)
+                                </label>
+                            </div>
                         </div>
 
                         <!-- Billing Section -->
@@ -896,9 +607,15 @@
                                     <option value="direct">Direct Billing</option>
                                 </select>
                             </div>
+                            <div class="form-divider"></div>
                             <div class="form-group">
                                 <label class="form-label">Special Concessions</label>
                                 <textarea class="form-textarea" id="lead-concessions" placeholder="Enter concessions (one per line)..."></textarea>
+                            </div>
+                            <div class="form-divider"></div>
+                            <div class="form-group">
+                                <label class="form-label">Total Anticipated Revenue</label>
+                                <input type="number" class="form-input calculated-field" id="lead-revenue" disabled>
                             </div>
                         </div>
 
@@ -906,7 +623,7 @@
                         <div class="panel-section" id="section-notes">
                             <div class="form-group">
                                 <label class="form-label">Notes</label>
-                                <textarea class="form-textarea" id="lead-notes" placeholder="Add notes..." style="min-height: 200px;"></textarea>
+                                <textarea class="form-textarea" id="lead-notes" placeholder="Add notes..." style="min-height: 250px;"></textarea>
                             </div>
                         </div>
                     </div>
@@ -931,10 +648,7 @@
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) return JSON.parse(saved);
-            return { 
-                leads: [],
-                settings: { goalTarget: 86000 }
-            };
+            return { leads: [], settings: { goalTarget: 86000 } };
         }
 
         function saveData() {
@@ -956,8 +670,6 @@
         const leadsTableBody = document.getElementById('leadsTableBody');
         const statusFilter = document.getElementById('statusFilter');
         const leadSearch = document.getElementById('leadSearch');
-        const panelTabs = document.querySelectorAll('.panel-tab');
-        const panelSections = document.querySelectorAll('.panel-section');
 
         // ============ AUTH ============
         if (sessionStorage.getItem('kelphi_unlocked') === 'true') {
@@ -975,10 +687,7 @@
                     initApp();
                 } else {
                     this.classList.add('error');
-                    setTimeout(() => {
-                        this.classList.remove('error');
-                        this.value = '';
-                    }, 500);
+                    setTimeout(() => { this.classList.remove('error'); this.value = ''; }, 500);
                 }
             }
         });
@@ -988,13 +697,12 @@
             updateDate();
             renderLeads();
             updateDashboard();
+            setupPanelListeners();
         }
 
         function updateDate() {
             const now = new Date();
-            headerDate.textContent = now.toLocaleDateString('en-US', { 
-                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
-            });
+            headerDate.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
         }
 
         // ============ NAVIGATION ============
@@ -1008,40 +716,143 @@
             });
         });
 
+        // ============ PANEL SETUP ============
+        function setupPanelListeners() {
+            // Panel tab navigation
+            document.querySelectorAll('.panel-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    if (this.classList.contains('hidden')) return;
+                    const section = this.dataset.section;
+                    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(`section-${section}`).classList.add('active');
+                });
+            });
+
+            // Booking type change - show/hide tabs
+            document.getElementById('lead-type').addEventListener('change', updatePanelTabs);
+
+            // Same as contact checkbox
+            document.getElementById('lead-sameAsContact').addEventListener('change', function() {
+                if (this.checked) {
+                    document.getElementById('lead-signerName').value = document.getElementById('lead-contactName').value;
+                    document.getElementById('lead-signerEmail').value = document.getElementById('lead-contactEmail').value;
+                    document.getElementById('lead-signerPhone').value = document.getElementById('lead-contactPhone').value;
+                }
+            });
+
+            // Revenue calculations
+            const roomRevenueInputs = ['lead-totalRooms', 'lead-nightlyRate'];
+            roomRevenueInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateRoomRevenue);
+            });
+
+            document.getElementById('lead-roomRevenue').addEventListener('input', calculateTotalRevenue);
+
+            const eventRevenueInputs = ['lead-roomRental', 'lead-fbMinimum'];
+            eventRevenueInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateEventRevenue);
+            });
+        }
+
+        function updatePanelTabs() {
+            const type = document.getElementById('lead-type').value;
+            const tabGuestroom = document.getElementById('tabGuestroom');
+            const tabEvent = document.getElementById('tabEvent');
+            const roomContractFields = document.getElementById('roomContractFields');
+            const eventContractFields = document.getElementById('eventContractFields');
+            const billingSelect = document.getElementById('lead-billingType');
+
+            // Show/hide tabs based on type
+            if (type === 'rooms') {
+                tabGuestroom.classList.remove('hidden');
+                tabEvent.classList.add('hidden');
+                roomContractFields.style.display = 'block';
+                eventContractFields.style.display = 'none';
+                // Enable credit card option
+                billingSelect.querySelector('option[value="credit-card"]').disabled = false;
+            } else if (type === 'events') {
+                tabGuestroom.classList.add('hidden');
+                tabEvent.classList.remove('hidden');
+                roomContractFields.style.display = 'none';
+                eventContractFields.style.display = 'block';
+                // Disable credit card option for events only
+                billingSelect.querySelector('option[value="credit-card"]').disabled = true;
+                if (billingSelect.value === 'credit-card') billingSelect.value = '';
+            } else { // both
+                tabGuestroom.classList.remove('hidden');
+                tabEvent.classList.remove('hidden');
+                roomContractFields.style.display = 'block';
+                eventContractFields.style.display = 'block';
+                billingSelect.querySelector('option[value="credit-card"]').disabled = false;
+            }
+
+            calculateTotalRevenue();
+        }
+
+        function calculateRoomRevenue() {
+            const totalRooms = parseFloat(document.getElementById('lead-totalRooms').value) || 0;
+            const rate = parseFloat(document.getElementById('lead-nightlyRate').value) || 0;
+            const roomRevenue = totalRooms * rate;
+            
+            if (roomRevenue > 0) {
+                document.getElementById('lead-roomRevenue').value = roomRevenue.toFixed(2);
+            }
+            
+            const forecasted = roomRevenue * 0.8;
+            document.getElementById('lead-forecastedRevenue').value = forecasted > 0 ? forecasted.toFixed(2) : '';
+            
+            calculateTotalRevenue();
+        }
+
+        function calculateEventRevenue() {
+            const rental = parseFloat(document.getElementById('lead-roomRental').value) || 0;
+            const fb = parseFloat(document.getElementById('lead-fbMinimum').value) || 0;
+            const eventRevenue = rental + fb;
+            document.getElementById('lead-eventRevenue').value = eventRevenue > 0 ? eventRevenue.toFixed(2) : '';
+            calculateTotalRevenue();
+        }
+
+        function calculateTotalRevenue() {
+            const type = document.getElementById('lead-type').value;
+            let total = 0;
+
+            if (type === 'rooms' || type === 'both') {
+                total += parseFloat(document.getElementById('lead-roomRevenue').value) || 0;
+            }
+            if (type === 'events' || type === 'both') {
+                total += parseFloat(document.getElementById('lead-eventRevenue').value) || 0;
+            }
+
+            document.getElementById('lead-revenue').value = total > 0 ? total.toFixed(2) : '';
+        }
+
         // ============ LEADS TABLE ============
         function renderLeads() {
             const filter = statusFilter.value;
             const search = leadSearch.value.toLowerCase();
             
             let leads = appData.leads.filter(lead => {
-                // Status filter
                 if (filter === 'active') {
                     if (['completed', 'lost'].includes(lead.status)) return false;
                 } else if (filter !== 'all' && lead.status !== filter) {
                     return false;
                 }
-                // Search filter
-                if (search && !lead.bookingName.toLowerCase().includes(search) && 
-                    !(lead.account || '').toLowerCase().includes(search)) {
+                if (search && !lead.bookingName.toLowerCase().includes(search) && !(lead.account || '').toLowerCase().includes(search)) {
                     return false;
                 }
                 return true;
             });
 
             if (leads.length === 0) {
-                leadsTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; color: #666; padding: 3rem;">
-                            No leads found. Click "+ New Lead" to create one.
-                        </td>
-                    </tr>
-                `;
+                leadsTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #666; padding: 3rem;">No leads found. Click "+ New Lead" to create one.</td></tr>`;
                 return;
             }
 
             leadsTableBody.innerHTML = leads.map(lead => `
                 <tr data-id="${lead.id}" class="${currentLeadId === lead.id ? 'selected' : ''}">
-                    <td class="lead-name-cell">${lead.bookingName}</td>
+                    <td class="lead-name-cell">${lead.bookingName || 'Untitled'}</td>
                     <td>${lead.account || '—'}</td>
                     <td><span class="item-badge ${lead.status}">${formatStatus(lead.status)}</span></td>
                     <td>${lead.arrival ? formatDate(lead.arrival) : '—'}</td>
@@ -1050,7 +861,6 @@
                 </tr>
             `).join('');
 
-            // Add click handlers
             document.querySelectorAll('#leadsTableBody tr[data-id]').forEach(row => {
                 row.addEventListener('click', () => openLead(row.dataset.id));
             });
@@ -1065,6 +875,8 @@
             clearPanel();
             document.getElementById('panelTitle').textContent = 'New Lead';
             document.getElementById('panelSubtitle').textContent = '';
+            document.getElementById('lead-type').value = 'rooms';
+            updatePanelTabs();
             leadPanel.classList.add('open');
         });
 
@@ -1076,41 +888,40 @@
             if (!lead) return;
 
             currentLeadId = id;
-            document.getElementById('panelTitle').textContent = lead.bookingName;
+            document.getElementById('panelTitle').textContent = lead.bookingName || 'Untitled';
             document.getElementById('panelSubtitle').textContent = lead.account || '';
 
-            // Populate form fields
-            document.getElementById('lead-bookingName').value = lead.bookingName || '';
-            document.getElementById('lead-account').value = lead.account || '';
-            document.getElementById('lead-contactName').value = lead.contactName || '';
-            document.getElementById('lead-contactPhone').value = lead.contactPhone || '';
-            document.getElementById('lead-contactEmail').value = lead.contactEmail || '';
-            document.getElementById('lead-arrival').value = lead.arrival || '';
-            document.getElementById('lead-departure').value = lead.departure || '';
-            document.getElementById('lead-type').value = lead.type || 'rooms';
-            document.getElementById('lead-status').value = lead.status || 'working';
-            document.getElementById('lead-revenue').value = lead.revenue || '';
-            
-            // Contract info
-            document.getElementById('lead-signerName').value = lead.signerName || '';
-            document.getElementById('lead-signerEmail').value = lead.signerEmail || '';
-            document.getElementById('lead-signerPhone').value = lead.signerPhone || '';
-            document.getElementById('lead-signerAddress').value = lead.signerAddress || '';
-            document.getElementById('lead-resProcedure').value = lead.resProcedure || '';
-            document.getElementById('lead-roomPayment').value = lead.roomPayment || '';
-            document.getElementById('lead-cutoff').value = lead.cutoff || '';
-            document.getElementById('lead-commission').value = lead.commission || '';
+            // Populate all form fields
+            const fields = [
+                'bookingName', 'account', 'contactName', 'contactPhone', 'contactEmail',
+                'arrival', 'departure', 'type', 'status',
+                'numNights', 'peakRooms', 'totalRooms', 'nightlyRate', 'roomRevenue', 'forecastedRevenue',
+                'eventName', 'eventStart', 'eventEnd', 'functionRoom', 'headcount', 'roomRental', 'fbMinimum', 'eventRevenue',
+                'signerName', 'signerEmail', 'signerPhone', 'signerAddress',
+                'resProcedure', 'roomPayment', 'cutoff', 'commission',
+                'billingType', 'concessions', 'notes', 'revenue'
+            ];
+
+            fields.forEach(field => {
+                const el = document.getElementById(`lead-${field}`);
+                if (el) el.value = lead[field] || '';
+            });
+
+            // Checkboxes
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
+            document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
+            document.getElementById('lead-sameAsContact').checked = false;
+
+            updatePanelTabs();
             
-            // Billing
-            document.getElementById('lead-billingType').value = lead.billingType || '';
-            document.getElementById('lead-concessions').value = lead.concessions || '';
-            
-            // Notes
-            document.getElementById('lead-notes').value = lead.notes || '';
+            // Reset to first tab
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+            document.querySelector('.panel-tab').classList.add('active');
+            document.getElementById('section-booking').classList.add('active');
 
             leadPanel.classList.add('open');
-            renderLeads(); // Update selected state
+            renderLeads();
         }
 
         function closePanel() {
@@ -1124,23 +935,11 @@
                 if (el.type === 'checkbox') el.checked = false;
                 else el.value = '';
             });
-            // Reset to first tab
-            panelTabs.forEach(t => t.classList.remove('active'));
-            panelSections.forEach(s => s.classList.remove('active'));
-            panelTabs[0].classList.add('active');
-            panelSections[0].classList.add('active');
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+            document.querySelector('.panel-tab').classList.add('active');
+            document.getElementById('section-booking').classList.add('active');
         }
-
-        // Panel tab navigation
-        panelTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const section = this.dataset.section;
-                panelTabs.forEach(t => t.classList.remove('active'));
-                panelSections.forEach(s => s.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById(`section-${section}`).classList.add('active');
-            });
-        });
 
         // Save lead
         document.getElementById('panelSave').addEventListener('click', () => {
@@ -1155,7 +954,23 @@
                 departure: document.getElementById('lead-departure').value,
                 type: document.getElementById('lead-type').value,
                 status: document.getElementById('lead-status').value,
-                revenue: parseFloat(document.getElementById('lead-revenue').value) || 0,
+                // Guestroom
+                numNights: document.getElementById('lead-numNights').value,
+                peakRooms: document.getElementById('lead-peakRooms').value,
+                totalRooms: document.getElementById('lead-totalRooms').value,
+                nightlyRate: document.getElementById('lead-nightlyRate').value,
+                roomRevenue: parseFloat(document.getElementById('lead-roomRevenue').value) || 0,
+                forecastedRevenue: parseFloat(document.getElementById('lead-forecastedRevenue').value) || 0,
+                // Event
+                eventName: document.getElementById('lead-eventName').value,
+                eventStart: document.getElementById('lead-eventStart').value,
+                eventEnd: document.getElementById('lead-eventEnd').value,
+                functionRoom: document.getElementById('lead-functionRoom').value,
+                headcount: document.getElementById('lead-headcount').value,
+                roomRental: parseFloat(document.getElementById('lead-roomRental').value) || 0,
+                fbMinimum: parseFloat(document.getElementById('lead-fbMinimum').value) || 0,
+                eventRevenue: parseFloat(document.getElementById('lead-eventRevenue').value) || 0,
+                // Contract
                 signerName: document.getElementById('lead-signerName').value,
                 signerEmail: document.getElementById('lead-signerEmail').value,
                 signerPhone: document.getElementById('lead-signerPhone').value,
@@ -1165,19 +980,22 @@
                 cutoff: document.getElementById('lead-cutoff').value,
                 commission: document.getElementById('lead-commission').value,
                 waiveRental: document.getElementById('lead-waiveRental').checked,
+                fbCombined: document.getElementById('lead-fbCombined').checked,
+                // Billing
                 billingType: document.getElementById('lead-billingType').value,
                 concessions: document.getElementById('lead-concessions').value,
+                revenue: parseFloat(document.getElementById('lead-revenue').value) || 0,
+                // Notes
                 notes: document.getElementById('lead-notes').value,
+                // Meta
                 createdAt: currentLeadId ? (appData.leads.find(l => l.id === currentLeadId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
 
             if (currentLeadId) {
-                // Update existing
                 const idx = appData.leads.findIndex(l => l.id === currentLeadId);
                 if (idx !== -1) appData.leads[idx] = leadData;
             } else {
-                // Add new
                 appData.leads.push(leadData);
             }
 
@@ -1190,40 +1008,24 @@
         // ============ DASHBOARD ============
         function updateDashboard() {
             const leads = appData.leads;
-            
-            // Pipeline (Working + Tentative + Contract Out)
             const pipelineStatuses = ['working', 'tentative', 'contract-out'];
-            const pipeline = leads
-                .filter(l => pipelineStatuses.includes(l.status))
-                .reduce((sum, l) => sum + (l.revenue || 0), 0);
+            const pipeline = leads.filter(l => pipelineStatuses.includes(l.status)).reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-pipeline').textContent = formatCurrency(pipeline);
 
-            // Contracts Out
             const contractsOut = leads.filter(l => l.status === 'contract-out').length;
             document.getElementById('stat-contracts').textContent = contractsOut;
 
-            // Definite this month
-            const now = new Date();
-            const definiteThisMonth = leads
-                .filter(l => l.status === 'definite')
-                .reduce((sum, l) => sum + (l.revenue || 0), 0);
+            const definiteThisMonth = leads.filter(l => l.status === 'definite').reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-definite').textContent = formatCurrency(definiteThisMonth);
 
-            // Total leads
             document.getElementById('stat-leads').textContent = leads.filter(l => !['completed', 'lost'].includes(l.status)).length;
 
-            // Goal progress
             const goalTarget = appData.settings.goalTarget || 86000;
             const goalPercent = Math.min(100, Math.round((definiteThisMonth / goalTarget) * 100));
             document.getElementById('goalProgressFill').style.width = goalPercent + '%';
             document.getElementById('goalCurrent').textContent = formatCurrency(definiteThisMonth) + ' booked';
 
-            // Top leads
-            const topLeads = [...leads]
-                .filter(l => !['completed', 'lost'].includes(l.status))
-                .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
-                .slice(0, 3);
-            
+            const topLeads = [...leads].filter(l => !['completed', 'lost'].includes(l.status)).sort((a, b) => (b.revenue || 0) - (a.revenue || 0)).slice(0, 3);
             const topLeadsEl = document.getElementById('top-leads');
             if (topLeads.length === 0) {
                 topLeadsEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">No leads yet</div>';
@@ -1231,7 +1033,7 @@
                 topLeadsEl.innerHTML = topLeads.map(l => `
                     <div class="card-item">
                         <div>
-                            <div class="item-name">${l.bookingName}</div>
+                            <div class="item-name">${l.bookingName || 'Untitled'}</div>
                             <div class="item-meta">${l.arrival ? formatDate(l.arrival) : 'No date'} · ${formatType(l.type)}</div>
                         </div>
                         <span class="item-value">${formatCurrency(l.revenue)}</span>
@@ -1241,34 +1043,18 @@
         }
 
         // ============ HELPERS ============
-        function formatCurrency(val) {
-            return '$' + (val || 0).toLocaleString();
-        }
-
+        function formatCurrency(val) { return '$' + (val || 0).toLocaleString(); }
         function formatDate(dateStr) {
             if (!dateStr) return '';
             const d = new Date(dateStr);
             return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
-
         function formatStatus(status) {
-            const labels = {
-                'working': 'Working',
-                'tentative': 'Tentative',
-                'contract-out': 'Contract Out',
-                'definite': 'Definite',
-                'completed': 'Completed',
-                'lost': 'Lost'
-            };
+            const labels = { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost' };
             return labels[status] || status;
         }
-
         function formatType(type) {
-            const labels = {
-                'rooms': 'Rooms Only',
-                'events': 'Events Only',
-                'both': 'Rooms + Events'
-            };
+            const labels = { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' };
             return labels[type] || type;
         }
     </script>

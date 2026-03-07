@@ -234,7 +234,7 @@
                 </div>
 
                 <!-- Quote Generator Tab -->
-                <div class="tab-content" id="tab-quotes"><div class="empty-state"><h3>Quote Generator</h3><p>Coming soon</p></div></div>
+                <div class="tab-content" id="tab-quotes"><iframe id="quoteGeneratorFrame" src="https://puddlesmcsplashy.github.io/RATE-CALCULATOR/" style="width: 100%; height: calc(100vh - 180px); border: none; border-radius: 8px;"></iframe></div>
 
                 <!-- Leads Tab -->
                 <div class="tab-content" id="tab-leads">
@@ -1006,6 +1006,34 @@
         function formatShortDate(d) { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }); }
         function formatStatus(s) { return { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost' }[s] || s; }
         function formatType(t) { return { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' }[t] || t; }
+    
+
+        // Listen for CREATE_LEAD messages from embedded Quote Generator
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'CREATE_LEAD') {
+                const leadData = event.data.data;
+                // Generate ID and add timestamps
+                leadData.id = generateId();
+                leadData.createdAt = new Date().toISOString();
+                leadData.updatedAt = new Date().toISOString();
+                
+                // Add to leads
+                appData.leads.push(leadData);
+                saveData();
+                
+                // Switch to Leads tab and refresh
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.querySelector('.nav-tab[data-tab="leads"]').classList.add('active');
+                document.getElementById('tab-leads').classList.add('active');
+                
+                renderLeads();
+                updateDashboard();
+                
+                // Open the new lead
+                setTimeout(() => openLead(leadData.id), 100);
+            }
+        });
     </script>
 </body>
 </html>

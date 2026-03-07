@@ -394,8 +394,24 @@
                         <div class="panel-section" id="section-billing">
                             <div class="form-group">
                                 <label class="form-label">Billing Procedure</label>
-                                <select class="form-select" id="lead-billingType"><option value="">Select...</option><option value="deposit">Deposit Schedule</option><option value="credit-card">Credit Card Deposit</option><option value="direct">Direct Billing</option></select>
+                                <select class="form-select" id="lead-billingType" onchange="updateBillingDisplay()"><option value="">Select...</option><option value="deposit">Deposit Schedule</option><option value="credit-card">Credit Card Deposit</option><option value="direct">Direct Billing</option></select>
                             </div>
+                            
+                            <!-- Deposit Schedule Preview -->
+                            <div id="depositSchedulePreview" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0,217,255,0.05); border: 1px solid rgba(0,217,255,0.2); border-radius: 8px;">
+                                <div style="font-weight: 600; margin-bottom: 12px; color: var(--accent);">Deposit Schedule Preview</div>
+                                <div id="depositScheduleContent" style="font-size: 14px; line-height: 1.8;"></div>
+                                <div id="depositScheduleNote" style="font-size: 12px; color: var(--text-muted); margin-top: 12px; font-style: italic;"></div>
+                            </div>
+                            
+                            <!-- Credit Card Deposit -->
+                            <div id="creditCardSection" style="display: none; margin-top: 16px;">
+                                <div class="form-group">
+                                    <label class="form-label">Credit Card Deposit Amount <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(1 night + tax, editable)</span></label>
+                                    <input type="number" class="form-input" id="lead-ccDeposit" placeholder="0.00" step="0.01">
+                                </div>
+                            </div>
+                            
                             <div class="form-divider"></div>
                             <div class="form-group"><label class="form-label">Total Anticipated Revenue</label><input type="text" class="form-input calculated-field" id="lead-revenue" readonly></div>
                         </div>
@@ -905,13 +921,16 @@
             // Simple fields
             ['bookingName', 'account', 'contactName', 'contactPhone', 'contactEmail', 'arrival', 'departure', 'type', 'status',
              'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
-             'billingType', 'concessions', 'notes', 'handoverNotes'].forEach(f => {
+             'billingType', 'concessions', 'notes', 'handoverNotes', 'ccDeposit'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
                 if (el) el.value = lead[f] || '';
             });
             
             // Populate mirror fields
             document.getElementById('lead-concessionsMirror').value = lead.concessions || '';
+            
+            // Update billing display (show deposit schedule or CC section)
+            updateBillingDisplay();
 
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
             document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
@@ -998,6 +1017,7 @@
                 waiveRental: document.getElementById('lead-waiveRental').checked,
                 fbCombined: document.getElementById('lead-fbCombined').checked,
                 billingType: document.getElementById('lead-billingType').value,
+                ccDeposit: document.getElementById('lead-ccDeposit').value,
                 concessions: document.getElementById('lead-concessions').value,
                 notes: document.getElementById('lead-notes').value,
                 handoverNotes: document.getElementById('lead-handoverNotes').value,
@@ -1058,6 +1078,128 @@
                 document.getElementById('lead-handoverNotes').value = value;
                 // Future: sync with Handover tab when implemented
             }
+        }
+        
+        // Update billing display based on selection
+        function updateBillingDisplay() {
+            const billingType = document.getElementById('lead-billingType').value;
+            const depositPreview = document.getElementById('depositSchedulePreview');
+            const creditCardSection = document.getElementById('creditCardSection');
+            
+            depositPreview.style.display = 'none';
+            creditCardSection.style.display = 'none';
+            
+            if (billingType === 'deposit') {
+                depositPreview.style.display = 'block';
+                calculateDepositSchedule();
+            } else if (billingType === 'credit-card') {
+                creditCardSection.style.display = 'block';
+                calculateCreditCardDeposit();
+            }
+        }
+        
+        // Calculate and display deposit schedule preview
+        function calculateDepositSchedule() {
+            const arrival = document.getElementById('lead-arrival').value;
+            const type = document.getElementById('lead-type').value;
+            const revenue = parseCurrency(document.getElementById('lead-revenue').value) || 0;
+            
+            if (!arrival || !revenue) {
+                document.getElementById('depositScheduleContent').innerHTML = '<span style="color: var(--text-muted);">Enter arrival date and revenue to see schedule</span>';
+                document.getElementById('depositScheduleNote').textContent = '';
+                return;
+            }
+            
+            const today = new Date();
+            const arrivalDate = new Date(arrival + 'T12:00:00');
+            const daysOut = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
+            
+            // Calculate dates
+            const date90 = new Date(arrivalDate);
+            date90.setDate(date90.getDate() - 90);
+            const date30 = new Date(arrivalDate);
+            date30.setDate(date30.getDate() - 30);
+            
+            const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const formatMoney = (amt) => '$' + amt.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            
+            let schedule = '';
+            let scheduleType = '';
+            
+            if (daysOut >= 60) {
+                // Schedule A: 25/50/25
+                scheduleType = 'A';
+                const amt1 = Math.round(revenue * 0.25);
+                const amt2 = Math.round(revenue * 0.50);
+                const amt3 = revenue - amt1 - amt2;
+                schedule = `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span><strong>Upon Signing</strong></span>
+                        <span><strong>${formatMoney(amt1)}</strong> <span style="color: var(--text-muted);">· 25% anticipated revenue</span></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span><strong>90 Days Prior</strong> <span style="color: var(--text-muted);">(${formatDate(date90)})</span></span>
+                        <span><strong>${formatMoney(amt2)}</strong> <span style="color: var(--text-muted);">· 50% anticipated revenue</span></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span><strong>30 Days Prior</strong> <span style="color: var(--text-muted);">(${formatDate(date30)})</span></span>
+                        <span><strong>${formatMoney(amt3)}</strong> <span style="color: var(--text-muted);">· Remaining balance</span></span>
+                    </div>
+                `;
+            } else if (daysOut >= 31) {
+                // Schedule B: 50/50
+                scheduleType = 'B';
+                const amt1 = Math.round(revenue * 0.50);
+                const amt2 = revenue - amt1;
+                schedule = `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span><strong>Upon Signing</strong></span>
+                        <span><strong>${formatMoney(amt1)}</strong> <span style="color: var(--text-muted);">· 50% anticipated revenue</span></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span><strong>30 Days Prior</strong> <span style="color: var(--text-muted);">(${formatDate(date30)})</span></span>
+                        <span><strong>${formatMoney(amt2)}</strong> <span style="color: var(--text-muted);">· Remaining balance</span></span>
+                    </div>
+                `;
+            } else {
+                // Schedule C: 100%
+                scheduleType = 'C';
+                schedule = `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span><strong>Upon Signing</strong></span>
+                        <span><strong>${formatMoney(revenue)}</strong> <span style="color: var(--text-muted);">· 100% anticipated revenue</span></span>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('depositScheduleContent').innerHTML = schedule;
+            
+            // Add note about F&B refund for events
+            let note = `Schedule ${scheduleType} (${daysOut} days out)`;
+            if (type === 'events' || type === 'both') {
+                note += ' · F&B minimum refund row applies for unused amounts after event';
+            }
+            document.getElementById('depositScheduleNote').textContent = note;
+        }
+        
+        // Calculate credit card deposit (one night + 13.5% tax)
+        function calculateCreditCardDeposit() {
+            const ccInput = document.getElementById('lead-ccDeposit');
+            if (ccInput.value) return; // Don't overwrite if already set
+            
+            // Get first night's room revenue from room block
+            let oneNightTotal = 0;
+            if (currentRoomBlock && currentRoomBlock.length > 0) {
+                currentRoomBlock.forEach(row => {
+                    const rate = parseFloat(row.rate) || 0;
+                    const firstNightQty = row.quantities && row.quantities[0] ? parseInt(row.quantities[0]) : 0;
+                    oneNightTotal += rate * firstNightQty;
+                });
+            }
+            
+            // Add 13.5% tax
+            const withTax = oneNightTotal * 1.135;
+            ccInput.value = withTax.toFixed(2);
         }
         function parseCurrency(str) { return parseFloat((str || '').replace(/[$,]/g, '')) || 0; }
         function formatDate(dateStr) { return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; }

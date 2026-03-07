@@ -15,79 +15,33 @@
 
         /* Lock Screen */
         #lockScreen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #0d0d14 0%, #1a1a2e 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
         #lockScreen.hidden { display: none; }
-        .lock-title {
-            font-size: 3rem;
-            font-weight: 200;
-            color: #00d9ff;
-            margin-bottom: 3rem;
-            letter-spacing: 1rem;
-        }
+        .lock-title { font-size: 3rem; font-weight: 200; color: #00d9ff; margin-bottom: 3rem; letter-spacing: 1rem; }
         .lock-input {
-            background: transparent;
-            border: 1px solid rgba(0,217,255,0.3);
-            border-radius: 4px;
-            padding: 1rem 1.5rem;
-            font-size: 1.5rem;
-            color: #fff;
-            text-align: center;
-            letter-spacing: 0.75rem;
-            width: 180px;
-            transition: all 0.3s;
+            background: transparent; border: 1px solid rgba(0,217,255,0.3); border-radius: 4px;
+            padding: 1rem 1.5rem; font-size: 1.5rem; color: #fff; text-align: center;
+            letter-spacing: 0.75rem; width: 180px; transition: all 0.3s;
         }
         .lock-input:focus { outline: none; border-color: #00d9ff; box-shadow: 0 0 20px rgba(0,217,255,0.1); }
         .lock-input.error { border-color: #ff4757; animation: shake 0.5s; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 
         /* Main App */
         #app { display: none; flex-direction: column; height: 100vh; }
         #app.visible { display: flex; }
 
         /* Top Header */
-        .top-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 2rem;
-            height: 60px;
-            background: #12121c;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
+        .top-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 60px; background: #12121c; border-bottom: 1px solid rgba(255,255,255,0.06); }
         .brand { font-size: 1.1rem; font-weight: 300; color: #00d9ff; letter-spacing: 0.4rem; }
         .header-right { font-size: 0.8rem; color: #666; }
 
         /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            gap: 0;
-            padding: 0 2rem;
-            background: #12121c;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .nav-tab {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #666;
-            font-size: 0.85rem;
-            font-weight: 400;
-            letter-spacing: 0.02rem;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -1px;
-        }
+        .tab-nav { display: flex; gap: 0; padding: 0 2rem; background: #12121c; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .nav-tab { padding: 1rem 1.5rem; cursor: pointer; transition: all 0.2s; color: #666; font-size: 0.85rem; font-weight: 400; letter-spacing: 0.02rem; border-bottom: 2px solid transparent; margin-bottom: -1px; }
         .nav-tab:hover { color: #aaa; }
         .nav-tab.active { color: #00d9ff; border-bottom-color: #00d9ff; }
 
@@ -96,10 +50,7 @@
         .main-content { flex: 1; overflow-y: auto; padding: 2rem; transition: margin-right 0.3s; }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Dashboard Styles */
         .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
@@ -109,7 +60,6 @@
         .stat-value.cyan { color: #00d9ff; }
         .stat-value.green { color: #00d98f; }
         .stat-value.orange { color: #ffaa00; }
-
         .dashboard-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
         .dashboard-card { background: #16161f; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); overflow: hidden; }
         .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05rem; }
@@ -120,7 +70,6 @@
         .item-name { font-size: 0.9rem; color: #e0e0e0; }
         .item-meta { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
         .item-value { font-size: 0.9rem; color: #00d9ff; font-weight: 500; }
-
         .item-badge { font-size: 0.7rem; padding: 0.25rem 0.5rem; border-radius: 4px; background: rgba(0,217,255,0.1); color: #00d9ff; }
         .item-badge.working { background: rgba(136,136,136,0.1); color: #888; }
         .item-badge.tentative { background: rgba(255,170,0,0.1); color: #ffaa00; }
@@ -128,20 +77,12 @@
         .item-badge.definite { background: rgba(0,217,143,0.1); color: #00d98f; }
         .item-badge.completed { background: rgba(0,100,200,0.1); color: #66b3ff; }
         .item-badge.lost { background: rgba(255,71,87,0.1); color: #ff4757; }
-
         .section-header { font-size: 0.8rem; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 1rem; }
 
         /* Leads Tab Styles */
         .leads-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         .leads-filters { display: flex; gap: 1rem; align-items: center; }
-        .filter-select, .search-input {
-            background: #16161f;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 4px;
-            padding: 0.5rem 1rem;
-            color: #e0e0e0;
-            font-size: 0.85rem;
-        }
+        .filter-select, .search-input { background: #16161f; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.5rem 1rem; color: #e0e0e0; font-size: 0.85rem; }
         .search-input { width: 250px; }
         .search-input::placeholder { color: #555; }
         .filter-select:focus, .search-input:focus { outline: none; border-color: #00d9ff; }
@@ -158,14 +99,7 @@
         .lead-revenue { color: #00d9ff; }
 
         /* Lead Detail Panel */
-        .lead-panel {
-            width: 550px;
-            background: #12121c;
-            border-left: 1px solid rgba(255,255,255,0.06);
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-        }
+        .lead-panel { width: 600px; background: #12121c; border-left: 1px solid rgba(255,255,255,0.06); display: none; flex-direction: column; overflow: hidden; }
         .lead-panel.open { display: flex; }
         .panel-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: flex-start; }
         .panel-title { font-size: 1.1rem; font-weight: 400; color: #fff; margin-bottom: 0.25rem; }
@@ -175,8 +109,8 @@
 
         /* Panel Vertical Tabs */
         .panel-body { display: flex; flex: 1; overflow: hidden; }
-        .panel-tabs { width: 130px; background: #0d0d14; padding: 1rem 0; display: flex; flex-direction: column; gap: 0.25rem; overflow-y: auto; }
-        .panel-tab { padding: 0.6rem 0.8rem; font-size: 0.75rem; color: #666; cursor: pointer; border-left: 2px solid transparent; transition: all 0.2s; }
+        .panel-tabs { width: 120px; background: #0d0d14; padding: 1rem 0; display: flex; flex-direction: column; gap: 0.25rem; overflow-y: auto; flex-shrink: 0; }
+        .panel-tab { padding: 0.6rem 0.8rem; font-size: 0.72rem; color: #666; cursor: pointer; border-left: 2px solid transparent; transition: all 0.2s; }
         .panel-tab:hover { color: #aaa; background: rgba(255,255,255,0.02); }
         .panel-tab.active { color: #00d9ff; border-left-color: #00d9ff; background: rgba(0,217,255,0.05); }
         .panel-tab.hidden { display: none; }
@@ -186,27 +120,52 @@
 
         /* Form Styles */
         .form-group { margin-bottom: 1.25rem; }
-        .form-label { display: block; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.03rem; margin-bottom: 0.5rem; }
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            background: #1a1a24;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 4px;
-            padding: 0.6rem 0.8rem;
-            color: #e0e0e0;
-            font-size: 0.85rem;
-            transition: border-color 0.2s;
-        }
+        .form-label { display: block; font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.03rem; margin-bottom: 0.4rem; }
+        .form-input, .form-select, .form-textarea { width: 100%; background: #1a1a24; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; padding: 0.5rem 0.7rem; color: #e0e0e0; font-size: 0.8rem; transition: border-color 0.2s; }
         .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #00d9ff; }
         .form-input:disabled, .form-select:disabled { opacity: 0.5; cursor: not-allowed; }
-        .form-textarea { resize: vertical; min-height: 100px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
-        .form-checkbox { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #aaa; cursor: pointer; margin-bottom: 1rem; }
-        .form-checkbox input { width: 16px; height: 16px; accent-color: #00d9ff; }
-        .form-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 1.5rem 0; }
-        .form-section-title { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 1rem; }
+        .form-textarea { resize: vertical; min-height: 80px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .form-checkbox { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #aaa; cursor: pointer; margin-bottom: 0.75rem; }
+        .form-checkbox input { width: 14px; height: 14px; accent-color: #00d9ff; }
+        .form-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 1.25rem 0; }
+        .form-section-title { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 0.75rem; }
         .calculated-field { background: #0d0d14; border-color: rgba(0,217,255,0.3); color: #00d9ff; }
+
+        /* Room Block Table */
+        .room-block-container { margin-top: 1rem; }
+        .room-block-scroll { overflow-x: auto; margin-bottom: 1rem; }
+        .room-block-table { border-collapse: collapse; min-width: 100%; }
+        .room-block-table th, .room-block-table td { padding: 0.5rem; border: 1px solid rgba(255,255,255,0.08); text-align: center; font-size: 0.75rem; white-space: nowrap; }
+        .room-block-table th { background: #1a1a24; color: #888; font-weight: 500; text-transform: uppercase; font-size: 0.65rem; }
+        .room-block-table td { background: #16161f; }
+        .room-block-table .room-type-cell { text-align: left; min-width: 140px; }
+        .room-block-table .rate-cell { min-width: 80px; }
+        .room-block-table .date-cell { min-width: 60px; }
+        .room-block-table .total-row td { background: #1a1a24; font-weight: 600; color: #00d9ff; }
+        .room-block-table input { width: 100%; background: transparent; border: none; color: #e0e0e0; text-align: center; font-size: 0.8rem; padding: 0.25rem; }
+        .room-block-table input:focus { outline: none; background: rgba(0,217,255,0.1); }
+        .room-block-table select { background: #1a1a24; border: none; color: #e0e0e0; font-size: 0.75rem; padding: 0.25rem; width: 100%; }
+        .room-block-table .remove-row { color: #ff4757; cursor: pointer; font-size: 1rem; opacity: 0.5; }
+        .room-block-table .remove-row:hover { opacity: 1; }
+        .add-room-type-btn { background: transparent; border: 1px dashed rgba(0,217,255,0.3); color: #00d9ff; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+        .add-room-type-btn:hover { background: rgba(0,217,255,0.1); border-style: solid; }
+        .room-block-summary { display: flex; gap: 2rem; margin-top: 1rem; padding: 1rem; background: #1a1a24; border-radius: 4px; }
+        .summary-item { text-align: center; }
+        .summary-label { font-size: 0.65rem; color: #666; text-transform: uppercase; margin-bottom: 0.25rem; }
+        .summary-value { font-size: 1.1rem; color: #00d9ff; font-weight: 500; }
+
+        /* Events Table */
+        .events-container { margin-top: 1rem; }
+        .event-card { background: #16161f; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; position: relative; }
+        .event-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .event-card-title { font-size: 0.8rem; color: #00d9ff; font-weight: 500; }
+        .event-card-remove { color: #ff4757; cursor: pointer; font-size: 0.8rem; opacity: 0.6; }
+        .event-card-remove:hover { opacity: 1; }
+        .add-event-btn { background: transparent; border: 1px dashed rgba(0,217,255,0.3); color: #00d9ff; padding: 0.75rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; width: 100%; }
+        .add-event-btn:hover { background: rgba(0,217,255,0.1); border-style: solid; }
+        .events-summary { display: flex; gap: 2rem; margin-top: 1rem; padding: 1rem; background: #1a1a24; border-radius: 4px; }
 
         /* Buttons */
         .btn { padding: 0.6rem 1.2rem; border-radius: 4px; border: none; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; font-weight: 400; }
@@ -214,9 +173,10 @@
         .btn-primary:hover { background: #00c4e6; }
         .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #888; }
         .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
         .panel-actions { padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 0.75rem; justify-content: flex-end; }
 
-        /* Goals Tab - Rainbow Progress */
+        /* Goals Tab */
         .goal-progress-container { background: #16161f; border-radius: 8px; padding: 2rem; border: 1px solid rgba(255,255,255,0.04); }
         .goal-progress-bar { height: 24px; border-radius: 12px; background: #1a1a24; overflow: hidden; }
         .goal-progress-fill { height: 100%; border-radius: 12px; background: linear-gradient(90deg, #ff6b6b 0%, #ffa502 20%, #ffdd59 40%, #2ed573 60%, #1e90ff 80%, #a55eea 100%); transition: width 0.5s ease; }
@@ -228,6 +188,9 @@
         .empty-state { text-align: center; padding: 4rem 2rem; color: #444; }
         .empty-state h3 { font-weight: 400; font-size: 1rem; margin-bottom: 0.5rem; color: #666; }
         .empty-state p { font-size: 0.85rem; }
+
+        /* Info message */
+        .info-message { background: rgba(0,217,255,0.1); border: 1px solid rgba(0,217,255,0.2); border-radius: 4px; padding: 0.75rem 1rem; font-size: 0.8rem; color: #88d9f5; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
@@ -259,46 +222,19 @@
                 <!-- Home Dashboard -->
                 <div class="tab-content active" id="tab-home">
                     <div class="dashboard-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Pipeline Total</div>
-                            <div class="stat-value cyan" id="stat-pipeline">$0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Contracts Out</div>
-                            <div class="stat-value orange" id="stat-contracts">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Definite This Month</div>
-                            <div class="stat-value green" id="stat-definite">$0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Leads</div>
-                            <div class="stat-value" id="stat-leads">0</div>
-                        </div>
+                        <div class="stat-card"><div class="stat-label">Pipeline Total</div><div class="stat-value cyan" id="stat-pipeline">$0</div></div>
+                        <div class="stat-card"><div class="stat-label">Contracts Out</div><div class="stat-value orange" id="stat-contracts">0</div></div>
+                        <div class="stat-card"><div class="stat-label">Definite This Month</div><div class="stat-value green" id="stat-definite">$0</div></div>
+                        <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-value" id="stat-leads">0</div></div>
                     </div>
                     <div class="dashboard-columns">
-                        <div class="dashboard-card">
-                            <div class="card-header">Needs Attention</div>
-                            <div class="card-body" id="needs-attention">
-                                <div class="card-item" style="color: #666; justify-content: center;">No items need attention</div>
-                            </div>
-                        </div>
-                        <div class="dashboard-card">
-                            <div class="card-header">Top Leads by Revenue</div>
-                            <div class="card-body" id="top-leads">
-                                <div class="card-item" style="color: #666; justify-content: center;">No leads yet</div>
-                            </div>
-                        </div>
+                        <div class="dashboard-card"><div class="card-header">Needs Attention</div><div class="card-body" id="needs-attention"><div class="card-item" style="color: #666; justify-content: center;">No items need attention</div></div></div>
+                        <div class="dashboard-card"><div class="card-header">Top Leads by Revenue</div><div class="card-body" id="top-leads"><div class="card-item" style="color: #666; justify-content: center;">No leads yet</div></div></div>
                     </div>
                 </div>
 
                 <!-- Quote Generator Tab -->
-                <div class="tab-content" id="tab-quotes">
-                    <div class="empty-state">
-                        <h3>Quote Generator</h3>
-                        <p>Coming soon — generate estimates and create leads</p>
-                    </div>
-                </div>
+                <div class="tab-content" id="tab-quotes"><div class="empty-state"><h3>Quote Generator</h3><p>Coming soon</p></div></div>
 
                 <!-- Leads Tab -->
                 <div class="tab-content" id="tab-leads">
@@ -319,102 +255,52 @@
                         <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
                     </div>
                     <table class="leads-table">
-                        <thead>
-                            <tr>
-                                <th>Booking Name</th>
-                                <th>Account</th>
-                                <th>Status</th>
-                                <th>Arrival</th>
-                                <th>Type</th>
-                                <th>Revenue</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Booking Name</th><th>Account</th><th>Status</th><th>Arrival</th><th>Type</th><th>Revenue</th></tr></thead>
                         <tbody id="leadsTableBody"></tbody>
                     </table>
                 </div>
 
-                <!-- Contracts Tab -->
-                <div class="tab-content" id="tab-contracts">
-                    <div class="empty-state"><h3>Contracts</h3><p>Coming soon</p></div>
-                </div>
-
-                <!-- Handover Tab -->
-                <div class="tab-content" id="tab-handover">
-                    <div class="empty-state"><h3>Handover Checklists</h3><p>Coming soon</p></div>
-                </div>
-
-                <!-- Goals Tab -->
+                <!-- Other tabs -->
+                <div class="tab-content" id="tab-contracts"><div class="empty-state"><h3>Contracts</h3><p>Coming soon</p></div></div>
+                <div class="tab-content" id="tab-handover"><div class="empty-state"><h3>Handover Checklists</h3><p>Coming soon</p></div></div>
                 <div class="tab-content" id="tab-goals">
                     <div class="goal-progress-container">
                         <div class="section-header">Monthly Goal Progress</div>
-                        <div class="goal-progress-bar">
-                            <div class="goal-progress-fill" id="goalProgressFill" style="width: 0%;"></div>
-                        </div>
-                        <div class="goal-labels">
-                            <span class="goal-current" id="goalCurrent">$0 booked</span>
-                            <span class="goal-target">$86,000 target</span>
-                        </div>
+                        <div class="goal-progress-bar"><div class="goal-progress-fill" id="goalProgressFill" style="width: 0%;"></div></div>
+                        <div class="goal-labels"><span class="goal-current" id="goalCurrent">$0 booked</span><span class="goal-target">$86,000 target</span></div>
                     </div>
                 </div>
-
-                <!-- Post Booking Tab -->
-                <div class="tab-content" id="tab-wrapup">
-                    <div class="empty-state"><h3>Post Booking Wrap Up</h3><p>Coming soon</p></div>
-                </div>
+                <div class="tab-content" id="tab-wrapup"><div class="empty-state"><h3>Post Booking Wrap Up</h3><p>Coming soon</p></div></div>
             </main>
 
             <!-- Lead Detail Panel -->
             <aside class="lead-panel" id="leadPanel">
                 <div class="panel-header">
-                    <div>
-                        <div class="panel-title" id="panelTitle">Lead Name</div>
-                        <div class="panel-subtitle" id="panelSubtitle">Account</div>
-                    </div>
+                    <div><div class="panel-title" id="panelTitle">Lead Name</div><div class="panel-subtitle" id="panelSubtitle">Account</div></div>
                     <button class="panel-close" id="panelClose">&times;</button>
                 </div>
                 <div class="panel-body">
                     <div class="panel-tabs" id="panelTabs">
                         <div class="panel-tab active" data-section="booking">Booking Info</div>
-                        <div class="panel-tab hidden" data-section="guestroom" id="tabGuestroom">Guestroom Info</div>
+                        <div class="panel-tab hidden" data-section="guestroom" id="tabGuestroom">Guestroom</div>
                         <div class="panel-tab hidden" data-section="event" id="tabEvent">Event Info</div>
-                        <div class="panel-tab" data-section="contract">Contract Details</div>
+                        <div class="panel-tab" data-section="contract">Contract</div>
                         <div class="panel-tab" data-section="billing">Billing</div>
                         <div class="panel-tab" data-section="notes">Notes</div>
                     </div>
                     <div class="panel-content">
                         <!-- Booking Info Section -->
                         <div class="panel-section active" id="section-booking">
-                            <div class="form-group">
-                                <label class="form-label">Booking Name</label>
-                                <input type="text" class="form-input" id="lead-bookingName">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Account</label>
-                                <input type="text" class="form-input" id="lead-account">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Contact Name</label>
-                                <input type="text" class="form-input" id="lead-contactName">
+                            <div class="form-group"><label class="form-label">Booking Name</label><input type="text" class="form-input" id="lead-bookingName"></div>
+                            <div class="form-group"><label class="form-label">Account</label><input type="text" class="form-input" id="lead-account"></div>
+                            <div class="form-group"><label class="form-label">Contact Name</label><input type="text" class="form-input" id="lead-contactName"></div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Contact Phone</label><input type="text" class="form-input" id="lead-contactPhone"></div>
+                                <div class="form-group"><label class="form-label">Contact Email</label><input type="email" class="form-input" id="lead-contactEmail"></div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Contact Phone</label>
-                                    <input type="text" class="form-input" id="lead-contactPhone">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Contact Email</label>
-                                    <input type="email" class="form-input" id="lead-contactEmail">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Arrival Date</label>
-                                    <input type="date" class="form-input" id="lead-arrival">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Departure Date</label>
-                                    <input type="date" class="form-input" id="lead-departure">
-                                </div>
+                                <div class="form-group"><label class="form-label">Arrival Date</label><input type="date" class="form-input" id="lead-arrival"></div>
+                                <div class="form-group"><label class="form-label">Departure Date</label><input type="date" class="form-input" id="lead-departure"></div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -441,158 +327,61 @@
 
                         <!-- Guestroom Info Section -->
                         <div class="panel-section" id="section-guestroom">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Number of Nights</label>
-                                    <input type="number" class="form-input" id="lead-numNights" min="1">
+                            <div class="info-message" id="guestroomDateMsg">Enter arrival and departure dates in Booking Info to configure the room block.</div>
+                            <div id="roomBlockContainer" style="display: none;">
+                                <div class="form-section-title">Room Block</div>
+                                <div class="room-block-scroll">
+                                    <table class="room-block-table" id="roomBlockTable">
+                                        <thead id="roomBlockHead"></thead>
+                                        <tbody id="roomBlockBody"></tbody>
+                                        <tfoot id="roomBlockFoot"></tfoot>
+                                    </table>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Peak Rooms</label>
-                                    <input type="number" class="form-input" id="lead-peakRooms" min="1">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Total Rooms</label>
-                                    <input type="number" class="form-input" id="lead-totalRooms" min="1">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Avg Nightly Rate</label>
-                                    <input type="number" class="form-input" id="lead-nightlyRate" min="0" step="0.01" placeholder="0.00">
-                                </div>
-                            </div>
-                            <div class="form-divider"></div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Anticipated Room Revenue</label>
-                                    <input type="number" class="form-input calculated-field" id="lead-roomRevenue" placeholder="Auto-calculated or enter manually">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Forecasted (80%)</label>
-                                    <input type="number" class="form-input calculated-field" id="lead-forecastedRevenue" disabled>
+                                <button type="button" class="add-room-type-btn" id="addRoomTypeBtn">+ Add Room Type</button>
+                                <div class="room-block-summary">
+                                    <div class="summary-item"><div class="summary-label">Total Room Nights</div><div class="summary-value" id="totalRoomNights">0</div></div>
+                                    <div class="summary-item"><div class="summary-label">Peak Rooms</div><div class="summary-value" id="peakRooms">0</div></div>
+                                    <div class="summary-item"><div class="summary-label">Anticipated Revenue</div><div class="summary-value" id="roomRevenue">$0</div></div>
+                                    <div class="summary-item"><div class="summary-label">Forecasted (80%)</div><div class="summary-value" id="forecastedRevenue">$0</div></div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Event Info Section -->
                         <div class="panel-section" id="section-event">
-                            <div class="form-group">
-                                <label class="form-label">Event Name</label>
-                                <input type="text" class="form-input" id="lead-eventName">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Event Start Date</label>
-                                    <input type="date" class="form-input" id="lead-eventStart">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Event End Date</label>
-                                    <input type="date" class="form-input" id="lead-eventEnd">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Function Room</label>
-                                    <select class="form-select" id="lead-functionRoom">
-                                        <option value="">Select...</option>
-                                        <option value="dogwood">Dogwood Ballroom</option>
-                                        <option value="eddy">The Eddy</option>
-                                        <option value="field-notes">Field Notes</option>
-                                        <option value="sestina">Sestina</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Headcount</label>
-                                    <input type="number" class="form-input" id="lead-headcount" min="1">
-                                </div>
-                            </div>
-                            <div class="form-divider"></div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Room Rental</label>
-                                    <input type="number" class="form-input" id="lead-roomRental" min="0" step="0.01" placeholder="0.00">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">F&B Minimum</label>
-                                    <input type="number" class="form-input" id="lead-fbMinimum" min="0" step="0.01" placeholder="0.00">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Anticipated Event Revenue</label>
-                                <input type="number" class="form-input calculated-field" id="lead-eventRevenue" disabled>
+                            <div class="events-container" id="eventsContainer"></div>
+                            <button type="button" class="add-event-btn" id="addEventBtn">+ Add Event</button>
+                            <div class="events-summary">
+                                <div class="summary-item"><div class="summary-label">Total Room Rental</div><div class="summary-value" id="totalRoomRental">$0</div></div>
+                                <div class="summary-item"><div class="summary-label">Total F&B Minimum</div><div class="summary-value" id="totalFbMin">$0</div></div>
+                                <div class="summary-item"><div class="summary-label">Total Event Revenue</div><div class="summary-value" id="totalEventRevenue">$0</div></div>
                             </div>
                         </div>
 
                         <!-- Contract Details Section -->
                         <div class="panel-section" id="section-contract">
-                            <label class="form-checkbox">
-                                <input type="checkbox" id="lead-sameAsContact">
-                                Same as booking contact
-                            </label>
-                            <div class="form-group">
-                                <label class="form-label">Signer Name</label>
-                                <input type="text" class="form-input" id="lead-signerName">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Signer Email</label>
-                                <input type="email" class="form-input" id="lead-signerEmail">
-                            </div>
+                            <label class="form-checkbox"><input type="checkbox" id="lead-sameAsContact"> Same as booking contact</label>
+                            <div class="form-group"><label class="form-label">Signer Name</label><input type="text" class="form-input" id="lead-signerName"></div>
+                            <div class="form-group"><label class="form-label">Signer Email</label><input type="email" class="form-input" id="lead-signerEmail"></div>
                             <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Signer Phone</label>
-                                    <input type="text" class="form-input" id="lead-signerPhone">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Signer Address</label>
-                                    <input type="text" class="form-input" id="lead-signerAddress">
-                                </div>
+                                <div class="form-group"><label class="form-label">Signer Phone</label><input type="text" class="form-input" id="lead-signerPhone"></div>
+                                <div class="form-group"><label class="form-label">Signer Address</label><input type="text" class="form-input" id="lead-signerAddress"></div>
                             </div>
-
-                            <!-- Room-specific fields (hidden for events only) -->
                             <div id="roomContractFields">
                                 <div class="form-divider"></div>
                                 <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Reservation Procedure</label>
-                                        <select class="form-select" id="lead-resProcedure">
-                                            <option value="">Select...</option>
-                                            <option value="rooming-list">Rooming List</option>
-                                            <option value="individual">Individual Reservations</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Room Payment</label>
-                                        <select class="form-select" id="lead-roomPayment">
-                                            <option value="">Select...</option>
-                                            <option value="individual">Individual Pays Own</option>
-                                            <option value="room-tax">Room & Tax to Master</option>
-                                            <option value="all-master">All Charges to Master</option>
-                                        </select>
-                                    </div>
+                                    <div class="form-group"><label class="form-label">Reservation Procedure</label><select class="form-select" id="lead-resProcedure"><option value="">Select...</option><option value="rooming-list">Rooming List</option><option value="individual">Individual Reservations</option></select></div>
+                                    <div class="form-group"><label class="form-label">Room Payment</label><select class="form-select" id="lead-roomPayment"><option value="">Select...</option><option value="individual">Individual Pays Own</option><option value="room-tax">Room & Tax to Master</option><option value="all-master">All Charges to Master</option></select></div>
                                 </div>
                                 <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Cut-off Date</label>
-                                        <input type="date" class="form-input" id="lead-cutoff">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Commission %</label>
-                                        <input type="number" class="form-input" id="lead-commission" placeholder="0" min="0" max="100">
-                                    </div>
+                                    <div class="form-group"><label class="form-label">Cut-off Date</label><input type="date" class="form-input" id="lead-cutoff"></div>
+                                    <div class="form-group"><label class="form-label">Commission %</label><input type="number" class="form-input" id="lead-commission" placeholder="0" min="0" max="100"></div>
                                 </div>
                             </div>
-
-                            <!-- Event-specific fields -->
                             <div id="eventContractFields">
                                 <div class="form-divider"></div>
-                                <label class="form-checkbox">
-                                    <input type="checkbox" id="lead-waiveRental">
-                                    Waive Room Rental Fee
-                                </label>
-                                <label class="form-checkbox">
-                                    <input type="checkbox" id="lead-fbCombined">
-                                    F&B Minimum Combined (single total)
-                                </label>
+                                <label class="form-checkbox"><input type="checkbox" id="lead-waiveRental"> Waive Room Rental Fee</label>
+                                <label class="form-checkbox"><input type="checkbox" id="lead-fbCombined"> F&B Minimum Combined</label>
                             </div>
                         </div>
 
@@ -600,31 +389,17 @@
                         <div class="panel-section" id="section-billing">
                             <div class="form-group">
                                 <label class="form-label">Billing Procedure</label>
-                                <select class="form-select" id="lead-billingType">
-                                    <option value="">Select...</option>
-                                    <option value="deposit">Deposit Schedule</option>
-                                    <option value="credit-card">Credit Card Deposit</option>
-                                    <option value="direct">Direct Billing</option>
-                                </select>
+                                <select class="form-select" id="lead-billingType"><option value="">Select...</option><option value="deposit">Deposit Schedule</option><option value="credit-card">Credit Card Deposit</option><option value="direct">Direct Billing</option></select>
                             </div>
                             <div class="form-divider"></div>
-                            <div class="form-group">
-                                <label class="form-label">Special Concessions</label>
-                                <textarea class="form-textarea" id="lead-concessions" placeholder="Enter concessions (one per line)..."></textarea>
-                            </div>
+                            <div class="form-group"><label class="form-label">Special Concessions</label><textarea class="form-textarea" id="lead-concessions" placeholder="Enter concessions (one per line)..."></textarea></div>
                             <div class="form-divider"></div>
-                            <div class="form-group">
-                                <label class="form-label">Total Anticipated Revenue</label>
-                                <input type="number" class="form-input calculated-field" id="lead-revenue" disabled>
-                            </div>
+                            <div class="form-group"><label class="form-label">Total Anticipated Revenue</label><input type="text" class="form-input calculated-field" id="lead-revenue" readonly></div>
                         </div>
 
                         <!-- Notes Section -->
                         <div class="panel-section" id="section-notes">
-                            <div class="form-group">
-                                <label class="form-label">Notes</label>
-                                <textarea class="form-textarea" id="lead-notes" placeholder="Add notes..." style="min-height: 250px;"></textarea>
-                            </div>
+                            <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="lead-notes" placeholder="Add notes..." style="min-height: 200px;"></textarea></div>
                         </div>
                     </div>
                 </div>
@@ -640,32 +415,33 @@
         // ============ CONFIG ============
         const CORRECT_PASSWORD = '4273';
         const STORAGE_KEY = 'kelphi_data';
+        const ROOM_TYPES = [
+            'Run of House', 'Deluxe King', 'Deluxe Two Queen', 'Premium King', 
+            'Premium Two Queen', 'Studio Suite King', 'One Bedroom Suite King', 'Presidential Suite King'
+        ];
+        const FUNCTION_ROOMS = ['Dogwood Ballroom', 'The Eddy', 'Field Notes', 'Sestina'];
+        const SETUP_STYLES = ['Theater', 'Classroom', 'Rounds', 'U-Shape', 'Hollow Square', 'Reception', 'Banquet'];
 
         // ============ DATA ============
         let appData = loadData();
         let currentLeadId = null;
+        let currentRoomBlock = [];
+        let currentEvents = [];
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) return JSON.parse(saved);
             return { leads: [], settings: { goalTarget: 86000 } };
         }
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
+        function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-        }
-
-        function generateId() {
-            return 'lead_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        // ============ DOM ELEMENTS ============
+        // ============ DOM ============
         const lockScreen = document.getElementById('lockScreen');
         const passwordInput = document.getElementById('passwordInput');
         const app = document.getElementById('app');
         const navTabs = document.querySelectorAll('.nav-tab');
         const tabContents = document.querySelectorAll('.tab-content');
-        const headerDate = document.getElementById('headerDate');
         const leadPanel = document.getElementById('leadPanel');
         const leadsTableBody = document.getElementById('leadsTableBody');
         const statusFilter = document.getElementById('statusFilter');
@@ -677,7 +453,6 @@
             app.classList.add('visible');
             initApp();
         }
-
         passwordInput.addEventListener('input', function() {
             if (this.value.length === 4) {
                 if (this.value === CORRECT_PASSWORD) {
@@ -694,46 +469,42 @@
 
         // ============ INIT ============
         function initApp() {
-            updateDate();
+            document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
             renderLeads();
             updateDashboard();
-            setupPanelListeners();
+            setupListeners();
         }
 
-        function updateDate() {
-            const now = new Date();
-            headerDate.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-        }
-
-        // ============ NAVIGATION ============
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const tabId = this.dataset.tab;
-                navTabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById(`tab-${tabId}`).classList.add('active');
-            });
-        });
-
-        // ============ PANEL SETUP ============
-        function setupPanelListeners() {
-            // Panel tab navigation
-            document.querySelectorAll('.panel-tab').forEach(tab => {
+        function setupListeners() {
+            // Main nav
+            navTabs.forEach(tab => {
                 tab.addEventListener('click', function() {
-                    if (this.classList.contains('hidden')) return;
-                    const section = this.dataset.section;
-                    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
                     this.classList.add('active');
-                    document.getElementById(`section-${section}`).classList.add('active');
+                    document.getElementById(`tab-${this.dataset.tab}`).classList.add('active');
                 });
             });
 
-            // Booking type change - show/hide tabs
+            // Panel tabs
+            document.querySelectorAll('.panel-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    if (this.classList.contains('hidden')) return;
+                    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(`section-${this.dataset.section}`).classList.add('active');
+                });
+            });
+
+            // Booking type change
             document.getElementById('lead-type').addEventListener('change', updatePanelTabs);
 
-            // Same as contact checkbox
+            // Date changes - rebuild room block
+            document.getElementById('lead-arrival').addEventListener('change', rebuildRoomBlock);
+            document.getElementById('lead-departure').addEventListener('change', rebuildRoomBlock);
+
+            // Same as contact
             document.getElementById('lead-sameAsContact').addEventListener('change', function() {
                 if (this.checked) {
                     document.getElementById('lead-signerName').value = document.getElementById('lead-contactName').value;
@@ -742,90 +513,308 @@
                 }
             });
 
-            // Revenue calculations
-            const roomRevenueInputs = ['lead-totalRooms', 'lead-nightlyRate'];
-            roomRevenueInputs.forEach(id => {
-                document.getElementById(id).addEventListener('input', calculateRoomRevenue);
-            });
+            // Add room type
+            document.getElementById('addRoomTypeBtn').addEventListener('click', addRoomTypeRow);
 
-            document.getElementById('lead-roomRevenue').addEventListener('input', calculateTotalRevenue);
+            // Add event
+            document.getElementById('addEventBtn').addEventListener('click', addEventCard);
 
-            const eventRevenueInputs = ['lead-roomRental', 'lead-fbMinimum'];
-            eventRevenueInputs.forEach(id => {
-                document.getElementById(id).addEventListener('input', calculateEventRevenue);
-            });
+            // Panel buttons
+            document.getElementById('newLeadBtn').addEventListener('click', () => openNewLead());
+            document.getElementById('panelClose').addEventListener('click', closePanel);
+            document.getElementById('panelCancel').addEventListener('click', closePanel);
+            document.getElementById('panelSave').addEventListener('click', saveLead);
+
+            // Filters
+            statusFilter.addEventListener('change', renderLeads);
+            leadSearch.addEventListener('input', renderLeads);
         }
 
+        // ============ PANEL TABS ============
         function updatePanelTabs() {
             const type = document.getElementById('lead-type').value;
             const tabGuestroom = document.getElementById('tabGuestroom');
             const tabEvent = document.getElementById('tabEvent');
-            const roomContractFields = document.getElementById('roomContractFields');
-            const eventContractFields = document.getElementById('eventContractFields');
+            const roomFields = document.getElementById('roomContractFields');
+            const eventFields = document.getElementById('eventContractFields');
             const billingSelect = document.getElementById('lead-billingType');
 
-            // Show/hide tabs based on type
-            if (type === 'rooms') {
-                tabGuestroom.classList.remove('hidden');
-                tabEvent.classList.add('hidden');
-                roomContractFields.style.display = 'block';
-                eventContractFields.style.display = 'none';
-                // Enable credit card option
-                billingSelect.querySelector('option[value="credit-card"]').disabled = false;
-            } else if (type === 'events') {
-                tabGuestroom.classList.add('hidden');
-                tabEvent.classList.remove('hidden');
-                roomContractFields.style.display = 'none';
-                eventContractFields.style.display = 'block';
-                // Disable credit card option for events only
-                billingSelect.querySelector('option[value="credit-card"]').disabled = true;
-                if (billingSelect.value === 'credit-card') billingSelect.value = '';
-            } else { // both
-                tabGuestroom.classList.remove('hidden');
-                tabEvent.classList.remove('hidden');
-                roomContractFields.style.display = 'block';
-                eventContractFields.style.display = 'block';
-                billingSelect.querySelector('option[value="credit-card"]').disabled = false;
+            tabGuestroom.classList.toggle('hidden', type === 'events');
+            tabEvent.classList.toggle('hidden', type === 'rooms');
+            roomFields.style.display = type === 'events' ? 'none' : 'block';
+            eventFields.style.display = type === 'rooms' ? 'none' : 'block';
+            
+            const ccOption = billingSelect.querySelector('option[value="credit-card"]');
+            if (ccOption) ccOption.disabled = type === 'events';
+            
+            calculateTotalRevenue();
+        }
+
+        // ============ ROOM BLOCK ============
+        function getDatesArray(arrival, departure) {
+            if (!arrival || !departure) return [];
+            const dates = [];
+            let current = new Date(arrival);
+            const end = new Date(departure);
+            while (current < end) {
+                dates.push(new Date(current));
+                current.setDate(current.getDate() + 1);
+            }
+            return dates;
+        }
+
+        function rebuildRoomBlock() {
+            const arrival = document.getElementById('lead-arrival').value;
+            const departure = document.getElementById('lead-departure').value;
+            const dates = getDatesArray(arrival, departure);
+            
+            const msgEl = document.getElementById('guestroomDateMsg');
+            const containerEl = document.getElementById('roomBlockContainer');
+
+            if (dates.length === 0) {
+                msgEl.style.display = 'block';
+                containerEl.style.display = 'none';
+                return;
+            }
+
+            msgEl.style.display = 'none';
+            containerEl.style.display = 'block';
+
+            // Build header
+            const thead = document.getElementById('roomBlockHead');
+            thead.innerHTML = `<tr>
+                <th class="room-type-cell">Room Type</th>
+                <th class="rate-cell">Rate</th>
+                ${dates.map(d => `<th class="date-cell">${formatShortDate(d)}</th>`).join('')}
+                <th></th>
+            </tr>`;
+
+            // Rebuild body with existing data
+            renderRoomBlockBody(dates);
+        }
+
+        function renderRoomBlockBody(dates) {
+            if (!dates) {
+                const arrival = document.getElementById('lead-arrival').value;
+                const departure = document.getElementById('lead-departure').value;
+                dates = getDatesArray(arrival, departure);
+            }
+
+            const tbody = document.getElementById('roomBlockBody');
+            tbody.innerHTML = currentRoomBlock.map((row, idx) => `
+                <tr data-idx="${idx}">
+                    <td class="room-type-cell">
+                        <select class="room-type-select" data-idx="${idx}">
+                            <option value="">Select type...</option>
+                            ${ROOM_TYPES.map(t => `<option value="${t}" ${row.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td class="rate-cell">
+                        <input type="number" class="rate-input" data-idx="${idx}" value="${row.rate || ''}" placeholder="0" min="0" step="0.01">
+                    </td>
+                    ${dates.map((d, di) => `
+                        <td class="date-cell">
+                            <input type="number" class="qty-input" data-idx="${idx}" data-date="${di}" value="${row.quantities[di] || ''}" placeholder="0" min="0">
+                        </td>
+                    `).join('')}
+                    <td><span class="remove-row" data-idx="${idx}">&times;</span></td>
+                </tr>
+            `).join('');
+
+            // Add listeners
+            tbody.querySelectorAll('.room-type-select').forEach(el => {
+                el.addEventListener('change', e => {
+                    currentRoomBlock[e.target.dataset.idx].type = e.target.value;
+                    calculateRoomTotals();
+                });
+            });
+            tbody.querySelectorAll('.rate-input').forEach(el => {
+                el.addEventListener('input', e => {
+                    currentRoomBlock[e.target.dataset.idx].rate = parseFloat(e.target.value) || 0;
+                    calculateRoomTotals();
+                });
+            });
+            tbody.querySelectorAll('.qty-input').forEach(el => {
+                el.addEventListener('input', e => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    const dateIdx = parseInt(e.target.dataset.date);
+                    currentRoomBlock[idx].quantities[dateIdx] = parseInt(e.target.value) || 0;
+                    calculateRoomTotals();
+                });
+            });
+            tbody.querySelectorAll('.remove-row').forEach(el => {
+                el.addEventListener('click', e => {
+                    currentRoomBlock.splice(parseInt(e.target.dataset.idx), 1);
+                    renderRoomBlockBody(dates);
+                    calculateRoomTotals();
+                });
+            });
+
+            calculateRoomTotals();
+        }
+
+        function addRoomTypeRow() {
+            const arrival = document.getElementById('lead-arrival').value;
+            const departure = document.getElementById('lead-departure').value;
+            const dates = getDatesArray(arrival, departure);
+            
+            currentRoomBlock.push({
+                type: '',
+                rate: 0,
+                quantities: new Array(dates.length).fill(0)
+            });
+            renderRoomBlockBody(dates);
+        }
+
+        function calculateRoomTotals() {
+            const arrival = document.getElementById('lead-arrival').value;
+            const departure = document.getElementById('lead-departure').value;
+            const dates = getDatesArray(arrival, departure);
+
+            let totalNights = 0;
+            let totalRevenue = 0;
+            let dailyTotals = new Array(dates.length).fill(0);
+
+            currentRoomBlock.forEach(row => {
+                row.quantities.forEach((qty, i) => {
+                    dailyTotals[i] += qty;
+                    totalNights += qty;
+                    totalRevenue += qty * (row.rate || 0);
+                });
+            });
+
+            const peakRooms = Math.max(...dailyTotals, 0);
+
+            document.getElementById('totalRoomNights').textContent = totalNights;
+            document.getElementById('peakRooms').textContent = peakRooms;
+            document.getElementById('roomRevenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('forecastedRevenue').textContent = formatCurrency(totalRevenue * 0.8);
+
+            // Update footer totals
+            const tfoot = document.getElementById('roomBlockFoot');
+            if (dates.length > 0) {
+                tfoot.innerHTML = `<tr class="total-row">
+                    <td class="room-type-cell"><strong>TOTAL</strong></td>
+                    <td></td>
+                    ${dailyTotals.map(t => `<td class="date-cell"><strong>${t}</strong></td>`).join('')}
+                    <td></td>
+                </tr>`;
             }
 
             calculateTotalRevenue();
         }
 
-        function calculateRoomRevenue() {
-            const totalRooms = parseFloat(document.getElementById('lead-totalRooms').value) || 0;
-            const rate = parseFloat(document.getElementById('lead-nightlyRate').value) || 0;
-            const roomRevenue = totalRooms * rate;
-            
-            if (roomRevenue > 0) {
-                document.getElementById('lead-roomRevenue').value = roomRevenue.toFixed(2);
-            }
-            
-            const forecasted = roomRevenue * 0.8;
-            document.getElementById('lead-forecastedRevenue').value = forecasted > 0 ? forecasted.toFixed(2) : '';
-            
+        // ============ EVENTS ============
+        function renderEvents() {
+            const container = document.getElementById('eventsContainer');
+            container.innerHTML = currentEvents.map((evt, idx) => `
+                <div class="event-card" data-idx="${idx}">
+                    <div class="event-card-header">
+                        <span class="event-card-title">Event ${idx + 1}</span>
+                        <span class="event-card-remove" data-idx="${idx}">&times; Remove</span>
+                    </div>
+                    <div class="form-group"><label class="form-label">Event Name</label><input type="text" class="form-input event-name" data-idx="${idx}" value="${evt.name || ''}"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input event-date" data-idx="${idx}" value="${evt.date || ''}"></div>
+                        <div class="form-group"><label class="form-label">Classification</label>
+                            <select class="form-select event-classification" data-idx="${idx}">
+                                <option value="">Select...</option>
+                                <option value="meeting" ${evt.classification === 'meeting' ? 'selected' : ''}>Meeting</option>
+                                <option value="banquet" ${evt.classification === 'banquet' ? 'selected' : ''}>Banquet</option>
+                                <option value="reception" ${evt.classification === 'reception' ? 'selected' : ''}>Reception</option>
+                                <option value="social" ${evt.classification === 'social' ? 'selected' : ''}>Social</option>
+                                <option value="wedding" ${evt.classification === 'wedding' ? 'selected' : ''}>Wedding</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Start Time</label><input type="time" class="form-input event-start" data-idx="${idx}" value="${evt.startTime || ''}"></div>
+                        <div class="form-group"><label class="form-label">End Time</label><input type="time" class="form-input event-end" data-idx="${idx}" value="${evt.endTime || ''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Function Room</label>
+                            <select class="form-select event-room" data-idx="${idx}">
+                                <option value="">Select...</option>
+                                ${FUNCTION_ROOMS.map(r => `<option value="${r}" ${evt.room === r ? 'selected' : ''}>${r}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group"><label class="form-label">Setup Style</label>
+                            <select class="form-select event-setup" data-idx="${idx}">
+                                <option value="">Select...</option>
+                                ${SETUP_STYLES.map(s => `<option value="${s}" ${evt.setup === s ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row-3">
+                        <div class="form-group"><label class="form-label">Headcount</label><input type="number" class="form-input event-headcount" data-idx="${idx}" value="${evt.headcount || ''}" min="1"></div>
+                        <div class="form-group"><label class="form-label">Room Rental</label><input type="number" class="form-input event-rental" data-idx="${idx}" value="${evt.rental || ''}" min="0" step="0.01"></div>
+                        <div class="form-group"><label class="form-label">F&B Minimum</label><input type="number" class="form-input event-fb" data-idx="${idx}" value="${evt.fbMin || ''}" min="0" step="0.01"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add listeners
+            container.querySelectorAll('.event-card-remove').forEach(el => {
+                el.addEventListener('click', e => {
+                    currentEvents.splice(parseInt(e.target.dataset.idx), 1);
+                    renderEvents();
+                });
+            });
+
+            const fields = ['name', 'date', 'classification', 'startTime:start', 'endTime:end', 'room', 'setup', 'headcount', 'rental', 'fbMin:fb'];
+            fields.forEach(f => {
+                const [key, cls] = f.includes(':') ? f.split(':') : [f, f];
+                container.querySelectorAll(`.event-${cls}`).forEach(el => {
+                    el.addEventListener('input', e => {
+                        const idx = parseInt(e.target.dataset.idx);
+                        let val = e.target.value;
+                        if (['headcount', 'rental', 'fbMin'].includes(key)) val = parseFloat(val) || 0;
+                        currentEvents[idx][key] = val;
+                        calculateEventTotals();
+                    });
+                    el.addEventListener('change', e => {
+                        const idx = parseInt(e.target.dataset.idx);
+                        currentEvents[idx][key] = e.target.value;
+                        calculateEventTotals();
+                    });
+                });
+            });
+
+            calculateEventTotals();
+        }
+
+        function addEventCard() {
+            currentEvents.push({ name: '', date: '', classification: '', startTime: '', endTime: '', room: '', setup: '', headcount: 0, rental: 0, fbMin: 0 });
+            renderEvents();
+        }
+
+        function calculateEventTotals() {
+            let totalRental = 0, totalFb = 0;
+            currentEvents.forEach(evt => {
+                totalRental += evt.rental || 0;
+                totalFb += evt.fbMin || 0;
+            });
+            document.getElementById('totalRoomRental').textContent = formatCurrency(totalRental);
+            document.getElementById('totalFbMin').textContent = formatCurrency(totalFb);
+            document.getElementById('totalEventRevenue').textContent = formatCurrency(totalRental + totalFb);
             calculateTotalRevenue();
         }
 
-        function calculateEventRevenue() {
-            const rental = parseFloat(document.getElementById('lead-roomRental').value) || 0;
-            const fb = parseFloat(document.getElementById('lead-fbMinimum').value) || 0;
-            const eventRevenue = rental + fb;
-            document.getElementById('lead-eventRevenue').value = eventRevenue > 0 ? eventRevenue.toFixed(2) : '';
-            calculateTotalRevenue();
-        }
-
+        // ============ TOTAL REVENUE ============
         function calculateTotalRevenue() {
             const type = document.getElementById('lead-type').value;
             let total = 0;
 
             if (type === 'rooms' || type === 'both') {
-                total += parseFloat(document.getElementById('lead-roomRevenue').value) || 0;
+                const roomRev = document.getElementById('roomRevenue').textContent;
+                total += parseCurrency(roomRev);
             }
             if (type === 'events' || type === 'both') {
-                total += parseFloat(document.getElementById('lead-eventRevenue').value) || 0;
+                const eventRev = document.getElementById('totalEventRevenue').textContent;
+                total += parseCurrency(eventRev);
             }
 
-            document.getElementById('lead-revenue').value = total > 0 ? total.toFixed(2) : '';
+            document.getElementById('lead-revenue').value = formatCurrency(total);
         }
 
         // ============ LEADS TABLE ============
@@ -834,14 +823,9 @@
             const search = leadSearch.value.toLowerCase();
             
             let leads = appData.leads.filter(lead => {
-                if (filter === 'active') {
-                    if (['completed', 'lost'].includes(lead.status)) return false;
-                } else if (filter !== 'all' && lead.status !== filter) {
-                    return false;
-                }
-                if (search && !lead.bookingName.toLowerCase().includes(search) && !(lead.account || '').toLowerCase().includes(search)) {
-                    return false;
-                }
+                if (filter === 'active' && ['completed', 'lost'].includes(lead.status)) return false;
+                if (filter !== 'all' && filter !== 'active' && lead.status !== filter) return false;
+                if (search && !(lead.bookingName || '').toLowerCase().includes(search) && !(lead.account || '').toLowerCase().includes(search)) return false;
                 return true;
             });
 
@@ -866,54 +850,49 @@
             });
         }
 
-        statusFilter.addEventListener('change', renderLeads);
-        leadSearch.addEventListener('input', renderLeads);
-
-        // ============ LEAD PANEL ============
-        document.getElementById('newLeadBtn').addEventListener('click', () => {
+        // ============ OPEN/SAVE LEAD ============
+        function openNewLead() {
             currentLeadId = null;
+            currentRoomBlock = [];
+            currentEvents = [];
             clearPanel();
             document.getElementById('panelTitle').textContent = 'New Lead';
             document.getElementById('panelSubtitle').textContent = '';
             document.getElementById('lead-type').value = 'rooms';
             updatePanelTabs();
+            renderRoomBlockBody([]);
+            renderEvents();
             leadPanel.classList.add('open');
-        });
-
-        document.getElementById('panelClose').addEventListener('click', closePanel);
-        document.getElementById('panelCancel').addEventListener('click', closePanel);
+        }
 
         function openLead(id) {
             const lead = appData.leads.find(l => l.id === id);
             if (!lead) return;
 
             currentLeadId = id;
+            currentRoomBlock = lead.roomBlock ? JSON.parse(JSON.stringify(lead.roomBlock)) : [];
+            currentEvents = lead.events ? JSON.parse(JSON.stringify(lead.events)) : [];
+
             document.getElementById('panelTitle').textContent = lead.bookingName || 'Untitled';
             document.getElementById('panelSubtitle').textContent = lead.account || '';
 
-            // Populate all form fields
-            const fields = [
-                'bookingName', 'account', 'contactName', 'contactPhone', 'contactEmail',
-                'arrival', 'departure', 'type', 'status',
-                'numNights', 'peakRooms', 'totalRooms', 'nightlyRate', 'roomRevenue', 'forecastedRevenue',
-                'eventName', 'eventStart', 'eventEnd', 'functionRoom', 'headcount', 'roomRental', 'fbMinimum', 'eventRevenue',
-                'signerName', 'signerEmail', 'signerPhone', 'signerAddress',
-                'resProcedure', 'roomPayment', 'cutoff', 'commission',
-                'billingType', 'concessions', 'notes', 'revenue'
-            ];
-
-            fields.forEach(field => {
-                const el = document.getElementById(`lead-${field}`);
-                if (el) el.value = lead[field] || '';
+            // Simple fields
+            ['bookingName', 'account', 'contactName', 'contactPhone', 'contactEmail', 'arrival', 'departure', 'type', 'status',
+             'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
+             'billingType', 'concessions', 'notes'].forEach(f => {
+                const el = document.getElementById(`lead-${f}`);
+                if (el) el.value = lead[f] || '';
             });
 
-            // Checkboxes
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
             document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
             document.getElementById('lead-sameAsContact').checked = false;
+            document.getElementById('lead-revenue').value = formatCurrency(lead.revenue || 0);
 
             updatePanelTabs();
-            
+            rebuildRoomBlock();
+            renderEvents();
+
             // Reset to first tab
             document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
@@ -935,14 +914,20 @@
                 if (el.type === 'checkbox') el.checked = false;
                 else el.value = '';
             });
-            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
-            document.querySelector('.panel-tab').classList.add('active');
-            document.getElementById('section-booking').classList.add('active');
         }
 
-        // Save lead
-        document.getElementById('panelSave').addEventListener('click', () => {
+        function saveLead() {
+            const type = document.getElementById('lead-type').value;
+            
+            // Calculate revenue
+            let revenue = 0;
+            if (type === 'rooms' || type === 'both') {
+                revenue += parseCurrency(document.getElementById('roomRevenue').textContent);
+            }
+            if (type === 'events' || type === 'both') {
+                revenue += parseCurrency(document.getElementById('totalEventRevenue').textContent);
+            }
+
             const leadData = {
                 id: currentLeadId || generateId(),
                 bookingName: document.getElementById('lead-bookingName').value,
@@ -952,25 +937,10 @@
                 contactEmail: document.getElementById('lead-contactEmail').value,
                 arrival: document.getElementById('lead-arrival').value,
                 departure: document.getElementById('lead-departure').value,
-                type: document.getElementById('lead-type').value,
+                type: type,
                 status: document.getElementById('lead-status').value,
-                // Guestroom
-                numNights: document.getElementById('lead-numNights').value,
-                peakRooms: document.getElementById('lead-peakRooms').value,
-                totalRooms: document.getElementById('lead-totalRooms').value,
-                nightlyRate: document.getElementById('lead-nightlyRate').value,
-                roomRevenue: parseFloat(document.getElementById('lead-roomRevenue').value) || 0,
-                forecastedRevenue: parseFloat(document.getElementById('lead-forecastedRevenue').value) || 0,
-                // Event
-                eventName: document.getElementById('lead-eventName').value,
-                eventStart: document.getElementById('lead-eventStart').value,
-                eventEnd: document.getElementById('lead-eventEnd').value,
-                functionRoom: document.getElementById('lead-functionRoom').value,
-                headcount: document.getElementById('lead-headcount').value,
-                roomRental: parseFloat(document.getElementById('lead-roomRental').value) || 0,
-                fbMinimum: parseFloat(document.getElementById('lead-fbMinimum').value) || 0,
-                eventRevenue: parseFloat(document.getElementById('lead-eventRevenue').value) || 0,
-                // Contract
+                roomBlock: currentRoomBlock,
+                events: currentEvents,
                 signerName: document.getElementById('lead-signerName').value,
                 signerEmail: document.getElementById('lead-signerEmail').value,
                 signerPhone: document.getElementById('lead-signerPhone').value,
@@ -981,13 +951,10 @@
                 commission: document.getElementById('lead-commission').value,
                 waiveRental: document.getElementById('lead-waiveRental').checked,
                 fbCombined: document.getElementById('lead-fbCombined').checked,
-                // Billing
                 billingType: document.getElementById('lead-billingType').value,
                 concessions: document.getElementById('lead-concessions').value,
-                revenue: parseFloat(document.getElementById('lead-revenue').value) || 0,
-                // Notes
                 notes: document.getElementById('lead-notes').value,
-                // Meta
+                revenue: revenue,
                 createdAt: currentLeadId ? (appData.leads.find(l => l.id === currentLeadId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
@@ -1003,7 +970,7 @@
             closePanel();
             renderLeads();
             updateDashboard();
-        });
+        }
 
         // ============ DASHBOARD ============
         function updateDashboard() {
@@ -1011,19 +978,15 @@
             const pipelineStatuses = ['working', 'tentative', 'contract-out'];
             const pipeline = leads.filter(l => pipelineStatuses.includes(l.status)).reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-pipeline').textContent = formatCurrency(pipeline);
-
-            const contractsOut = leads.filter(l => l.status === 'contract-out').length;
-            document.getElementById('stat-contracts').textContent = contractsOut;
-
-            const definiteThisMonth = leads.filter(l => l.status === 'definite').reduce((sum, l) => sum + (l.revenue || 0), 0);
-            document.getElementById('stat-definite').textContent = formatCurrency(definiteThisMonth);
-
+            document.getElementById('stat-contracts').textContent = leads.filter(l => l.status === 'contract-out').length;
+            const definite = leads.filter(l => l.status === 'definite').reduce((sum, l) => sum + (l.revenue || 0), 0);
+            document.getElementById('stat-definite').textContent = formatCurrency(definite);
             document.getElementById('stat-leads').textContent = leads.filter(l => !['completed', 'lost'].includes(l.status)).length;
 
             const goalTarget = appData.settings.goalTarget || 86000;
-            const goalPercent = Math.min(100, Math.round((definiteThisMonth / goalTarget) * 100));
+            const goalPercent = Math.min(100, Math.round((definite / goalTarget) * 100));
             document.getElementById('goalProgressFill').style.width = goalPercent + '%';
-            document.getElementById('goalCurrent').textContent = formatCurrency(definiteThisMonth) + ' booked';
+            document.getElementById('goalCurrent').textContent = formatCurrency(definite) + ' booked';
 
             const topLeads = [...leads].filter(l => !['completed', 'lost'].includes(l.status)).sort((a, b) => (b.revenue || 0) - (a.revenue || 0)).slice(0, 3);
             const topLeadsEl = document.getElementById('top-leads');
@@ -1031,32 +994,18 @@
                 topLeadsEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">No leads yet</div>';
             } else {
                 topLeadsEl.innerHTML = topLeads.map(l => `
-                    <div class="card-item">
-                        <div>
-                            <div class="item-name">${l.bookingName || 'Untitled'}</div>
-                            <div class="item-meta">${l.arrival ? formatDate(l.arrival) : 'No date'} · ${formatType(l.type)}</div>
-                        </div>
-                        <span class="item-value">${formatCurrency(l.revenue)}</span>
-                    </div>
+                    <div class="card-item"><div><div class="item-name">${l.bookingName || 'Untitled'}</div><div class="item-meta">${l.arrival ? formatDate(l.arrival) : 'No date'} · ${formatType(l.type)}</div></div><span class="item-value">${formatCurrency(l.revenue)}</span></div>
                 `).join('');
             }
         }
 
         // ============ HELPERS ============
-        function formatCurrency(val) { return '$' + (val || 0).toLocaleString(); }
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
-        function formatStatus(status) {
-            const labels = { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost' };
-            return labels[status] || status;
-        }
-        function formatType(type) {
-            const labels = { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' };
-            return labels[type] || type;
-        }
+        function formatCurrency(val) { return '$' + (parseFloat(val) || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
+        function parseCurrency(str) { return parseFloat((str || '').replace(/[$,]/g, '')) || 0; }
+        function formatDate(dateStr) { return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; }
+        function formatShortDate(d) { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }); }
+        function formatStatus(s) { return { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost' }[s] || s; }
+        function formatType(t) { return { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' }[t] || t; }
     </script>
 </body>
 </html>

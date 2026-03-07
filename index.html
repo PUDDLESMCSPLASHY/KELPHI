@@ -726,11 +726,30 @@
                         <div class="form-group"><label class="form-label">Classification</label>
                             <select class="form-select event-classification" data-idx="${idx}">
                                 <option value="">Select...</option>
+                                <option value="24-hour-hold" ${evt.classification === '24-hour-hold' ? 'selected' : ''}>24 Hour Hold</option>
+                                <option value="afternoon-break" ${evt.classification === 'afternoon-break' ? 'selected' : ''}>Afternoon Break</option>
+                                <option value="breakfast" ${evt.classification === 'breakfast' ? 'selected' : ''}>Breakfast</option>
+                                <option value="brunch" ${evt.classification === 'brunch' ? 'selected' : ''}>Brunch</option>
+                                <option value="ceremony" ${evt.classification === 'ceremony' ? 'selected' : ''}>Ceremony</option>
+                                <option value="continental-breakfast" ${evt.classification === 'continental-breakfast' ? 'selected' : ''}>Continental Breakfast</option>
+                                <option value="convention" ${evt.classification === 'convention' ? 'selected' : ''}>Convention</option>
+                                <option value="dinner" ${evt.classification === 'dinner' ? 'selected' : ''}>Dinner</option>
+                                <option value="hold" ${evt.classification === 'hold' ? 'selected' : ''}>Hold</option>
+                                <option value="house-use" ${evt.classification === 'house-use' ? 'selected' : ''}>House Use</option>
+                                <option value="lunch" ${evt.classification === 'lunch' ? 'selected' : ''}>Lunch</option>
                                 <option value="meeting" ${evt.classification === 'meeting' ? 'selected' : ''}>Meeting</option>
-                                <option value="banquet" ${evt.classification === 'banquet' ? 'selected' : ''}>Banquet</option>
+                                <option value="meetings-half-am" ${evt.classification === 'meetings-half-am' ? 'selected' : ''}>Meetings Simplified Half Day AM</option>
+                                <option value="meetings-half-pm" ${evt.classification === 'meetings-half-pm' ? 'selected' : ''}>Meetings Simplified Half Day PM</option>
+                                <option value="morning-break" ${evt.classification === 'morning-break' ? 'selected' : ''}>Morning Break</option>
+                                <option value="photo-session" ${evt.classification === 'photo-session' ? 'selected' : ''}>Photo Session</option>
                                 <option value="reception" ${evt.classification === 'reception' ? 'selected' : ''}>Reception</option>
-                                <option value="social" ${evt.classification === 'social' ? 'selected' : ''}>Social</option>
-                                <option value="wedding" ${evt.classification === 'wedding' ? 'selected' : ''}>Wedding</option>
+                                <option value="registration" ${evt.classification === 'registration' ? 'selected' : ''}>Registration</option>
+                                <option value="roadshow" ${evt.classification === 'roadshow' ? 'selected' : ''}>Roadshow</option>
+                                <option value="setup" ${evt.classification === 'setup' ? 'selected' : ''}>Setup</option>
+                                <option value="teardown" ${evt.classification === 'teardown' ? 'selected' : ''}>Teardown</option>
+                                <option value="unassigned" ${evt.classification === 'unassigned' ? 'selected' : ''}>Unassigned</option>
+                                <option value="wedding-reception" ${evt.classification === 'wedding-reception' ? 'selected' : ''}>Wedding Reception</option>
+                                <option value="workshop" ${evt.classification === 'workshop' ? 'selected' : ''}>Workshop</option>
                             </select>
                         </div>
                     </div>

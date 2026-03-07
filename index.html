@@ -13,8 +13,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
+            background: #0d0d14;
+            color: #e0e0e0;
             min-height: 100vh;
         }
 
@@ -25,7 +25,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #0d0d14 0%, #1a1a2e 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -37,35 +37,31 @@
             display: none;
         }
 
-        .lock-logo {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
         .lock-title {
-            font-size: 2.5rem;
-            font-weight: 300;
+            font-size: 3rem;
+            font-weight: 200;
             color: #00d9ff;
-            margin-bottom: 2rem;
-            letter-spacing: 0.5rem;
+            margin-bottom: 3rem;
+            letter-spacing: 1rem;
         }
 
         .lock-input {
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(0,217,255,0.3);
-            border-radius: 8px;
+            background: transparent;
+            border: 1px solid rgba(0,217,255,0.3);
+            border-radius: 4px;
             padding: 1rem 1.5rem;
             font-size: 1.5rem;
             color: #fff;
             text-align: center;
-            letter-spacing: 0.5rem;
-            width: 200px;
-            transition: border-color 0.3s;
+            letter-spacing: 0.75rem;
+            width: 180px;
+            transition: all 0.3s;
         }
 
         .lock-input:focus {
             outline: none;
             border-color: #00d9ff;
+            box-shadow: 0 0 20px rgba(0,217,255,0.1);
         }
 
         .lock-input.error {
@@ -82,6 +78,7 @@
         /* Main App */
         #app {
             display: none;
+            flex-direction: column;
             height: 100vh;
         }
 
@@ -89,262 +86,513 @@
             display: flex;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 220px;
-            background: #16213e;
-            padding: 1rem 0;
+        /* Top Header */
+        .top-header {
             display: flex;
-            flex-direction: column;
-            border-right: 1px solid rgba(0,217,255,0.2);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+            background: #12121c;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
-        .sidebar-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid rgba(0,217,255,0.2);
-            margin-bottom: 1rem;
-        }
-
-        .sidebar-header h1 {
-            font-size: 1.5rem;
+        .brand {
+            font-size: 1.1rem;
             font-weight: 300;
             color: #00d9ff;
-            letter-spacing: 0.3rem;
+            letter-spacing: 0.4rem;
         }
 
-        .sidebar-header span {
-            font-size: 0.75rem;
-            color: #888;
+        .header-right {
+            font-size: 0.8rem;
+            color: #666;
         }
 
-        .nav-tabs {
-            flex: 1;
+        /* Tab Navigation */
+        .tab-nav {
             display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            padding: 0 0.5rem;
+            gap: 0;
+            padding: 0 2rem;
+            background: #12121c;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
         .nav-tab {
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
+            padding: 1rem 1.5rem;
             cursor: pointer;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: #aaa;
-            font-size: 0.9rem;
+            color: #666;
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 0.02rem;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
         }
 
         .nav-tab:hover {
-            background: rgba(0,217,255,0.1);
-            color: #fff;
+            color: #aaa;
         }
 
         .nav-tab.active {
-            background: rgba(0,217,255,0.2);
             color: #00d9ff;
-        }
-
-        .nav-tab .icon {
-            font-size: 1.1rem;
+            border-bottom-color: #00d9ff;
         }
 
         /* Main Content */
         .main-content {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .content-header {
-            padding: 1.5rem 2rem;
-            background: #16213e;
-            border-bottom: 1px solid rgba(0,217,255,0.2);
-        }
-
-        .content-header h2 {
-            font-weight: 400;
-            color: #fff;
-        }
-
-        .content-body {
-            flex: 1;
-            padding: 2rem;
             overflow-y: auto;
+            padding: 2rem;
         }
 
         .tab-content {
             display: none;
+            animation: fadeIn 0.3s ease;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        /* Placeholder content */
-        .placeholder {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #666;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .placeholder .icon {
-            font-size: 4rem;
+        /* Dashboard Styles */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #16161f;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 300;
+            color: #fff;
+        }
+
+        .stat-value.cyan { color: #00d9ff; }
+        .stat-value.green { color: #00d98f; }
+        .stat-value.orange { color: #ffaa00; }
+
+        .dashboard-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: #16161f;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.04);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        .card-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .card-item:hover {
+            background: rgba(0,217,255,0.03);
+        }
+
+        .card-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            font-size: 0.9rem;
+            color: #e0e0e0;
+        }
+
+        .item-meta {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .item-value {
+            font-size: 0.9rem;
+            color: #00d9ff;
+            font-weight: 500;
+        }
+
+        .item-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(0,217,255,0.1);
+            color: #00d9ff;
+        }
+
+        .item-badge.tentative { background: rgba(255,170,0,0.1); color: #ffaa00; }
+        .item-badge.contract-out { background: rgba(138,43,226,0.1); color: #b366ff; }
+        .item-badge.definite { background: rgba(0,217,143,0.1); color: #00d98f; }
+
+        /* Section Headers */
+        .section-header {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
             margin-bottom: 1rem;
         }
 
-        .placeholder h3 {
-            font-weight: 400;
-            margin-bottom: 0.5rem;
+        /* Upcoming Arrivals */
+        .arrivals-list {
+            background: #16161f;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .arrival-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            display: grid;
+            grid-template-columns: 100px 1fr 120px 100px;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .arrival-item:last-child {
+            border-bottom: none;
+        }
+
+        .arrival-date {
+            font-size: 0.85rem;
             color: #888;
         }
 
-        .placeholder p {
+        .arrival-name {
             font-size: 0.9rem;
+            color: #e0e0e0;
+        }
+
+        .arrival-type {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .arrival-revenue {
+            font-size: 0.9rem;
+            color: #00d9ff;
+            text-align: right;
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #444;
+        }
+
+        .empty-state h3 {
+            font-weight: 400;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 0.85rem;
+        }
+
+        /* Goals Tab - Rainbow Progress */
+        .goal-progress-container {
+            background: #16161f;
+            border-radius: 8px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .goal-progress-bar {
+            height: 24px;
+            border-radius: 12px;
+            background: #1a1a24;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .goal-progress-fill {
+            height: 100%;
+            border-radius: 12px;
+            background: linear-gradient(90deg, 
+                #ff6b6b 0%, 
+                #ffa502 20%, 
+                #ffdd59 40%, 
+                #2ed573 60%, 
+                #1e90ff 80%, 
+                #a55eea 100%
+            );
+            transition: width 0.5s ease;
+        }
+
+        .goal-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .goal-current {
+            color: #00d9ff;
+            font-weight: 500;
+        }
+
+        .goal-target {
+            color: #666;
         }
 
         /* Buttons */
         .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
             border: none;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: all 0.2s;
+            font-weight: 400;
         }
 
         .btn-primary {
             background: #00d9ff;
-            color: #1a1a2e;
+            color: #0d0d14;
         }
 
         .btn-primary:hover {
-            background: #00b8d9;
+            background: #00c4e6;
         }
 
-        /* Status bar */
-        .status-bar {
-            padding: 0.5rem 1rem;
-            background: #0f0f1a;
-            border-top: 1px solid rgba(0,217,255,0.2);
-            font-size: 0.75rem;
-            color: #666;
-            display: flex;
-            justify-content: space-between;
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #888;
+        }
+
+        .btn-ghost:hover {
+            border-color: rgba(255,255,255,0.2);
+            color: #fff;
         }
     </style>
 </head>
 <body>
     <!-- Lock Screen -->
     <div id="lockScreen">
-        <div class="lock-logo">🐬</div>
         <h1 class="lock-title">KELPHI</h1>
-        <input type="password" class="lock-input" id="passwordInput" maxlength="4" placeholder="••••" autofocus>
+        <input type="password" class="lock-input" id="passwordInput" maxlength="4" placeholder="····" autofocus>
     </div>
 
     <!-- Main App -->
     <div id="app">
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <h1>🐬 KELPHI</h1>
-                <span>The Compton Sales</span>
-            </div>
-            <div class="nav-tabs">
-                <div class="nav-tab active" data-tab="quotes">
-                    <span class="icon">📝</span>
-                    <span>Quote Generator</span>
-                </div>
-                <div class="nav-tab" data-tab="leads">
-                    <span class="icon">📋</span>
-                    <span>Leads</span>
-                </div>
-                <div class="nav-tab" data-tab="contracts">
-                    <span class="icon">📄</span>
-                    <span>Contracts</span>
-                </div>
-                <div class="nav-tab" data-tab="handover">
-                    <span class="icon">✅</span>
-                    <span>Handover</span>
-                </div>
-                <div class="nav-tab" data-tab="goals">
-                    <span class="icon">🎯</span>
-                    <span>Goals</span>
-                </div>
-                <div class="nav-tab" data-tab="wrapup">
-                    <span class="icon">🎁</span>
-                    <span>Post Booking</span>
-                </div>
-            </div>
+        <header class="top-header">
+            <div class="brand">KELPHI</div>
+            <div class="header-right" id="headerDate"></div>
+        </header>
+
+        <nav class="tab-nav">
+            <div class="nav-tab active" data-tab="home">Home</div>
+            <div class="nav-tab" data-tab="quotes">Quote Generator</div>
+            <div class="nav-tab" data-tab="leads">Leads</div>
+            <div class="nav-tab" data-tab="contracts">Contracts</div>
+            <div class="nav-tab" data-tab="handover">Handover</div>
+            <div class="nav-tab" data-tab="goals">Goals</div>
+            <div class="nav-tab" data-tab="wrapup">Post Booking</div>
         </nav>
 
         <main class="main-content">
-            <header class="content-header">
-                <h2 id="contentTitle">Quote Generator</h2>
-            </header>
-            
-            <div class="content-body">
-                <!-- Quote Generator Tab -->
-                <div class="tab-content active" id="tab-quotes">
-                    <div class="placeholder">
-                        <div class="icon">📝</div>
-                        <h3>Quote Generator</h3>
-                        <p>Generate estimates and optionally create leads</p>
+            <!-- Home Dashboard -->
+            <div class="tab-content active" id="tab-home">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Pipeline Total</div>
+                        <div class="stat-value cyan">$124,500</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Contracts Out</div>
+                        <div class="stat-value orange">3</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Definite This Month</div>
+                        <div class="stat-value green">$67,200</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Goal Progress</div>
+                        <div class="stat-value">78%</div>
                     </div>
                 </div>
 
-                <!-- Leads Tab -->
-                <div class="tab-content" id="tab-leads">
-                    <div class="placeholder">
-                        <div class="icon">📋</div>
-                        <h3>Leads</h3>
-                        <p>Master list of all leads — your single source of truth</p>
+                <div class="dashboard-columns">
+                    <div class="dashboard-card">
+                        <div class="card-header">Needs Attention</div>
+                        <div class="card-body">
+                            <div class="card-item">
+                                <div>
+                                    <div class="item-name">Walmart Leadership Summit</div>
+                                    <div class="item-meta">Contract out 5 days</div>
+                                </div>
+                                <span class="item-badge contract-out">Contract Out</span>
+                            </div>
+                            <div class="card-item">
+                                <div>
+                                    <div class="item-name">Johnson Wedding</div>
+                                    <div class="item-meta">Arrival in 3 days</div>
+                                </div>
+                                <span class="item-badge definite">Definite</span>
+                            </div>
+                            <div class="card-item">
+                                <div>
+                                    <div class="item-name">Tech Startup Retreat</div>
+                                    <div class="item-meta">Follow-up due today</div>
+                                </div>
+                                <span class="item-badge tentative">Tentative</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">Top Leads by Revenue</div>
+                        <div class="card-body">
+                            <div class="card-item">
+                                <div>
+                                    <div class="item-name">Walmart Leadership Summit</div>
+                                    <div class="item-meta">Apr 15-18 · 45 rooms</div>
+                                </div>
+                                <span class="item-value">$42,500</span>
+                            </div>
+                            <div class="card-item">
+                                <div>
+                                    <div class="item-name">Annual Gala 2026</div>
+                                    <div class="item-meta">May 2 · Event only</div>
+                                </div>
+                                <span class="item-value">$28,000</span>
+                            </div>
+                            <div class="card-item">
+                                <div>
+                                    <div class="item-name">Regional Sales Meeting</div>
+                                    <div class="item-meta">Mar 22-24 · 32 rooms</div>
+                                </div>
+                                <span class="item-value">$18,750</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Contracts Tab -->
-                <div class="tab-content" id="tab-contracts">
-                    <div class="placeholder">
-                        <div class="icon">📄</div>
-                        <h3>Contracts</h3>
-                        <p>Generate, preview, and download contracts</p>
+                <div class="section-header">Upcoming Arrivals — Next 7 Days</div>
+                <div class="arrivals-list">
+                    <div class="arrival-item">
+                        <div class="arrival-date">Mar 10</div>
+                        <div class="arrival-name">Johnson Wedding</div>
+                        <div class="arrival-type">Rooms + Events</div>
+                        <div class="arrival-revenue">$12,400</div>
                     </div>
-                </div>
-
-                <!-- Handover Tab -->
-                <div class="tab-content" id="tab-handover">
-                    <div class="placeholder">
-                        <div class="icon">✅</div>
-                        <h3>Handover Checklists</h3>
-                        <p>Track progress from Tentative through Definite</p>
+                    <div class="arrival-item">
+                        <div class="arrival-date">Mar 12</div>
+                        <div class="arrival-name">Corporate Training</div>
+                        <div class="arrival-type">Rooms Only</div>
+                        <div class="arrival-revenue">$8,200</div>
                     </div>
-                </div>
-
-                <!-- Goals Tab -->
-                <div class="tab-content" id="tab-goals">
-                    <div class="placeholder">
-                        <div class="icon">🎯</div>
-                        <h3>Goals Tracker</h3>
-                        <p>Bonus calculator and revenue tracking</p>
-                    </div>
-                </div>
-
-                <!-- Post Booking Wrap Up Tab -->
-                <div class="tab-content" id="tab-wrapup">
-                    <div class="placeholder">
-                        <div class="icon">🎁</div>
-                        <h3>Post Booking Wrap Up</h3>
-                        <p>Final checklists for completed bookings</p>
+                    <div class="arrival-item">
+                        <div class="arrival-date">Mar 14</div>
+                        <div class="arrival-name">Birthday Celebration</div>
+                        <div class="arrival-type">Event Only</div>
+                        <div class="arrival-revenue">$3,500</div>
                     </div>
                 </div>
             </div>
 
-            <footer class="status-bar">
-                <span id="statusLeft">Ready</span>
-                <span id="statusRight"></span>
-            </footer>
+            <!-- Quote Generator Tab -->
+            <div class="tab-content" id="tab-quotes">
+                <div class="empty-state">
+                    <h3>Quote Generator</h3>
+                    <p>Generate estimates and optionally create leads</p>
+                </div>
+            </div>
+
+            <!-- Leads Tab -->
+            <div class="tab-content" id="tab-leads">
+                <div class="empty-state">
+                    <h3>Leads</h3>
+                    <p>Master list of all leads — your single source of truth</p>
+                </div>
+            </div>
+
+            <!-- Contracts Tab -->
+            <div class="tab-content" id="tab-contracts">
+                <div class="empty-state">
+                    <h3>Contracts</h3>
+                    <p>Generate, preview, and download contracts</p>
+                </div>
+            </div>
+
+            <!-- Handover Tab -->
+            <div class="tab-content" id="tab-handover">
+                <div class="empty-state">
+                    <h3>Handover Checklists</h3>
+                    <p>Track progress from Tentative through Definite</p>
+                </div>
+            </div>
+
+            <!-- Goals Tab -->
+            <div class="tab-content" id="tab-goals">
+                <div class="goal-progress-container">
+                    <div class="section-header">Monthly Goal Progress</div>
+                    <div class="goal-progress-bar">
+                        <div class="goal-progress-fill" style="width: 78%;"></div>
+                    </div>
+                    <div class="goal-labels">
+                        <span class="goal-current">$67,200 booked</span>
+                        <span class="goal-target">$86,000 target</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Post Booking Wrap Up Tab -->
+            <div class="tab-content" id="tab-wrapup">
+                <div class="empty-state">
+                    <h3>Post Booking Wrap Up</h3>
+                    <p>Final checklists for completed bookings</p>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -358,20 +606,9 @@
         const app = document.getElementById('app');
         const navTabs = document.querySelectorAll('.nav-tab');
         const tabContents = document.querySelectorAll('.tab-content');
-        const contentTitle = document.getElementById('contentTitle');
-        const statusRight = document.getElementById('statusRight');
+        const headerDate = document.getElementById('headerDate');
 
-        // Tab titles
-        const tabTitles = {
-            'quotes': 'Quote Generator',
-            'leads': 'Leads',
-            'contracts': 'Contracts',
-            'handover': 'Handover Checklists',
-            'goals': 'Goals Tracker',
-            'wrapup': 'Post Booking Wrap Up'
-        };
-
-        // Check for saved unlock state (session only)
+        // Check for saved unlock state
         if (sessionStorage.getItem('kelphi_unlocked') === 'true') {
             lockScreen.classList.add('hidden');
             app.classList.add('visible');
@@ -381,12 +618,10 @@
         passwordInput.addEventListener('input', function() {
             if (this.value.length === 4) {
                 if (this.value === CORRECT_PASSWORD) {
-                    // Correct password
                     sessionStorage.setItem('kelphi_unlocked', 'true');
                     lockScreen.classList.add('hidden');
                     app.classList.add('visible');
                 } else {
-                    // Wrong password
                     this.classList.add('error');
                     setTimeout(() => {
                         this.classList.remove('error');
@@ -401,56 +636,40 @@
             tab.addEventListener('click', function() {
                 const tabId = this.dataset.tab;
                 
-                // Update active states
                 navTabs.forEach(t => t.classList.remove('active'));
                 tabContents.forEach(c => c.classList.remove('active'));
                 
                 this.classList.add('active');
                 document.getElementById(`tab-${tabId}`).classList.add('active');
-                
-                // Update title
-                contentTitle.textContent = tabTitles[tabId];
             });
         });
 
-        // Update status bar with current date/time
-        function updateStatus() {
+        // Update header date
+        function updateDate() {
             const now = new Date();
-            statusRight.textContent = now.toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                month: 'short', 
+            headerDate.textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'long',
+                month: 'long', 
                 day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
+                year: 'numeric'
             });
         }
-        updateStatus();
-        setInterval(updateStatus, 60000);
+        updateDate();
 
-        // Data storage structure (localStorage)
+        // Data storage
         const STORAGE_KEY = 'kelphi_data';
         
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                return JSON.parse(saved);
-            }
-            return {
-                leads: [],
-                contracts: [],
-                settings: {
-                    savedViews: []
-                }
-            };
+            if (saved) return JSON.parse(saved);
+            return { leads: [], contracts: [], settings: {} };
         }
 
         function saveData(data) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
 
-        // Initialize data
         let appData = loadData();
-        console.log('Kelphi initialized', appData);
     </script>
 </body>
 </html>

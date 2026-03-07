@@ -284,7 +284,7 @@
 
                 <!-- Other tabs -->
                 <div class="tab-content" id="tab-contracts"><div class="empty-state"><h3>Contracts</h3><p>Coming soon</p></div></div>
-                <div class="tab-content" id="tab-handover"><div class="empty-state"><h3>Handover Checklists</h3><p>Coming soon</p></div></div>
+                <div class="tab-content" id="tab-handover"><iframe id="checklistFrame" src="https://puddlesmcsplashy.github.io/CHECKLIST/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-goals">
                     <div class="goal-progress-container">
                         <div class="section-header">Monthly Goal Progress</div>
@@ -1102,6 +1102,10 @@
                 updatedAt: new Date().toISOString()
             };
 
+            // Check if status changed to tentative (trigger checklist creation)
+            const oldLead = currentLeadId ? appData.leads.find(l => l.id === currentLeadId) : null;
+            const statusChangedToTentative = leadData.status === 'tentative' && (!oldLead || oldLead.status !== 'tentative');
+
             if (currentLeadId) {
                 const idx = appData.leads.findIndex(l => l.id === currentLeadId);
                 if (idx !== -1) appData.leads[idx] = leadData;
@@ -1110,9 +1114,26 @@
             }
 
             saveData();
+            
+            // If status changed to tentative, create checklist
+            if (statusChangedToTentative) {
+                createChecklistForLead(leadData);
+            }
+            
             closePanel();
             renderLeads();
             updateDashboard();
+        }
+        
+        // Create checklist in embedded CHECKLIST app
+        function createChecklistForLead(lead) {
+            const checklistFrame = document.getElementById('checklistFrame');
+            if (checklistFrame && checklistFrame.contentWindow) {
+                checklistFrame.contentWindow.postMessage({
+                    type: 'CREATE_CHECKLIST',
+                    data: lead
+                }, '*');
+            }
         }
 
         // ============ DASHBOARD ============

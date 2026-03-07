@@ -791,8 +791,8 @@
         function calculateEventTotals() {
             let totalRental = 0, totalFb = 0;
             currentEvents.forEach(evt => {
-                totalRental += evt.rental || 0;
-                totalFb += evt.fbMin || 0;
+                totalRental += parseFloat(evt.rental) || 0;
+                totalFb += parseFloat(evt.fbMin) || 0;
             });
             document.getElementById('totalRoomRental').textContent = formatCurrency(totalRental);
             document.getElementById('totalFbMin').textContent = formatCurrency(totalFb);

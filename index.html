@@ -77,6 +77,9 @@
         .item-badge.definite { background: rgba(0,217,143,0.1); color: #00d98f; }
         .item-badge.completed { background: rgba(0,100,200,0.1); color: #66b3ff; }
         .item-badge.lost { background: rgba(255,71,87,0.1); color: #ff4757; }
+        .toggle-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #666; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.65rem; cursor: pointer; }
+        .toggle-btn:hover { border-color: #00d9ff; color: #aaa; }
+        .toggle-btn.active { background: rgba(0,217,255,0.15); border-color: #00d9ff; color: #00d9ff; }
         .section-header { font-size: 0.8rem; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 1rem; }
 
         /* Leads Tab Styles */
@@ -237,15 +240,43 @@
             <main class="main-content">
                 <!-- Home Dashboard -->
                 <div class="tab-content active" id="tab-home">
-                    <div class="dashboard-grid">
-                        <div class="stat-card"><div class="stat-label">Pipeline Total</div><div class="stat-value cyan" id="stat-pipeline">$0</div></div>
-                        <div class="stat-card"><div class="stat-label">Contracts Out</div><div class="stat-value orange" id="stat-contracts">0</div></div>
-                        <div class="stat-card"><div class="stat-label">Definite This Month</div><div class="stat-value green" id="stat-definite">$0</div></div>
-                        <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-value" id="stat-leads">0</div></div>
+                    <!-- Revenue Row -->
+                    <div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="stat-card"><div class="stat-label">Contract Out Revenue</div><div class="stat-value orange" id="stat-contractOutRev">$0</div></div>
+                        <div class="stat-card"><div class="stat-label">Viable Revenue</div><div class="stat-value cyan" id="stat-viableRev">$0</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Working/Tentative &lt;7 days</div></div>
+                        <div class="stat-card">
+                            <div class="stat-label">Definite Revenue</div>
+                            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                                <div><div style="font-size: 0.7rem; color: #666;">Rooms</div><div class="stat-value green" style="font-size: 1.25rem;" id="stat-definiteRooms">$0</div></div>
+                                <div><div style="font-size: 0.7rem; color: #666;">Events</div><div class="stat-value green" style="font-size: 1.25rem;" id="stat-definiteEvents">$0</div></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Completed Revenue</div>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                                <button class="toggle-btn active" onclick="toggleCompletedView('total')" id="compToggleTotal">Total</button>
+                                <button class="toggle-btn" onclick="toggleCompletedView('rooms')" id="compToggleRooms">Rooms</button>
+                                <button class="toggle-btn" onclick="toggleCompletedView('events')" id="compToggleEvents">Events</button>
+                            </div>
+                            <div class="stat-value" style="color: #66b3ff; margin-top: 0.5rem;" id="stat-completedRev">$0</div>
+                        </div>
                     </div>
-                    <div class="dashboard-columns">
-                        <div class="dashboard-card"><div class="card-header">Needs Attention</div><div class="card-body" id="needs-attention"><div class="card-item" style="color: #666; justify-content: center;">No items need attention</div></div></div>
-                        <div class="dashboard-card"><div class="card-header">Top Leads by Revenue</div><div class="card-body" id="top-leads"><div class="card-item" style="color: #666; justify-content: center;">No leads yet</div></div></div>
+                    
+                    <!-- Production Metrics Row -->
+                    <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+                        <div class="stat-card"><div class="stat-label">Quarterly Production Preview</div><div class="stat-value" style="color: #a78bfa;" id="stat-quarterlyProd">$0</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;" id="stat-quarterlyPct">0% of goal</div></div>
+                        <div class="stat-card"><div class="stat-label">Avg Time to Flip</div><div class="stat-value cyan" id="stat-avgFlipTime">— days</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Tentative → Definite</div></div>
+                        <div class="stat-card"><div class="stat-label">Average Quoted ADR</div><div class="stat-value green" id="stat-avgADR">$0</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">From room leads</div></div>
+                    </div>
+                    
+                    <!-- Action Lists -->
+                    <div class="dashboard-columns" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="dashboard-card"><div class="card-header">Contract Out (Oldest First)</div><div class="card-body" id="contract-out-list"><div class="card-item" style="color: #666; justify-content: center;">No contracts out</div></div></div>
+                        <div class="dashboard-card"><div class="card-header">Needs Attention (&gt;7 Days Stale)</div><div class="card-body" id="needs-attention"><div class="card-item" style="color: #666; justify-content: center;">All leads are fresh</div></div></div>
+                    </div>
+                    <div class="dashboard-columns" style="grid-template-columns: repeat(2, 1fr); margin-top: 1.5rem;">
+                        <div class="dashboard-card"><div class="card-header">Upcoming Arrivals (14 Days)</div><div class="card-body" id="upcoming-arrivals"><div class="card-item" style="color: #666; justify-content: center;">No upcoming arrivals</div></div></div>
+                        <div class="dashboard-card"><div class="card-header">Cut-off Dates Approaching</div><div class="card-body" id="cutoff-approaching"><div class="card-item" style="color: #666; justify-content: center;">No cutoffs approaching</div></div></div>
                     </div>
                 </div>
 
@@ -286,7 +317,10 @@
                 <div class="tab-content" id="tab-contracts"><div class="empty-state"><h3>Contracts</h3><p>Coming soon</p></div></div>
                 <div class="tab-content" id="tab-handover"><iframe id="checklistFrame" src="https://puddlesmcsplashy.github.io/CHECKLIST/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-goals"><iframe id="goalsFrame" src="https://puddlesmcsplashy.github.io/GOALS/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
-                <div class="tab-content" id="tab-wrapup"><div class="empty-state"><h3>Post Booking Wrap Up</h3><p>Coming soon</p></div></div>
+                <div class="tab-content" id="tab-wrapup">
+                    <div class="section-header">Post Booking Wrap Up</div>
+                    <div id="wrapupList"></div>
+                </div>
             </main>
 
             <!-- View Configuration Modal -->
@@ -1132,14 +1166,24 @@
 
             saveData();
             
-            // If status changed to tentative, create checklist
+            // If status changed to tentative, create checklist and record date
             if (statusChangedToTentative) {
+                leadData.tentativeDate = new Date().toISOString();
+                // Update the saved lead with tentativeDate
+                const idx = appData.leads.findIndex(l => l.id === leadData.id);
+                if (idx !== -1) appData.leads[idx].tentativeDate = leadData.tentativeDate;
+                saveData();
                 createChecklistForLead(leadData);
             }
             
-            // If status changed to definite, add to goals
+            // If status changed to definite, add to goals and record date
             const statusChangedToDefinite = leadData.status === 'definite' && (!oldLead || oldLead.status !== 'definite');
             if (statusChangedToDefinite) {
+                leadData.definiteDate = new Date().toISOString();
+                // Update the saved lead with definiteDate
+                const idx = appData.leads.findIndex(l => l.id === leadData.id);
+                if (idx !== -1) appData.leads[idx].definiteDate = leadData.definiteDate;
+                saveData();
                 addBookingToGoals(leadData);
             }
             
@@ -1254,34 +1298,231 @@
         }
 
         // ============ DASHBOARD ============
+        let completedViewMode = 'total';
+        
+        function toggleCompletedView(mode) {
+            completedViewMode = mode;
+            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('compToggle' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('active');
+            updateCompletedRevenue();
+        }
+        
+        function updateCompletedRevenue() {
+            const leads = appData.leads.filter(l => l.status === 'completed');
+            let total = 0;
+            
+            if (completedViewMode === 'total') {
+                total = leads.reduce((sum, l) => sum + (l.revenue || 0), 0);
+            } else if (completedViewMode === 'rooms') {
+                total = leads.filter(l => l.type === 'rooms' || l.type === 'both').reduce((sum, l) => sum + calcRoomRevenue(l), 0);
+            } else if (completedViewMode === 'events') {
+                total = leads.filter(l => l.type === 'events' || l.type === 'both').reduce((sum, l) => sum + calcEventRevenue(l), 0);
+            }
+            
+            document.getElementById('stat-completedRev').textContent = formatCurrency(total);
+        }
+        
+        function calcRoomRevenue(lead) {
+            if (!lead.roomBlock) return 0;
+            return lead.roomBlock.reduce((sum, row) => {
+                const rate = parseFloat(row.rate) || 0;
+                const nights = row.quantities ? row.quantities.reduce((s, q) => s + (parseInt(q) || 0), 0) : 0;
+                return sum + (rate * nights);
+            }, 0);
+        }
+        
+        function calcEventRevenue(lead) {
+            if (!lead.events) return 0;
+            return lead.events.reduce((sum, evt) => sum + (parseFloat(evt.rental) || 0) + (parseFloat(evt.fbMin) || 0), 0);
+        }
+        
         function updateDashboard() {
             const leads = appData.leads;
-            const pipelineStatuses = ['working', 'tentative', 'contract-out'];
-            const pipeline = leads.filter(l => pipelineStatuses.includes(l.status)).reduce((sum, l) => sum + (l.revenue || 0), 0);
-            document.getElementById('stat-pipeline').textContent = formatCurrency(pipeline);
-            document.getElementById('stat-contracts').textContent = leads.filter(l => l.status === 'contract-out').length;
-            const definite = leads.filter(l => l.status === 'definite').reduce((sum, l) => sum + (l.revenue || 0), 0);
-            document.getElementById('stat-definite').textContent = formatCurrency(definite);
-            document.getElementById('stat-leads').textContent = leads.filter(l => !['completed', 'lost'].includes(l.status)).length;
-
-            const goalTarget = appData.settings?.goalTarget || 86000;
-            const goalPercent = Math.min(100, Math.round((definite / goalTarget) * 100));
-            const goalFillEl = document.getElementById('goalProgressFill');
-            const goalCurrentEl = document.getElementById('goalCurrent');
-            if (goalFillEl) goalFillEl.style.width = goalPercent + '%';
-            if (goalCurrentEl) goalCurrentEl.textContent = formatCurrency(definite) + ' booked';
-
-            const topLeads = [...leads].filter(l => !['completed', 'lost'].includes(l.status)).sort((a, b) => (b.revenue || 0) - (a.revenue || 0)).slice(0, 3);
-            const topLeadsEl = document.getElementById('top-leads');
-            if (topLeads.length === 0) {
-                topLeadsEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">No leads yet</div>';
-            } else {
-                topLeadsEl.innerHTML = topLeads.map(l => `
-                    <div class="card-item"><div><div class="item-name">${l.bookingName || 'Untitled'}</div><div class="item-meta">${l.arrival ? formatDate(l.arrival) : 'No date'} · ${formatType(l.type)}</div></div><span class="item-value">${formatCurrency(l.revenue)}</span></div>
-                `).join('');
+            const now = new Date();
+            const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+            const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            
+            // Contract Out Revenue
+            const contractOutRev = leads.filter(l => l.status === 'contract-out').reduce((sum, l) => sum + (l.revenue || 0), 0);
+            document.getElementById('stat-contractOutRev').textContent = formatCurrency(contractOutRev);
+            
+            // Viable Revenue (Working/Tentative, updated within 7 days)
+            const viableLeads = leads.filter(l => {
+                if (!['working', 'tentative'].includes(l.status)) return false;
+                if (!l.updatedAt) return false;
+                return new Date(l.updatedAt) >= sevenDaysAgo;
+            });
+            const viableRev = viableLeads.reduce((sum, l) => sum + (l.revenue || 0), 0);
+            document.getElementById('stat-viableRev').textContent = formatCurrency(viableRev);
+            
+            // Definite Revenue Split
+            const definiteLeads = leads.filter(l => l.status === 'definite');
+            const definiteRooms = definiteLeads.reduce((sum, l) => sum + calcRoomRevenue(l), 0);
+            const definiteEvents = definiteLeads.reduce((sum, l) => sum + calcEventRevenue(l), 0);
+            document.getElementById('stat-definiteRooms').textContent = formatCurrency(definiteRooms);
+            document.getElementById('stat-definiteEvents').textContent = formatCurrency(definiteEvents);
+            
+            // Completed Revenue
+            updateCompletedRevenue();
+            
+            // Quarterly Production Preview (definite revenue this quarter)
+            const currentQuarter = Math.floor(now.getMonth() / 3);
+            const quarterStart = new Date(now.getFullYear(), currentQuarter * 3, 1);
+            const quarterEnd = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
+            const quarterlyProd = definiteLeads.reduce((sum, l) => sum + (l.revenue || 0), 0);
+            const quarterlyGoal = 250000; // Can be configured
+            document.getElementById('stat-quarterlyProd').textContent = formatCurrency(quarterlyProd);
+            document.getElementById('stat-quarterlyPct').textContent = Math.round((quarterlyProd / quarterlyGoal) * 100) + '% of goal';
+            
+            // Average Time to Flip (Tentative → Definite)
+            const flippedLeads = leads.filter(l => l.status === 'definite' && l.tentativeDate && l.definiteDate);
+            let avgFlipDays = '—';
+            if (flippedLeads.length > 0) {
+                const totalDays = flippedLeads.reduce((sum, l) => {
+                    const tentDate = new Date(l.tentativeDate);
+                    const defDate = new Date(l.definiteDate);
+                    return sum + Math.ceil((defDate - tentDate) / (1000 * 60 * 60 * 24));
+                }, 0);
+                avgFlipDays = Math.round(totalDays / flippedLeads.length);
             }
+            document.getElementById('stat-avgFlipTime').textContent = avgFlipDays + ' days';
+            
+            // Average Quoted ADR
+            const roomLeads = leads.filter(l => (l.type === 'rooms' || l.type === 'both') && l.roomBlock && l.roomBlock.length > 0);
+            let avgADR = 0;
+            if (roomLeads.length > 0) {
+                const totalADR = roomLeads.reduce((sum, l) => {
+                    const rates = l.roomBlock.map(r => parseFloat(r.rate) || 0).filter(r => r > 0);
+                    return sum + (rates.length > 0 ? rates.reduce((s, r) => s + r, 0) / rates.length : 0);
+                }, 0);
+                avgADR = totalADR / roomLeads.length;
+            }
+            document.getElementById('stat-avgADR').textContent = formatCurrency(avgADR);
+            
+            // Contract Out List (oldest first)
+            const contractOutLeads = leads.filter(l => l.status === 'contract-out').sort((a, b) => new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0));
+            const coListEl = document.getElementById('contract-out-list');
+            if (contractOutLeads.length === 0) {
+                coListEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">No contracts out</div>';
+            } else {
+                coListEl.innerHTML = contractOutLeads.slice(0, 5).map(l => {
+                    const daysAgo = l.updatedAt ? Math.floor((now - new Date(l.updatedAt)) / (1000 * 60 * 60 * 24)) : '?';
+                    return `<div class="card-item" onclick="openLead('${l.id}')"><div><div class="item-name">${l.bookingName || 'Untitled'}</div><div class="item-meta">${daysAgo} days ago</div></div><span class="item-value">${formatCurrency(l.revenue)}</span></div>`;
+                }).join('');
+            }
+            
+            // Needs Attention (stale >7 days)
+            const staleLeads = leads.filter(l => {
+                if (!['working', 'tentative'].includes(l.status)) return false;
+                if (!l.updatedAt) return true;
+                return new Date(l.updatedAt) < sevenDaysAgo;
+            }).sort((a, b) => new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0));
+            const naEl = document.getElementById('needs-attention');
+            if (staleLeads.length === 0) {
+                naEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">All leads are fresh</div>';
+            } else {
+                naEl.innerHTML = staleLeads.slice(0, 5).map(l => {
+                    const daysStale = l.updatedAt ? Math.floor((now - new Date(l.updatedAt)) / (1000 * 60 * 60 * 24)) : '?';
+                    return `<div class="card-item" onclick="openLead('${l.id}')"><div><div class="item-name">${l.bookingName || 'Untitled'}</div><div class="item-meta">${daysStale} days stale · ${formatStatus(l.status)}</div></div><span class="item-badge ${l.status}">${formatStatus(l.status)}</span></div>`;
+                }).join('');
+            }
+            
+            // Upcoming Arrivals (next 14 days)
+            const upcomingArrivals = leads.filter(l => {
+                if (!['definite', 'tentative', 'contract-out'].includes(l.status)) return false;
+                if (!l.arrival) return false;
+                const arr = new Date(l.arrival + 'T12:00:00');
+                return arr >= now && arr <= fourteenDaysFromNow;
+            }).sort((a, b) => new Date(a.arrival) - new Date(b.arrival));
+            const uaEl = document.getElementById('upcoming-arrivals');
+            if (upcomingArrivals.length === 0) {
+                uaEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">No upcoming arrivals</div>';
+            } else {
+                uaEl.innerHTML = upcomingArrivals.slice(0, 5).map(l => `<div class="card-item" onclick="openLead('${l.id}')"><div><div class="item-name">${l.bookingName || 'Untitled'}</div><div class="item-meta">${formatDate(l.arrival)}</div></div><span class="item-badge ${l.status}">${formatStatus(l.status)}</span></div>`).join('');
+            }
+            
+            // Cut-off Dates Approaching (next 14 days)
+            const cutoffApproaching = leads.filter(l => {
+                if (!['definite', 'tentative', 'contract-out'].includes(l.status)) return false;
+                if (!l.cutoff) return false;
+                const cut = new Date(l.cutoff + 'T12:00:00');
+                return cut >= now && cut <= fourteenDaysFromNow;
+            }).sort((a, b) => new Date(a.cutoff) - new Date(b.cutoff));
+            const caEl = document.getElementById('cutoff-approaching');
+            if (cutoffApproaching.length === 0) {
+                caEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">No cutoffs approaching</div>';
+            } else {
+                caEl.innerHTML = cutoffApproaching.slice(0, 5).map(l => `<div class="card-item" onclick="openLead('${l.id}')"><div><div class="item-name">${l.bookingName || 'Untitled'}</div><div class="item-meta">Cutoff: ${formatDate(l.cutoff)}</div></div><span class="item-value">${formatCurrency(l.revenue)}</span></div>`).join('');
+            }
+            
+            // Update Post Booking Wrap Up
+            renderWrapUp();
         }
 
+        // ============ POST BOOKING WRAP UP ============
+        const WRAPUP_TASKS = [
+            { id: 'review-actuals', label: 'Review actuals in Delphi' },
+            { id: 'turnover-complete', label: 'Check turnover complete box' },
+            { id: 'review-invoice', label: 'Review final invoice' },
+            { id: 'add-summary', label: 'Add summary notes to booking and account in Delphi' },
+            { id: 'done', label: 'Done' }
+        ];
+        
+        function renderWrapUp() {
+            const wrapupList = document.getElementById('wrapupList');
+            const definiteLeads = appData.leads.filter(l => l.status === 'definite');
+            
+            if (definiteLeads.length === 0) {
+                wrapupList.innerHTML = '<div class="empty-state" style="padding: 3rem;"><h3>No Definite Bookings</h3><p>Leads will appear here when marked Definite</p></div>';
+                return;
+            }
+            
+            wrapupList.innerHTML = definiteLeads.map(lead => {
+                const wrapupData = lead.wrapup || {};
+                const completedCount = WRAPUP_TASKS.filter(t => wrapupData[t.id]).length;
+                const progressPct = Math.round((completedCount / WRAPUP_TASKS.length) * 100);
+                
+                return `
+                    <div class="dashboard-card" style="margin-bottom: 1rem;">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>${lead.bookingName || 'Untitled'}</span>
+                            <span style="font-size: 0.75rem; color: ${progressPct === 100 ? '#00d98f' : '#666'};">${completedCount}/${WRAPUP_TASKS.length} complete</span>
+                        </div>
+                        <div class="card-body" style="padding: 1rem;">
+                            ${WRAPUP_TASKS.map(task => `
+                                <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; cursor: pointer; ${wrapupData[task.id] ? 'color: #00d98f;' : ''}">
+                                    <input type="checkbox" ${wrapupData[task.id] ? 'checked' : ''} onchange="toggleWrapupTask('${lead.id}', '${task.id}')" style="accent-color: #00d9ff;">
+                                    <span style="${wrapupData[task.id] ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${task.label}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function toggleWrapupTask(leadId, taskId) {
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            if (!lead.wrapup) lead.wrapup = {};
+            lead.wrapup[taskId] = !lead.wrapup[taskId];
+            
+            // Check if all tasks are complete (including 'done')
+            const allComplete = WRAPUP_TASKS.every(t => lead.wrapup[t.id]);
+            
+            if (allComplete) {
+                // Archive and mark as completed
+                lead.status = 'completed';
+                lead.completedAt = new Date().toISOString();
+            }
+            
+            saveData();
+            renderWrapUp();
+            renderLeads();
+            updateDashboard();
+        }
+        
         // ============ HELPERS ============
         function formatCurrency(val) { return '$' + (parseFloat(val) || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
         

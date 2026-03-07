@@ -435,8 +435,11 @@
                                     <div class="form-group"><label class="form-label">Room Payment</label><select class="form-select" id="lead-roomPayment"><option value="">Select...</option><option value="individual">Individual Pays Own</option><option value="room-tax">Room & Tax to Master</option><option value="all-master">All Charges to Master</option></select></div>
                                 </div>
                                 <div class="form-row">
-                                    <div class="form-group"><label class="form-label">Cut-off Date</label><input type="date" class="form-input" id="lead-cutoff"></div>
-                                    <div class="form-group"><label class="form-label">Commission %</label><input type="number" class="form-input" id="lead-commission" placeholder="0" min="0" max="100"></div>
+                                    <div class="form-group"><label class="form-label">Cut-off Date</label><input type="date" class="form-input" id="lead-cutoff" onchange="markCutoffManual()"></div>
+                                    <div class="form-group">
+                                        <label class="form-checkbox" style="margin-bottom: 0.5rem;"><input type="checkbox" id="lead-commissionable" onchange="toggleCommissionField()"> Commissionable?</label>
+                                        <input type="number" class="form-input" id="lead-commission" placeholder="%" min="0" max="100" style="display: none;">
+                                    </div>
                                 </div>
                             </div>
                             <div id="eventContractFields">
@@ -596,10 +599,10 @@
             });
 
             // Booking type change
-            document.getElementById('lead-type').addEventListener('change', updatePanelTabs);
+            document.getElementById('lead-type').addEventListener('change', function() { updatePanelTabs(); autoCalculateCutoff(); });
 
             // Date changes - rebuild room block
-            document.getElementById('lead-arrival').addEventListener('change', rebuildRoomBlock);
+            document.getElementById('lead-arrival').addEventListener('change', function() { rebuildRoomBlock(); autoCalculateCutoff(); });
             document.getElementById('lead-departure').addEventListener('change', rebuildRoomBlock);
 
             // Same as contact
@@ -1017,6 +1020,11 @@
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
             document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
             document.getElementById('lead-sameAsContact').checked = false;
+            document.getElementById('lead-commissionable').checked = lead.commissionable || false;
+            toggleCommissionField();
+            
+            // Reset cutoff manual flag - if there's a cutoff value, consider it manually set
+            cutoffManuallySet = !!lead.cutoff;
             document.getElementById('lead-revenue').value = formatCurrency(lead.revenue || 0);
 
             updatePanelTabs();
@@ -1097,6 +1105,7 @@
                 resProcedure: document.getElementById('lead-resProcedure').value,
                 roomPayment: document.getElementById('lead-roomPayment').value,
                 cutoff: document.getElementById('lead-cutoff').value,
+                commissionable: document.getElementById('lead-commissionable').checked,
                 commission: document.getElementById('lead-commission').value,
                 waiveRental: document.getElementById('lead-waiveRental').checked,
                 fbCombined: document.getElementById('lead-fbCombined').checked,
@@ -1153,6 +1162,50 @@
                     data: lead
                 }, '*');
             }
+        }
+        
+        // Toggle commission percentage field visibility
+        function toggleCommissionField() {
+            const checkbox = document.getElementById('lead-commissionable');
+            const field = document.getElementById('lead-commission');
+            field.style.display = checkbox.checked ? 'block' : 'none';
+            if (!checkbox.checked) field.value = '';
+        }
+        
+        // Mark cutoff date as manually set
+        let cutoffManuallySet = false;
+        function markCutoffManual() {
+            cutoffManuallySet = true;
+        }
+        
+        // Auto-calculate cutoff date (30 days before arrival) for room bookings
+        function autoCalculateCutoff() {
+            if (cutoffManuallySet) return;
+            
+            const type = document.getElementById('lead-type').value;
+            const arrival = document.getElementById('lead-arrival').value;
+            const cutoffField = document.getElementById('lead-cutoff');
+            
+            // Only for bookings with rooms
+            if (type === 'events' || !arrival) {
+                return;
+            }
+            
+            const arrivalDate = new Date(arrival + 'T12:00:00');
+            const today = new Date();
+            today.setHours(12, 0, 0, 0);
+            
+            const daysUntilArrival = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
+            
+            // If arrival is within 30 days, leave blank
+            if (daysUntilArrival < 30) {
+                return;
+            }
+            
+            // Set cutoff to 30 days before arrival
+            const cutoffDate = new Date(arrivalDate);
+            cutoffDate.setDate(cutoffDate.getDate() - 30);
+            cutoffField.value = cutoffDate.toISOString().split('T')[0];
         }
         
         // Update checklist type when booking type changes (preserves task progress)

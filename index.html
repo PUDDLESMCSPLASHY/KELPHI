@@ -338,6 +338,7 @@
                         <div class="panel-tab" data-section="contract">Contract</div>
                         <div class="panel-tab" data-section="billing">Billing</div>
                         <div class="panel-tab" data-section="notes">Notes</div>
+                        <div class="panel-tab" data-section="delete" style="color: var(--danger);">Delete</div>
                     </div>
                     <div class="panel-content">
                         <!-- Booking Info Section -->
@@ -475,9 +476,24 @@
                             <div class="form-divider"></div>
                             <div class="form-group"><label class="form-label">Special Concessions <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(syncs with Contract tab)</span></label><textarea class="form-textarea" id="lead-concessionsMirror" placeholder="Enter concessions (one per line)..." style="min-height: 100px;" oninput="syncMirroredField('concessions', this.value)"></textarea></div>
                         </div>
+                        
+                        <!-- Delete Section -->
+                        <div class="panel-section" id="section-delete">
+                            <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 20px; text-align: center;">
+                                <div style="font-size: 24px; margin-bottom: 12px;">⚠️</div>
+                                <div style="font-weight: 600; color: var(--danger); margin-bottom: 8px;">Danger Zone</div>
+                                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">This will permanently delete this lead and all associated data (handover checklists, goals tracking).</div>
+                                <div class="form-group" style="max-width: 300px; margin: 0 auto 16px;">
+                                    <label class="form-label" style="font-size: 12px;">Type <strong>bye bye birdy</strong> to confirm:</label>
+                                    <input type="text" class="form-input" id="deleteConfirmText" placeholder="bye bye birdy" style="text-align: center;">
+                                </div>
+                                <button class="btn" style="background: var(--danger);" onclick="initiateDelete()">Delete Lead</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="panel-actions">
+                    <div id="lastUpdatedText" style="font-size: 12px; color: var(--text-muted); font-style: italic; flex: 1;"></div>
                     <button class="btn btn-ghost" id="panelCancel">Cancel</button>
                     <button class="btn btn-primary" id="panelSave">Save Lead</button>
                 </div>
@@ -979,6 +995,18 @@
             
             // Update billing display (show deposit schedule or CC section)
             updateBillingDisplay();
+            
+            // Show last updated timestamp
+            const lastUpdated = document.getElementById('lastUpdatedText');
+            if (lead.updatedAt) {
+                const d = new Date(lead.updatedAt);
+                lastUpdated.textContent = `Last updated on ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+            } else {
+                lastUpdated.textContent = '';
+            }
+            
+            // Clear delete confirmation field
+            document.getElementById('deleteConfirmText').value = '';
 
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
             document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
@@ -1229,6 +1257,36 @@
                 const col = ALL_COLUMNS.find(c => c.key === key);
                 return `<th>${col ? col.label : key}</th>`;
             }).join('');
+        }
+        
+        // Delete lead functionality
+        function initiateDelete() {
+            const confirmText = document.getElementById('deleteConfirmText').value.trim().toLowerCase();
+            if (confirmText !== 'bye bye birdy') {
+                alert('Please type "bye bye birdy" to confirm deletion.');
+                return;
+            }
+            
+            if (!confirm('Are you really sure? This cannot be undone.')) {
+                return;
+            }
+            
+            // Delete the lead
+            const leadIndex = appData.leads.findIndex(l => l.id === currentLeadId);
+            if (leadIndex > -1) {
+                appData.leads.splice(leadIndex, 1);
+                
+                // Also remove any associated handover/goals data (future)
+                // if (appData.handovers) delete appData.handovers[currentLeadId];
+                // if (appData.goals) delete appData.goals[currentLeadId];
+                
+                saveData();
+                closePanel();
+                renderLeads();
+                updateDashboard();
+                
+                alert('Lead deleted successfully.');
+            }
         }
         
         function getColumnValue(lead, key) {

@@ -285,13 +285,7 @@
                 <!-- Other tabs -->
                 <div class="tab-content" id="tab-contracts"><div class="empty-state"><h3>Contracts</h3><p>Coming soon</p></div></div>
                 <div class="tab-content" id="tab-handover"><iframe id="checklistFrame" src="https://puddlesmcsplashy.github.io/CHECKLIST/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
-                <div class="tab-content" id="tab-goals">
-                    <div class="goal-progress-container">
-                        <div class="section-header">Monthly Goal Progress</div>
-                        <div class="goal-progress-bar"><div class="goal-progress-fill" id="goalProgressFill" style="width: 0%;"></div></div>
-                        <div class="goal-labels"><span class="goal-current" id="goalCurrent">$0 booked</span><span class="goal-target">$86,000 target</span></div>
-                    </div>
-                </div>
+                <div class="tab-content" id="tab-goals"><iframe id="goalsFrame" src="https://puddlesmcsplashy.github.io/GOALS/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-wrapup"><div class="empty-state"><h3>Post Booking Wrap Up</h3><p>Coming soon</p></div></div>
             </main>
 
@@ -345,7 +339,10 @@
                         <div class="panel-section active" id="section-booking">
                             <div class="form-group"><label class="form-label">Booking Name</label><input type="text" class="form-input" id="lead-bookingName"></div>
                             <div class="form-group"><label class="form-label">Account</label><input type="text" class="form-input" id="lead-account"></div>
-                            <div class="form-group"><label class="form-label">Contact Name</label><input type="text" class="form-input" id="lead-contactName"></div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Contact First Name</label><input type="text" class="form-input" id="lead-contactFirstName"></div>
+                                <div class="form-group"><label class="form-label">Contact Last Name</label><input type="text" class="form-input" id="lead-contactLastName"></div>
+                            </div>
                             <div class="form-row">
                                 <div class="form-group"><label class="form-label">Contact Phone</label><input type="text" class="form-input" id="lead-contactPhone"></div>
                                 <div class="form-group"><label class="form-label">Contact Email</label><input type="email" class="form-input" id="lead-contactEmail"></div>
@@ -374,6 +371,15 @@
                                         <option value="lost">Lost / Turndown</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Market Segment</label>
+                                <select class="form-select" id="lead-segment">
+                                    <option value="">Select...</option>
+                                    <option value="corporate">Corporate</option>
+                                    <option value="smerf">SMERF</option>
+                                    <option value="government">Government</option>
+                                </select>
                             </div>
                         </div>
 
@@ -599,7 +605,7 @@
             // Same as contact
             document.getElementById('lead-sameAsContact').addEventListener('change', function() {
                 if (this.checked) {
-                    document.getElementById('lead-signerName').value = document.getElementById('lead-contactName').value;
+                    document.getElementById('lead-signerName').value = (document.getElementById('lead-contactFirstName').value + ' ' + document.getElementById('lead-contactLastName').value).trim();
                     document.getElementById('lead-signerEmail').value = document.getElementById('lead-contactEmail').value;
                     document.getElementById('lead-signerPhone').value = document.getElementById('lead-contactPhone').value;
                 }
@@ -983,7 +989,7 @@
             document.getElementById('panelSubtitle').textContent = lead.account || '';
 
             // Simple fields
-            ['bookingName', 'account', 'contactName', 'contactPhone', 'contactEmail', 'arrival', 'departure', 'type', 'status',
+            ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'arrival', 'departure', 'type', 'status', 'segment',
              'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
              'billingType', 'concessions', 'notes', 'handoverNotes', 'ccDeposit'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
@@ -1073,13 +1079,15 @@
                 id: currentLeadId || generateId(),
                 bookingName: document.getElementById('lead-bookingName').value,
                 account: document.getElementById('lead-account').value,
-                contactName: document.getElementById('lead-contactName').value,
+                contactFirstName: document.getElementById('lead-contactFirstName').value,
+                contactLastName: document.getElementById('lead-contactLastName').value,
                 contactPhone: document.getElementById('lead-contactPhone').value,
                 contactEmail: document.getElementById('lead-contactEmail').value,
                 arrival: document.getElementById('lead-arrival').value,
                 departure: document.getElementById('lead-departure').value,
                 type: type,
                 status: document.getElementById('lead-status').value,
+                segment: document.getElementById('lead-segment').value,
                 roomBlock: currentRoomBlock,
                 events: currentEvents,
                 signerName: document.getElementById('lead-signerName').value,
@@ -1120,6 +1128,17 @@
                 createChecklistForLead(leadData);
             }
             
+            // If status changed to definite, add to goals
+            const statusChangedToDefinite = leadData.status === 'definite' && (!oldLead || oldLead.status !== 'definite');
+            if (statusChangedToDefinite) {
+                addBookingToGoals(leadData);
+            }
+            
+            // If booking type changed and there's a checklist, update it (preserve task progress)
+            if (oldLead && oldLead.type !== leadData.type) {
+                updateChecklistType(leadData.id, leadData.type);
+            }
+            
             closePanel();
             renderLeads();
             updateDashboard();
@@ -1132,6 +1151,51 @@
                 checklistFrame.contentWindow.postMessage({
                     type: 'CREATE_CHECKLIST',
                     data: lead
+                }, '*');
+            }
+        }
+        
+        // Update checklist type when booking type changes (preserves task progress)
+        function updateChecklistType(leadId, newType) {
+            const checklistFrame = document.getElementById('checklistFrame');
+            if (checklistFrame && checklistFrame.contentWindow) {
+                checklistFrame.contentWindow.postMessage({
+                    type: 'UPDATE_CHECKLIST_TYPE',
+                    leadId: leadId,
+                    newType: newType
+                }, '*');
+            }
+        }
+        
+        // Add booking to embedded GOALS app
+        function addBookingToGoals(lead) {
+            // Calculate room revenue from room block
+            let roomRevenue = 0;
+            if (lead.roomBlock && lead.roomBlock.length > 0) {
+                lead.roomBlock.forEach(row => {
+                    const rate = parseFloat(row.rate) || 0;
+                    const totalNights = row.quantities ? row.quantities.reduce((sum, q) => sum + (parseInt(q) || 0), 0) : 0;
+                    roomRevenue += rate * totalNights;
+                });
+            }
+            
+            // Calculate catering revenue from events
+            let cateringRevenue = 0;
+            if (lead.events && lead.events.length > 0) {
+                lead.events.forEach(evt => {
+                    cateringRevenue += (parseFloat(evt.rental) || 0) + (parseFloat(evt.fbMin) || 0);
+                });
+            }
+            
+            const goalsFrame = document.getElementById('goalsFrame');
+            if (goalsFrame && goalsFrame.contentWindow) {
+                goalsFrame.contentWindow.postMessage({
+                    type: 'ADD_BOOKING',
+                    data: {
+                        ...lead,
+                        roomRevenue: roomRevenue,
+                        cateringRevenue: cateringRevenue
+                    }
                 }, '*');
             }
         }
@@ -1170,7 +1234,9 @@
         const ALL_COLUMNS = [
             { key: 'bookingName', label: 'Booking Name', default: true },
             { key: 'account', label: 'Account', default: true },
-            { key: 'contactName', label: 'Contact Name', default: false },
+            { key: 'contactFirstName', label: 'Contact First Name', default: false },
+            { key: 'contactLastName', label: 'Contact Last Name', default: false },
+            { key: 'segment', label: 'Market Segment', default: false },
             { key: 'contactEmail', label: 'Contact Email', default: false },
             { key: 'contactPhone', label: 'Contact Phone', default: false },
             { key: 'status', label: 'Status', default: true },
@@ -1329,6 +1395,9 @@
                 case 'billingType':
                     const billingLabels = { 'deposit': 'Deposit', 'credit-card': 'Credit Card', 'direct': 'Direct Billing' };
                     return billingLabels[lead[key]] || lead[key] || '';
+                case 'segment':
+                    const segmentLabels = { 'corporate': 'Corporate', 'smerf': 'SMERF', 'government': 'Government' };
+                    return segmentLabels[lead[key]] || lead[key] || '';
                 default:
                     return lead[key] || '';
             }

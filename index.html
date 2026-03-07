@@ -328,6 +328,9 @@
                         <!-- Guestroom Info Section -->
                         <div class="panel-section" id="section-guestroom">
                             <div class="info-message" id="guestroomDateMsg">Enter arrival and departure dates in Booking Info to configure the room block.</div>
+                            <div class="info-message" id="quoteRoomTotalsRef" style="display: none; background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); color: #4ade80;">
+                                <strong>From Quote Generator:</strong> <span id="quoteRoomTotalsText"></span>
+                            </div>
                             <div id="roomBlockContainer" style="display: none;">
                                 <div class="form-section-title">Room Block</div>
                                 <div class="room-block-scroll">
@@ -891,6 +894,23 @@
 
             updatePanelTabs();
             rebuildRoomBlock();
+            
+            // Show quote room totals reference if available
+            const quoteRef = document.getElementById('quoteRoomTotalsRef');
+            const quoteText = document.getElementById('quoteRoomTotalsText');
+            if (lead.quoteRoomTotals && Object.keys(lead.quoteRoomTotals).length > 0) {
+                const totals = Object.entries(lead.quoteRoomTotals)
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([date, count]) => {
+                        const d = new Date(date + 'T12:00:00');
+                        return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) + ': ' + count + ' rooms';
+                    })
+                    .join(' | ');
+                quoteText.textContent = totals;
+                quoteRef.style.display = 'block';
+            } else {
+                quoteRef.style.display = 'none';
+            }
             renderEvents();
 
             // Reset to first tab
@@ -1016,6 +1036,11 @@
                 leadData.id = generateId();
                 leadData.createdAt = new Date().toISOString();
                 leadData.updatedAt = new Date().toISOString();
+                
+                // Store room block reference from quote generator
+                if (leadData.roomBlockTotalsPerNight) {
+                    leadData.quoteRoomTotals = leadData.roomBlockTotalsPerNight;
+                }
                 
                 // Add to leads
                 appData.leads.push(leadData);

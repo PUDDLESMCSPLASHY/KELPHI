@@ -33,9 +33,7 @@
             z-index: 1000;
         }
 
-        #lockScreen.hidden {
-            display: none;
-        }
+        #lockScreen.hidden { display: none; }
 
         .lock-title {
             font-size: 3rem;
@@ -82,9 +80,7 @@
             height: 100vh;
         }
 
-        #app.visible {
-            display: flex;
-        }
+        #app.visible { display: flex; }
 
         /* Top Header */
         .top-header {
@@ -130,20 +126,28 @@
             margin-bottom: -1px;
         }
 
-        .nav-tab:hover {
-            color: #aaa;
-        }
-
+        .nav-tab:hover { color: #aaa; }
         .nav-tab.active {
             color: #00d9ff;
             border-bottom-color: #00d9ff;
         }
 
-        /* Main Content */
+        /* Main Content Area */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
         .main-content {
             flex: 1;
             overflow-y: auto;
             padding: 2rem;
+            transition: margin-right 0.3s;
+        }
+
+        .main-content.panel-open {
+            margin-right: 0;
         }
 
         .tab-content {
@@ -151,9 +155,7 @@
             animation: fadeIn 0.3s ease;
         }
 
-        .tab-content.active {
-            display: block;
-        }
+        .tab-content.active { display: block; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -217,9 +219,7 @@
             letter-spacing: 0.05rem;
         }
 
-        .card-body {
-            padding: 0;
-        }
+        .card-body { padding: 0; }
 
         .card-item {
             padding: 1rem 1.5rem;
@@ -231,30 +231,12 @@
             transition: background 0.2s;
         }
 
-        .card-item:hover {
-            background: rgba(0,217,255,0.03);
-        }
+        .card-item:hover { background: rgba(0,217,255,0.03); }
+        .card-item:last-child { border-bottom: none; }
 
-        .card-item:last-child {
-            border-bottom: none;
-        }
-
-        .item-name {
-            font-size: 0.9rem;
-            color: #e0e0e0;
-        }
-
-        .item-meta {
-            font-size: 0.75rem;
-            color: #666;
-            margin-top: 0.25rem;
-        }
-
-        .item-value {
-            font-size: 0.9rem;
-            color: #00d9ff;
-            font-weight: 500;
-        }
+        .item-name { font-size: 0.9rem; color: #e0e0e0; }
+        .item-meta { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
+        .item-value { font-size: 0.9rem; color: #00d9ff; font-weight: 500; }
 
         .item-badge {
             font-size: 0.7rem;
@@ -264,11 +246,13 @@
             color: #00d9ff;
         }
 
+        .item-badge.working { background: rgba(136,136,136,0.1); color: #888; }
         .item-badge.tentative { background: rgba(255,170,0,0.1); color: #ffaa00; }
         .item-badge.contract-out { background: rgba(138,43,226,0.1); color: #b366ff; }
         .item-badge.definite { background: rgba(0,217,143,0.1); color: #00d98f; }
+        .item-badge.completed { background: rgba(0,100,200,0.1); color: #66b3ff; }
+        .item-badge.lost { background: rgba(255,71,87,0.1); color: #ff4757; }
 
-        /* Section Headers */
         .section-header {
             font-size: 0.8rem;
             font-weight: 500;
@@ -278,7 +262,6 @@
             margin-bottom: 1rem;
         }
 
-        /* Upcoming Arrivals */
         .arrivals-list {
             background: #16161f;
             border-radius: 8px;
@@ -294,93 +277,241 @@
             gap: 1rem;
         }
 
-        .arrival-item:last-child {
-            border-bottom: none;
-        }
+        .arrival-item:last-child { border-bottom: none; }
+        .arrival-date { font-size: 0.85rem; color: #888; }
+        .arrival-name { font-size: 0.9rem; color: #e0e0e0; }
+        .arrival-type { font-size: 0.75rem; color: #666; }
+        .arrival-revenue { font-size: 0.9rem; color: #00d9ff; text-align: right; }
 
-        .arrival-date {
-            font-size: 0.85rem;
-            color: #888;
-        }
-
-        .arrival-name {
-            font-size: 0.9rem;
-            color: #e0e0e0;
-        }
-
-        .arrival-type {
-            font-size: 0.75rem;
-            color: #666;
-        }
-
-        .arrival-revenue {
-            font-size: 0.9rem;
-            color: #00d9ff;
-            text-align: right;
-        }
-
-        /* Empty States */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #444;
-        }
-
-        .empty-state h3 {
-            font-weight: 400;
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-            color: #666;
-        }
-
-        .empty-state p {
-            font-size: 0.85rem;
-        }
-
-        /* Goals Tab - Rainbow Progress */
-        .goal-progress-container {
-            background: #16161f;
-            border-radius: 8px;
-            padding: 2rem;
-            border: 1px solid rgba(255,255,255,0.04);
-        }
-
-        .goal-progress-bar {
-            height: 24px;
-            border-radius: 12px;
-            background: #1a1a24;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .goal-progress-fill {
-            height: 100%;
-            border-radius: 12px;
-            background: linear-gradient(90deg, 
-                #ff6b6b 0%, 
-                #ffa502 20%, 
-                #ffdd59 40%, 
-                #2ed573 60%, 
-                #1e90ff 80%, 
-                #a55eea 100%
-            );
-            transition: width 0.5s ease;
-        }
-
-        .goal-labels {
+        /* Leads Tab Styles */
+        .leads-toolbar {
             display: flex;
             justify-content: space-between;
-            margin-top: 1rem;
-            font-size: 0.85rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
         }
 
-        .goal-current {
+        .leads-filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-select {
+            background: #16161f;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        .search-input {
+            background: #16161f;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            width: 250px;
+        }
+
+        .search-input::placeholder { color: #555; }
+        .search-input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        /* Leads Table */
+        .leads-table {
+            width: 100%;
+            background: #16161f;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.04);
+            border-collapse: collapse;
+            overflow: hidden;
+        }
+
+        .leads-table th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: #12121c;
+        }
+
+        .leads-table td {
+            padding: 1rem 1.5rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .leads-table tr:last-child td { border-bottom: none; }
+
+        .leads-table tbody tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .leads-table tbody tr:hover { background: rgba(0,217,255,0.03); }
+        .leads-table tbody tr.selected { background: rgba(0,217,255,0.08); }
+
+        .lead-name-cell {
             color: #00d9ff;
             font-weight: 500;
         }
 
-        .goal-target {
+        .lead-revenue { color: #00d9ff; }
+
+        /* Lead Detail Panel */
+        .lead-panel {
+            width: 500px;
+            background: #12121c;
+            border-left: 1px solid rgba(255,255,255,0.06);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .lead-panel.open { display: flex; }
+
+        .panel-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .panel-subtitle {
+            font-size: 0.8rem;
             color: #666;
+        }
+
+        .panel-close {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .panel-close:hover { color: #fff; }
+
+        /* Panel Vertical Tabs */
+        .panel-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .panel-tabs {
+            width: 140px;
+            background: #0d0d14;
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .panel-tab {
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            color: #666;
+            cursor: pointer;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .panel-tab:hover { color: #aaa; background: rgba(255,255,255,0.02); }
+        .panel-tab.active {
+            color: #00d9ff;
+            border-left-color: #00d9ff;
+            background: rgba(0,217,255,0.05);
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .panel-section { display: none; }
+        .panel-section.active { display: block; }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.03rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: #1a1a24;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 4px;
+            padding: 0.6rem 0.8rem;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .form-checkbox input {
+            width: 16px;
+            height: 16px;
+            accent-color: #00d9ff;
         }
 
         /* Buttons */
@@ -399,9 +530,7 @@
             color: #0d0d14;
         }
 
-        .btn-primary:hover {
-            background: #00c4e6;
-        }
+        .btn-primary:hover { background: #00c4e6; }
 
         .btn-ghost {
             background: transparent;
@@ -413,6 +542,65 @@
             border-color: rgba(255,255,255,0.2);
             color: #fff;
         }
+
+        .panel-actions {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        /* Goals Tab - Rainbow Progress */
+        .goal-progress-container {
+            background: #16161f;
+            border-radius: 8px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .goal-progress-bar {
+            height: 24px;
+            border-radius: 12px;
+            background: #1a1a24;
+            overflow: hidden;
+        }
+
+        .goal-progress-fill {
+            height: 100%;
+            border-radius: 12px;
+            background: linear-gradient(90deg, 
+                #ff6b6b 0%, #ffa502 20%, #ffdd59 40%, 
+                #2ed573 60%, #1e90ff 80%, #a55eea 100%
+            );
+            transition: width 0.5s ease;
+        }
+
+        .goal-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .goal-current { color: #00d9ff; font-weight: 500; }
+        .goal-target { color: #666; }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #444;
+        }
+
+        .empty-state h3 {
+            font-weight: 400;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .empty-state p { font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -439,188 +627,352 @@
             <div class="nav-tab" data-tab="wrapup">Post Booking</div>
         </nav>
 
-        <main class="main-content">
-            <!-- Home Dashboard -->
-            <div class="tab-content active" id="tab-home">
-                <div class="dashboard-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Pipeline Total</div>
-                        <div class="stat-value cyan">$124,500</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Contracts Out</div>
-                        <div class="stat-value orange">3</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Definite This Month</div>
-                        <div class="stat-value green">$67,200</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Goal Progress</div>
-                        <div class="stat-value">78%</div>
-                    </div>
-                </div>
-
-                <div class="dashboard-columns">
-                    <div class="dashboard-card">
-                        <div class="card-header">Needs Attention</div>
-                        <div class="card-body">
-                            <div class="card-item">
-                                <div>
-                                    <div class="item-name">Walmart Leadership Summit</div>
-                                    <div class="item-meta">Contract out 5 days</div>
-                                </div>
-                                <span class="item-badge contract-out">Contract Out</span>
-                            </div>
-                            <div class="card-item">
-                                <div>
-                                    <div class="item-name">Johnson Wedding</div>
-                                    <div class="item-meta">Arrival in 3 days</div>
-                                </div>
-                                <span class="item-badge definite">Definite</span>
-                            </div>
-                            <div class="card-item">
-                                <div>
-                                    <div class="item-name">Tech Startup Retreat</div>
-                                    <div class="item-meta">Follow-up due today</div>
-                                </div>
-                                <span class="item-badge tentative">Tentative</span>
-                            </div>
+        <div class="main-wrapper">
+            <main class="main-content">
+                <!-- Home Dashboard -->
+                <div class="tab-content active" id="tab-home">
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Pipeline Total</div>
+                            <div class="stat-value cyan" id="stat-pipeline">$0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Contracts Out</div>
+                            <div class="stat-value orange" id="stat-contracts">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Definite This Month</div>
+                            <div class="stat-value green" id="stat-definite">$0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Leads</div>
+                            <div class="stat-value" id="stat-leads">0</div>
                         </div>
                     </div>
 
-                    <div class="dashboard-card">
-                        <div class="card-header">Top Leads by Revenue</div>
-                        <div class="card-body">
-                            <div class="card-item">
-                                <div>
-                                    <div class="item-name">Walmart Leadership Summit</div>
-                                    <div class="item-meta">Apr 15-18 · 45 rooms</div>
+                    <div class="dashboard-columns">
+                        <div class="dashboard-card">
+                            <div class="card-header">Needs Attention</div>
+                            <div class="card-body" id="needs-attention">
+                                <div class="card-item" style="color: #666; justify-content: center;">
+                                    No items need attention
                                 </div>
-                                <span class="item-value">$42,500</span>
                             </div>
-                            <div class="card-item">
-                                <div>
-                                    <div class="item-name">Annual Gala 2026</div>
-                                    <div class="item-meta">May 2 · Event only</div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">Top Leads by Revenue</div>
+                            <div class="card-body" id="top-leads">
+                                <div class="card-item" style="color: #666; justify-content: center;">
+                                    No leads yet
                                 </div>
-                                <span class="item-value">$28,000</span>
-                            </div>
-                            <div class="card-item">
-                                <div>
-                                    <div class="item-name">Regional Sales Meeting</div>
-                                    <div class="item-meta">Mar 22-24 · 32 rooms</div>
-                                </div>
-                                <span class="item-value">$18,750</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="section-header">Upcoming Arrivals — Next 7 Days</div>
-                <div class="arrivals-list">
-                    <div class="arrival-item">
-                        <div class="arrival-date">Mar 10</div>
-                        <div class="arrival-name">Johnson Wedding</div>
-                        <div class="arrival-type">Rooms + Events</div>
-                        <div class="arrival-revenue">$12,400</div>
-                    </div>
-                    <div class="arrival-item">
-                        <div class="arrival-date">Mar 12</div>
-                        <div class="arrival-name">Corporate Training</div>
-                        <div class="arrival-type">Rooms Only</div>
-                        <div class="arrival-revenue">$8,200</div>
-                    </div>
-                    <div class="arrival-item">
-                        <div class="arrival-date">Mar 14</div>
-                        <div class="arrival-name">Birthday Celebration</div>
-                        <div class="arrival-type">Event Only</div>
-                        <div class="arrival-revenue">$3,500</div>
+                <!-- Quote Generator Tab -->
+                <div class="tab-content" id="tab-quotes">
+                    <div class="empty-state">
+                        <h3>Quote Generator</h3>
+                        <p>Coming soon — generate estimates and create leads</p>
                     </div>
                 </div>
-            </div>
 
-            <!-- Quote Generator Tab -->
-            <div class="tab-content" id="tab-quotes">
-                <div class="empty-state">
-                    <h3>Quote Generator</h3>
-                    <p>Generate estimates and optionally create leads</p>
-                </div>
-            </div>
-
-            <!-- Leads Tab -->
-            <div class="tab-content" id="tab-leads">
-                <div class="empty-state">
-                    <h3>Leads</h3>
-                    <p>Master list of all leads — your single source of truth</p>
-                </div>
-            </div>
-
-            <!-- Contracts Tab -->
-            <div class="tab-content" id="tab-contracts">
-                <div class="empty-state">
-                    <h3>Contracts</h3>
-                    <p>Generate, preview, and download contracts</p>
-                </div>
-            </div>
-
-            <!-- Handover Tab -->
-            <div class="tab-content" id="tab-handover">
-                <div class="empty-state">
-                    <h3>Handover Checklists</h3>
-                    <p>Track progress from Tentative through Definite</p>
-                </div>
-            </div>
-
-            <!-- Goals Tab -->
-            <div class="tab-content" id="tab-goals">
-                <div class="goal-progress-container">
-                    <div class="section-header">Monthly Goal Progress</div>
-                    <div class="goal-progress-bar">
-                        <div class="goal-progress-fill" style="width: 78%;"></div>
+                <!-- Leads Tab -->
+                <div class="tab-content" id="tab-leads">
+                    <div class="leads-toolbar">
+                        <div class="leads-filters">
+                            <select class="filter-select" id="statusFilter">
+                                <option value="active">Active Leads</option>
+                                <option value="all">All Leads</option>
+                                <option value="working">Working</option>
+                                <option value="tentative">Tentative</option>
+                                <option value="contract-out">Contract Out</option>
+                                <option value="definite">Definite</option>
+                                <option value="completed">Completed</option>
+                                <option value="lost">Lost / Turndown</option>
+                            </select>
+                            <input type="text" class="search-input" id="leadSearch" placeholder="Search leads...">
+                        </div>
+                        <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
                     </div>
-                    <div class="goal-labels">
-                        <span class="goal-current">$67,200 booked</span>
-                        <span class="goal-target">$86,000 target</span>
+
+                    <table class="leads-table">
+                        <thead>
+                            <tr>
+                                <th>Booking Name</th>
+                                <th>Account</th>
+                                <th>Status</th>
+                                <th>Arrival</th>
+                                <th>Type</th>
+                                <th>Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTableBody">
+                            <!-- Leads will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Contracts Tab -->
+                <div class="tab-content" id="tab-contracts">
+                    <div class="empty-state">
+                        <h3>Contracts</h3>
+                        <p>Coming soon — generate, preview, and download contracts</p>
                     </div>
                 </div>
-            </div>
 
-            <!-- Post Booking Wrap Up Tab -->
-            <div class="tab-content" id="tab-wrapup">
-                <div class="empty-state">
-                    <h3>Post Booking Wrap Up</h3>
-                    <p>Final checklists for completed bookings</p>
+                <!-- Handover Tab -->
+                <div class="tab-content" id="tab-handover">
+                    <div class="empty-state">
+                        <h3>Handover Checklists</h3>
+                        <p>Coming soon — track from Tentative to Definite</p>
+                    </div>
                 </div>
-            </div>
-        </main>
+
+                <!-- Goals Tab -->
+                <div class="tab-content" id="tab-goals">
+                    <div class="goal-progress-container">
+                        <div class="section-header">Monthly Goal Progress</div>
+                        <div class="goal-progress-bar">
+                            <div class="goal-progress-fill" id="goalProgressFill" style="width: 0%;"></div>
+                        </div>
+                        <div class="goal-labels">
+                            <span class="goal-current" id="goalCurrent">$0 booked</span>
+                            <span class="goal-target">$86,000 target</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Post Booking Tab -->
+                <div class="tab-content" id="tab-wrapup">
+                    <div class="empty-state">
+                        <h3>Post Booking Wrap Up</h3>
+                        <p>Coming soon — final checklists for completed bookings</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Lead Detail Panel -->
+            <aside class="lead-panel" id="leadPanel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title" id="panelTitle">Lead Name</div>
+                        <div class="panel-subtitle" id="panelSubtitle">Account</div>
+                    </div>
+                    <button class="panel-close" id="panelClose">&times;</button>
+                </div>
+                <div class="panel-body">
+                    <div class="panel-tabs">
+                        <div class="panel-tab active" data-section="booking">Booking Info</div>
+                        <div class="panel-tab" data-section="contract">Contract Info</div>
+                        <div class="panel-tab" data-section="billing">Billing</div>
+                        <div class="panel-tab" data-section="notes">Notes</div>
+                    </div>
+                    <div class="panel-content">
+                        <!-- Booking Info Section -->
+                        <div class="panel-section active" id="section-booking">
+                            <div class="form-group">
+                                <label class="form-label">Booking Name</label>
+                                <input type="text" class="form-input" id="lead-bookingName">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Account</label>
+                                <input type="text" class="form-input" id="lead-account">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Contact Name</label>
+                                <input type="text" class="form-input" id="lead-contactName">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Contact Phone</label>
+                                    <input type="text" class="form-input" id="lead-contactPhone">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Contact Email</label>
+                                    <input type="email" class="form-input" id="lead-contactEmail">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Arrival Date</label>
+                                    <input type="date" class="form-input" id="lead-arrival">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Departure Date</label>
+                                    <input type="date" class="form-input" id="lead-departure">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Booking Type</label>
+                                    <select class="form-select" id="lead-type">
+                                        <option value="rooms">Rooms Only</option>
+                                        <option value="events">Events Only</option>
+                                        <option value="both">Rooms + Events</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" id="lead-status">
+                                        <option value="working">Working</option>
+                                        <option value="tentative">Tentative</option>
+                                        <option value="contract-out">Contract Out</option>
+                                        <option value="definite">Definite</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="lost">Lost / Turndown</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Anticipated Revenue</label>
+                                <input type="number" class="form-input" id="lead-revenue" placeholder="0">
+                            </div>
+                        </div>
+
+                        <!-- Contract Info Section -->
+                        <div class="panel-section" id="section-contract">
+                            <div class="form-group">
+                                <label class="form-label">Signer Name</label>
+                                <input type="text" class="form-input" id="lead-signerName">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Signer Email</label>
+                                <input type="email" class="form-input" id="lead-signerEmail">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Signer Phone</label>
+                                <input type="text" class="form-input" id="lead-signerPhone">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Signer Address</label>
+                                <input type="text" class="form-input" id="lead-signerAddress">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Reservation Procedure</label>
+                                    <select class="form-select" id="lead-resProcedure">
+                                        <option value="">Select...</option>
+                                        <option value="rooming-list">Rooming List</option>
+                                        <option value="individual">Individual Reservations</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Room Payment</label>
+                                    <select class="form-select" id="lead-roomPayment">
+                                        <option value="">Select...</option>
+                                        <option value="individual">Individual Pays Own</option>
+                                        <option value="room-tax">Room & Tax to Master</option>
+                                        <option value="all-master">All Charges to Master</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Cut-off Date</label>
+                                    <input type="date" class="form-input" id="lead-cutoff">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Commission %</label>
+                                    <input type="number" class="form-input" id="lead-commission" placeholder="0">
+                                </div>
+                            </div>
+                            <label class="form-checkbox">
+                                <input type="checkbox" id="lead-waiveRental">
+                                Waive Room Rental Fee
+                            </label>
+                        </div>
+
+                        <!-- Billing Section -->
+                        <div class="panel-section" id="section-billing">
+                            <div class="form-group">
+                                <label class="form-label">Billing Procedure</label>
+                                <select class="form-select" id="lead-billingType">
+                                    <option value="">Select...</option>
+                                    <option value="deposit">Deposit Schedule</option>
+                                    <option value="credit-card">Credit Card Deposit</option>
+                                    <option value="direct">Direct Billing</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Special Concessions</label>
+                                <textarea class="form-textarea" id="lead-concessions" placeholder="Enter concessions (one per line)..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Notes Section -->
+                        <div class="panel-section" id="section-notes">
+                            <div class="form-group">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-textarea" id="lead-notes" placeholder="Add notes..." style="min-height: 200px;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn btn-ghost" id="panelCancel">Cancel</button>
+                    <button class="btn btn-primary" id="panelSave">Save Lead</button>
+                </div>
+            </aside>
+        </div>
     </div>
 
     <script>
-        // Password: 4273
+        // ============ CONFIG ============
         const CORRECT_PASSWORD = '4273';
-        
-        // DOM Elements
+        const STORAGE_KEY = 'kelphi_data';
+
+        // ============ DATA ============
+        let appData = loadData();
+        let currentLeadId = null;
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) return JSON.parse(saved);
+            return { 
+                leads: [],
+                settings: { goalTarget: 86000 }
+            };
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        }
+
+        function generateId() {
+            return 'lead_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // ============ DOM ELEMENTS ============
         const lockScreen = document.getElementById('lockScreen');
         const passwordInput = document.getElementById('passwordInput');
         const app = document.getElementById('app');
         const navTabs = document.querySelectorAll('.nav-tab');
         const tabContents = document.querySelectorAll('.tab-content');
         const headerDate = document.getElementById('headerDate');
+        const leadPanel = document.getElementById('leadPanel');
+        const leadsTableBody = document.getElementById('leadsTableBody');
+        const statusFilter = document.getElementById('statusFilter');
+        const leadSearch = document.getElementById('leadSearch');
+        const panelTabs = document.querySelectorAll('.panel-tab');
+        const panelSections = document.querySelectorAll('.panel-section');
 
-        // Check for saved unlock state
+        // ============ AUTH ============
         if (sessionStorage.getItem('kelphi_unlocked') === 'true') {
             lockScreen.classList.add('hidden');
             app.classList.add('visible');
+            initApp();
         }
 
-        // Password input handler
         passwordInput.addEventListener('input', function() {
             if (this.value.length === 4) {
                 if (this.value === CORRECT_PASSWORD) {
                     sessionStorage.setItem('kelphi_unlocked', 'true');
                     lockScreen.classList.add('hidden');
                     app.classList.add('visible');
+                    initApp();
                 } else {
                     this.classList.add('error');
                     setTimeout(() => {
@@ -631,45 +983,294 @@
             }
         });
 
-        // Tab navigation
+        // ============ INIT ============
+        function initApp() {
+            updateDate();
+            renderLeads();
+            updateDashboard();
+        }
+
+        function updateDate() {
+            const now = new Date();
+            headerDate.textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+            });
+        }
+
+        // ============ NAVIGATION ============
         navTabs.forEach(tab => {
             tab.addEventListener('click', function() {
                 const tabId = this.dataset.tab;
-                
                 navTabs.forEach(t => t.classList.remove('active'));
                 tabContents.forEach(c => c.classList.remove('active'));
-                
                 this.classList.add('active');
                 document.getElementById(`tab-${tabId}`).classList.add('active');
             });
         });
 
-        // Update header date
-        function updateDate() {
-            const now = new Date();
-            headerDate.textContent = now.toLocaleDateString('en-US', { 
-                weekday: 'long',
-                month: 'long', 
-                day: 'numeric',
-                year: 'numeric'
+        // ============ LEADS TABLE ============
+        function renderLeads() {
+            const filter = statusFilter.value;
+            const search = leadSearch.value.toLowerCase();
+            
+            let leads = appData.leads.filter(lead => {
+                // Status filter
+                if (filter === 'active') {
+                    if (['completed', 'lost'].includes(lead.status)) return false;
+                } else if (filter !== 'all' && lead.status !== filter) {
+                    return false;
+                }
+                // Search filter
+                if (search && !lead.bookingName.toLowerCase().includes(search) && 
+                    !(lead.account || '').toLowerCase().includes(search)) {
+                    return false;
+                }
+                return true;
+            });
+
+            if (leads.length === 0) {
+                leadsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #666; padding: 3rem;">
+                            No leads found. Click "+ New Lead" to create one.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            leadsTableBody.innerHTML = leads.map(lead => `
+                <tr data-id="${lead.id}" class="${currentLeadId === lead.id ? 'selected' : ''}">
+                    <td class="lead-name-cell">${lead.bookingName}</td>
+                    <td>${lead.account || '—'}</td>
+                    <td><span class="item-badge ${lead.status}">${formatStatus(lead.status)}</span></td>
+                    <td>${lead.arrival ? formatDate(lead.arrival) : '—'}</td>
+                    <td>${formatType(lead.type)}</td>
+                    <td class="lead-revenue">${formatCurrency(lead.revenue)}</td>
+                </tr>
+            `).join('');
+
+            // Add click handlers
+            document.querySelectorAll('#leadsTableBody tr[data-id]').forEach(row => {
+                row.addEventListener('click', () => openLead(row.dataset.id));
             });
         }
-        updateDate();
 
-        // Data storage
-        const STORAGE_KEY = 'kelphi_data';
-        
-        function loadData() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) return JSON.parse(saved);
-            return { leads: [], contracts: [], settings: {} };
+        statusFilter.addEventListener('change', renderLeads);
+        leadSearch.addEventListener('input', renderLeads);
+
+        // ============ LEAD PANEL ============
+        document.getElementById('newLeadBtn').addEventListener('click', () => {
+            currentLeadId = null;
+            clearPanel();
+            document.getElementById('panelTitle').textContent = 'New Lead';
+            document.getElementById('panelSubtitle').textContent = '';
+            leadPanel.classList.add('open');
+        });
+
+        document.getElementById('panelClose').addEventListener('click', closePanel);
+        document.getElementById('panelCancel').addEventListener('click', closePanel);
+
+        function openLead(id) {
+            const lead = appData.leads.find(l => l.id === id);
+            if (!lead) return;
+
+            currentLeadId = id;
+            document.getElementById('panelTitle').textContent = lead.bookingName;
+            document.getElementById('panelSubtitle').textContent = lead.account || '';
+
+            // Populate form fields
+            document.getElementById('lead-bookingName').value = lead.bookingName || '';
+            document.getElementById('lead-account').value = lead.account || '';
+            document.getElementById('lead-contactName').value = lead.contactName || '';
+            document.getElementById('lead-contactPhone').value = lead.contactPhone || '';
+            document.getElementById('lead-contactEmail').value = lead.contactEmail || '';
+            document.getElementById('lead-arrival').value = lead.arrival || '';
+            document.getElementById('lead-departure').value = lead.departure || '';
+            document.getElementById('lead-type').value = lead.type || 'rooms';
+            document.getElementById('lead-status').value = lead.status || 'working';
+            document.getElementById('lead-revenue').value = lead.revenue || '';
+            
+            // Contract info
+            document.getElementById('lead-signerName').value = lead.signerName || '';
+            document.getElementById('lead-signerEmail').value = lead.signerEmail || '';
+            document.getElementById('lead-signerPhone').value = lead.signerPhone || '';
+            document.getElementById('lead-signerAddress').value = lead.signerAddress || '';
+            document.getElementById('lead-resProcedure').value = lead.resProcedure || '';
+            document.getElementById('lead-roomPayment').value = lead.roomPayment || '';
+            document.getElementById('lead-cutoff').value = lead.cutoff || '';
+            document.getElementById('lead-commission').value = lead.commission || '';
+            document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
+            
+            // Billing
+            document.getElementById('lead-billingType').value = lead.billingType || '';
+            document.getElementById('lead-concessions').value = lead.concessions || '';
+            
+            // Notes
+            document.getElementById('lead-notes').value = lead.notes || '';
+
+            leadPanel.classList.add('open');
+            renderLeads(); // Update selected state
         }
 
-        function saveData(data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        function closePanel() {
+            leadPanel.classList.remove('open');
+            currentLeadId = null;
+            renderLeads();
         }
 
-        let appData = loadData();
+        function clearPanel() {
+            document.querySelectorAll('.panel-content input, .panel-content select, .panel-content textarea').forEach(el => {
+                if (el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            // Reset to first tab
+            panelTabs.forEach(t => t.classList.remove('active'));
+            panelSections.forEach(s => s.classList.remove('active'));
+            panelTabs[0].classList.add('active');
+            panelSections[0].classList.add('active');
+        }
+
+        // Panel tab navigation
+        panelTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const section = this.dataset.section;
+                panelTabs.forEach(t => t.classList.remove('active'));
+                panelSections.forEach(s => s.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(`section-${section}`).classList.add('active');
+            });
+        });
+
+        // Save lead
+        document.getElementById('panelSave').addEventListener('click', () => {
+            const leadData = {
+                id: currentLeadId || generateId(),
+                bookingName: document.getElementById('lead-bookingName').value,
+                account: document.getElementById('lead-account').value,
+                contactName: document.getElementById('lead-contactName').value,
+                contactPhone: document.getElementById('lead-contactPhone').value,
+                contactEmail: document.getElementById('lead-contactEmail').value,
+                arrival: document.getElementById('lead-arrival').value,
+                departure: document.getElementById('lead-departure').value,
+                type: document.getElementById('lead-type').value,
+                status: document.getElementById('lead-status').value,
+                revenue: parseFloat(document.getElementById('lead-revenue').value) || 0,
+                signerName: document.getElementById('lead-signerName').value,
+                signerEmail: document.getElementById('lead-signerEmail').value,
+                signerPhone: document.getElementById('lead-signerPhone').value,
+                signerAddress: document.getElementById('lead-signerAddress').value,
+                resProcedure: document.getElementById('lead-resProcedure').value,
+                roomPayment: document.getElementById('lead-roomPayment').value,
+                cutoff: document.getElementById('lead-cutoff').value,
+                commission: document.getElementById('lead-commission').value,
+                waiveRental: document.getElementById('lead-waiveRental').checked,
+                billingType: document.getElementById('lead-billingType').value,
+                concessions: document.getElementById('lead-concessions').value,
+                notes: document.getElementById('lead-notes').value,
+                createdAt: currentLeadId ? (appData.leads.find(l => l.id === currentLeadId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (currentLeadId) {
+                // Update existing
+                const idx = appData.leads.findIndex(l => l.id === currentLeadId);
+                if (idx !== -1) appData.leads[idx] = leadData;
+            } else {
+                // Add new
+                appData.leads.push(leadData);
+            }
+
+            saveData();
+            closePanel();
+            renderLeads();
+            updateDashboard();
+        });
+
+        // ============ DASHBOARD ============
+        function updateDashboard() {
+            const leads = appData.leads;
+            
+            // Pipeline (Working + Tentative + Contract Out)
+            const pipelineStatuses = ['working', 'tentative', 'contract-out'];
+            const pipeline = leads
+                .filter(l => pipelineStatuses.includes(l.status))
+                .reduce((sum, l) => sum + (l.revenue || 0), 0);
+            document.getElementById('stat-pipeline').textContent = formatCurrency(pipeline);
+
+            // Contracts Out
+            const contractsOut = leads.filter(l => l.status === 'contract-out').length;
+            document.getElementById('stat-contracts').textContent = contractsOut;
+
+            // Definite this month
+            const now = new Date();
+            const definiteThisMonth = leads
+                .filter(l => l.status === 'definite')
+                .reduce((sum, l) => sum + (l.revenue || 0), 0);
+            document.getElementById('stat-definite').textContent = formatCurrency(definiteThisMonth);
+
+            // Total leads
+            document.getElementById('stat-leads').textContent = leads.filter(l => !['completed', 'lost'].includes(l.status)).length;
+
+            // Goal progress
+            const goalTarget = appData.settings.goalTarget || 86000;
+            const goalPercent = Math.min(100, Math.round((definiteThisMonth / goalTarget) * 100));
+            document.getElementById('goalProgressFill').style.width = goalPercent + '%';
+            document.getElementById('goalCurrent').textContent = formatCurrency(definiteThisMonth) + ' booked';
+
+            // Top leads
+            const topLeads = [...leads]
+                .filter(l => !['completed', 'lost'].includes(l.status))
+                .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
+                .slice(0, 3);
+            
+            const topLeadsEl = document.getElementById('top-leads');
+            if (topLeads.length === 0) {
+                topLeadsEl.innerHTML = '<div class="card-item" style="color: #666; justify-content: center;">No leads yet</div>';
+            } else {
+                topLeadsEl.innerHTML = topLeads.map(l => `
+                    <div class="card-item">
+                        <div>
+                            <div class="item-name">${l.bookingName}</div>
+                            <div class="item-meta">${l.arrival ? formatDate(l.arrival) : 'No date'} · ${formatType(l.type)}</div>
+                        </div>
+                        <span class="item-value">${formatCurrency(l.revenue)}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // ============ HELPERS ============
+        function formatCurrency(val) {
+            return '$' + (val || 0).toLocaleString();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function formatStatus(status) {
+            const labels = {
+                'working': 'Working',
+                'tentative': 'Tentative',
+                'contract-out': 'Contract Out',
+                'definite': 'Definite',
+                'completed': 'Completed',
+                'lost': 'Lost'
+            };
+            return labels[status] || status;
+        }
+
+        function formatType(type) {
+            const labels = {
+                'rooms': 'Rooms Only',
+                'events': 'Events Only',
+                'both': 'Rooms + Events'
+            };
+            return labels[type] || type;
+        }
     </script>
 </body>
 </html>

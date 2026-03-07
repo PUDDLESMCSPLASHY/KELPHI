@@ -191,6 +191,22 @@
 
         /* Info message */
         .info-message { background: rgba(0,217,255,0.1); border: 1px solid rgba(0,217,255,0.2); border-radius: 4px; padding: 0.75rem 1rem; font-size: 0.8rem; color: #88d9f5; margin-bottom: 1rem; }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+        .modal-header h3 { margin: 0; font-size: 1.1rem; }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
+        .modal-close:hover { color: var(--text); }
+        .modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
+        .view-controls { display: flex; gap: 0.5rem; align-items: center; }
+        .column-checkbox { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+        .column-checkbox:hover { border-color: var(--accent); }
+        .column-checkbox input { accent-color: var(--accent); }
+        .saved-view-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
+        .saved-view-item button { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -252,6 +268,12 @@
                             </select>
                             <input type="text" class="search-input" id="leadSearch" placeholder="Search leads...">
                         </div>
+                        <div class="view-controls">
+                            <select class="filter-select" id="savedViewsSelect" onchange="loadSavedView(this.value)">
+                                <option value="default">Default View</option>
+                            </select>
+                            <button class="btn btn-ghost" onclick="openViewModal()">Change View</button>
+                        </div>
                         <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
                     </div>
                     <table class="leads-table">
@@ -272,6 +294,35 @@
                 </div>
                 <div class="tab-content" id="tab-wrapup"><div class="empty-state"><h3>Post Booking Wrap Up</h3><p>Coming soon</p></div></div>
             </main>
+
+            <!-- View Configuration Modal -->
+            <div class="modal-overlay" id="viewModal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Configure View</h3>
+                        <button class="modal-close" onclick="closeViewModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Select columns to display:</label>
+                            <div id="columnCheckboxes" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px;"></div>
+                        </div>
+                        <div class="form-divider"></div>
+                        <div class="form-group">
+                            <label class="form-label">Save as new view:</label>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <input type="text" class="form-input" id="newViewName" placeholder="Enter view name...">
+                                <button class="btn btn-primary" onclick="saveCurrentView()">Save View</button>
+                            </div>
+                        </div>
+                        <div id="savedViewsList" style="margin-top: 16px;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-ghost" onclick="closeViewModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="applyView()">Apply</button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Lead Detail Panel -->
             <aside class="lead-panel" id="leadPanel">
@@ -493,6 +544,8 @@
         // ============ INIT ============
         function initApp() {
             document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            updateSavedViewsDropdown();
+            updateTableColumns();
             renderLeads();
             updateDashboard();
             setupListeners();
@@ -872,18 +925,13 @@
             });
 
             if (leads.length === 0) {
-                leadsTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #666; padding: 3rem;">No leads found. Click "+ New Lead" to create one.</td></tr>`;
+                leadsTableBody.innerHTML = `<tr><td colspan="${currentViewColumns.length}" style="text-align: center; color: #666; padding: 3rem;">No leads found. Click "+ New Lead" to create one.</td></tr>`;
                 return;
             }
 
             leadsTableBody.innerHTML = leads.map(lead => `
                 <tr data-id="${lead.id}" class="${currentLeadId === lead.id ? 'selected' : ''}">
-                    <td class="lead-name-cell">${lead.bookingName || 'Untitled'}</td>
-                    <td>${lead.account || '—'}</td>
-                    <td><span class="item-badge ${lead.status}">${formatStatus(lead.status)}</span></td>
-                    <td>${lead.arrival ? formatDate(lead.arrival) : '—'}</td>
-                    <td>${formatType(lead.type)}</td>
-                    <td class="lead-revenue">${formatCurrency(lead.revenue)}</td>
+                    ${currentViewColumns.map(key => `<td>${getColumnValue(lead, key)}</td>`).join('')}
                 </tr>
             `).join('');
 
@@ -1068,6 +1116,144 @@
 
         // ============ HELPERS ============
         function formatCurrency(val) { return '$' + (parseFloat(val) || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
+        
+        // ============ VIEW CONFIGURATION ============
+        const ALL_COLUMNS = [
+            { key: 'bookingName', label: 'Booking Name', default: true },
+            { key: 'account', label: 'Account', default: true },
+            { key: 'contactName', label: 'Contact Name', default: false },
+            { key: 'contactEmail', label: 'Contact Email', default: false },
+            { key: 'contactPhone', label: 'Contact Phone', default: false },
+            { key: 'status', label: 'Status', default: true },
+            { key: 'arrival', label: 'Arrival', default: true },
+            { key: 'departure', label: 'Departure', default: false },
+            { key: 'type', label: 'Type', default: true },
+            { key: 'revenue', label: 'Revenue', default: true },
+            { key: 'signerName', label: 'Signer Name', default: false },
+            { key: 'billingType', label: 'Billing Type', default: false },
+            { key: 'createdAt', label: 'Created Date', default: false },
+            { key: 'cutoff', label: 'Cut-off Date', default: false }
+        ];
+        
+        let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
+        let savedViews = JSON.parse(localStorage.getItem('kelphi_views') || '{}');
+        
+        function openViewModal() {
+            const modal = document.getElementById('viewModal');
+            const checkboxes = document.getElementById('columnCheckboxes');
+            
+            checkboxes.innerHTML = ALL_COLUMNS.map(col => `
+                <label class="column-checkbox">
+                    <input type="checkbox" value="${col.key}" ${currentViewColumns.includes(col.key) ? 'checked' : ''}>
+                    ${col.label}
+                </label>
+            `).join('');
+            
+            renderSavedViewsList();
+            modal.style.display = 'flex';
+        }
+        
+        function closeViewModal() {
+            document.getElementById('viewModal').style.display = 'none';
+        }
+        
+        function applyView() {
+            const checkboxes = document.querySelectorAll('#columnCheckboxes input:checked');
+            currentViewColumns = Array.from(checkboxes).map(cb => cb.value);
+            if (currentViewColumns.length === 0) {
+                currentViewColumns = ['bookingName', 'status'];
+            }
+            updateTableColumns();
+            renderLeads();
+            closeViewModal();
+        }
+        
+        function saveCurrentView() {
+            const nameInput = document.getElementById('newViewName');
+            const name = nameInput.value.trim();
+            if (!name) { alert('Please enter a view name'); return; }
+            
+            const checkboxes = document.querySelectorAll('#columnCheckboxes input:checked');
+            const columns = Array.from(checkboxes).map(cb => cb.value);
+            
+            savedViews[name] = columns;
+            localStorage.setItem('kelphi_views', JSON.stringify(savedViews));
+            
+            nameInput.value = '';
+            renderSavedViewsList();
+            updateSavedViewsDropdown();
+        }
+        
+        function deleteSavedView(name) {
+            delete savedViews[name];
+            localStorage.setItem('kelphi_views', JSON.stringify(savedViews));
+            renderSavedViewsList();
+            updateSavedViewsDropdown();
+        }
+        
+        function loadSavedView(name) {
+            if (name === 'default') {
+                currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
+            } else if (savedViews[name]) {
+                currentViewColumns = savedViews[name];
+            }
+            updateTableColumns();
+            renderLeads();
+        }
+        
+        function renderSavedViewsList() {
+            const list = document.getElementById('savedViewsList');
+            const viewNames = Object.keys(savedViews);
+            if (viewNames.length === 0) {
+                list.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No saved views yet</div>';
+                return;
+            }
+            list.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Saved Views:</div>' +
+                viewNames.map(name => `
+                    <div class="saved-view-item">
+                        <span>${name}</span>
+                        <button onclick="deleteSavedView('${name}')">Delete</button>
+                    </div>
+                `).join('');
+        }
+        
+        function updateSavedViewsDropdown() {
+            const select = document.getElementById('savedViewsSelect');
+            select.innerHTML = '<option value="default">Default View</option>' +
+                Object.keys(savedViews).map(name => `<option value="${name}">${name}</option>`).join('');
+        }
+        
+        function updateTableColumns() {
+            const thead = document.querySelector('.leads-table thead tr');
+            thead.innerHTML = currentViewColumns.map(key => {
+                const col = ALL_COLUMNS.find(c => c.key === key);
+                return `<th>${col ? col.label : key}</th>`;
+            }).join('');
+        }
+        
+        function getColumnValue(lead, key) {
+            switch(key) {
+                case 'status':
+                    const statusLabels = { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost', 'turndown': 'Turndown' };
+                    return `<span class="status-badge status-${lead.status}">${statusLabels[lead.status] || lead.status}</span>`;
+                case 'arrival':
+                case 'departure':
+                case 'cutoff':
+                    return lead[key] ? new Date(lead[key] + 'T12:00:00').toLocaleDateString() : '';
+                case 'createdAt':
+                    return lead[key] ? new Date(lead[key]).toLocaleDateString() : '';
+                case 'revenue':
+                    return formatCurrency(lead[key] || 0);
+                case 'type':
+                    const typeLabels = { 'rooms': 'Rooms', 'events': 'Events', 'both': 'Rooms + Events' };
+                    return typeLabels[lead[key]] || lead[key] || '';
+                case 'billingType':
+                    const billingLabels = { 'deposit': 'Deposit', 'credit-card': 'Credit Card', 'direct': 'Direct Billing' };
+                    return billingLabels[lead[key]] || lead[key] || '';
+                default:
+                    return lead[key] || '';
+            }
+        }
         
         // Sync mirrored fields (concessions, handoverNotes)
         function syncMirroredField(field, value) {

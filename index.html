@@ -386,6 +386,8 @@
                                 <label class="form-checkbox"><input type="checkbox" id="lead-waiveRental"> Waive Room Rental Fee</label>
                                 <label class="form-checkbox"><input type="checkbox" id="lead-fbCombined"> F&B Minimum Combined</label>
                             </div>
+                            <div class="form-divider"></div>
+                            <div class="form-group"><label class="form-label">Special Concessions</label><textarea class="form-textarea" id="lead-concessions" placeholder="Enter concessions (one per line)..." oninput="syncMirroredField('concessions', this.value)"></textarea></div>
                         </div>
 
                         <!-- Billing Section -->
@@ -395,14 +397,16 @@
                                 <select class="form-select" id="lead-billingType"><option value="">Select...</option><option value="deposit">Deposit Schedule</option><option value="credit-card">Credit Card Deposit</option><option value="direct">Direct Billing</option></select>
                             </div>
                             <div class="form-divider"></div>
-                            <div class="form-group"><label class="form-label">Special Concessions</label><textarea class="form-textarea" id="lead-concessions" placeholder="Enter concessions (one per line)..."></textarea></div>
-                            <div class="form-divider"></div>
                             <div class="form-group"><label class="form-label">Total Anticipated Revenue</label><input type="text" class="form-input calculated-field" id="lead-revenue" readonly></div>
                         </div>
 
                         <!-- Notes Section -->
                         <div class="panel-section" id="section-notes">
-                            <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="lead-notes" placeholder="Add notes..." style="min-height: 200px;"></textarea></div>
+                            <div class="form-group"><label class="form-label">General Notes</label><textarea class="form-textarea" id="lead-notes" placeholder="Add general notes..." style="min-height: 120px;"></textarea></div>
+                            <div class="form-divider"></div>
+                            <div class="form-group"><label class="form-label">Handover Notes <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(syncs with Handover tab)</span></label><textarea class="form-textarea" id="lead-handoverNotes" placeholder="Notes for the handover process..." style="min-height: 100px;" oninput="syncMirroredField('handoverNotes', this.value)"></textarea></div>
+                            <div class="form-divider"></div>
+                            <div class="form-group"><label class="form-label">Special Concessions <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(syncs with Contract tab)</span></label><textarea class="form-textarea" id="lead-concessionsMirror" placeholder="Enter concessions (one per line)..." style="min-height: 100px;" oninput="syncMirroredField('concessions', this.value)"></textarea></div>
                         </div>
                     </div>
                 </div>
@@ -882,10 +886,13 @@
             // Simple fields
             ['bookingName', 'account', 'contactName', 'contactPhone', 'contactEmail', 'arrival', 'departure', 'type', 'status',
              'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
-             'billingType', 'concessions', 'notes'].forEach(f => {
+             'billingType', 'concessions', 'notes', 'handoverNotes'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
                 if (el) el.value = lead[f] || '';
             });
+            
+            // Populate mirror fields
+            document.getElementById('lead-concessionsMirror').value = lead.concessions || '';
 
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
             document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
@@ -974,6 +981,7 @@
                 billingType: document.getElementById('lead-billingType').value,
                 concessions: document.getElementById('lead-concessions').value,
                 notes: document.getElementById('lead-notes').value,
+                handoverNotes: document.getElementById('lead-handoverNotes').value,
                 revenue: revenue,
                 createdAt: currentLeadId ? (appData.leads.find(l => l.id === currentLeadId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
                 updatedAt: new Date().toISOString()
@@ -1021,6 +1029,17 @@
 
         // ============ HELPERS ============
         function formatCurrency(val) { return '$' + (parseFloat(val) || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
+        
+        // Sync mirrored fields (concessions, handoverNotes)
+        function syncMirroredField(field, value) {
+            if (field === 'concessions') {
+                document.getElementById('lead-concessions').value = value;
+                document.getElementById('lead-concessionsMirror').value = value;
+            } else if (field === 'handoverNotes') {
+                document.getElementById('lead-handoverNotes').value = value;
+                // Future: sync with Handover tab when implemented
+            }
+        }
         function parseCurrency(str) { return parseFloat((str || '').replace(/[$,]/g, '')) || 0; }
         function formatDate(dateStr) { return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; }
         function formatShortDate(d) { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }); }

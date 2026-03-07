@@ -1348,15 +1348,25 @@
                 });
             }
             
+            const bookingData = {
+                ...lead,
+                roomRevenue: roomRevenue,
+                cateringRevenue: cateringRevenue
+            };
+            
+            // Save to pending queue in localStorage (GOALS will pick this up)
+            const pending = JSON.parse(localStorage.getItem('kelphi_pendingBookings') || '[]');
+            // Remove any existing entry for this lead
+            const filtered = pending.filter(b => b.id !== lead.id);
+            filtered.push(bookingData);
+            localStorage.setItem('kelphi_pendingBookings', JSON.stringify(filtered));
+            
+            // Also try to send directly if GOALS iframe is loaded
             const goalsFrame = document.getElementById('goalsFrame');
             if (goalsFrame && goalsFrame.contentWindow) {
                 goalsFrame.contentWindow.postMessage({
                     type: 'ADD_BOOKING',
-                    data: {
-                        ...lead,
-                        roomRevenue: roomRevenue,
-                        cateringRevenue: cateringRevenue
-                    }
+                    data: bookingData
                 }, '*');
             }
         }

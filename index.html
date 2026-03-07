@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelphi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        /* Lock Screen */
+        #lockScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #lockScreen.hidden {
+            display: none;
+        }
+
+        .lock-logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .lock-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #00d9ff;
+            margin-bottom: 2rem;
+            letter-spacing: 0.5rem;
+        }
+
+        .lock-input {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(0,217,255,0.3);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            font-size: 1.5rem;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 0.5rem;
+            width: 200px;
+            transition: border-color 0.3s;
+        }
+
+        .lock-input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        .lock-input.error {
+            border-color: #ff4757;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* Main App */
+        #app {
+            display: none;
+            height: 100vh;
+        }
+
+        #app.visible {
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: #16213e;
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(0,217,255,0.2);
+        }
+
+        .sidebar-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(0,217,255,0.2);
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #00d9ff;
+            letter-spacing: 0.3rem;
+        }
+
+        .sidebar-header span {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .nav-tabs {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 0 0.5rem;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .nav-tab:hover {
+            background: rgba(0,217,255,0.1);
+            color: #fff;
+        }
+
+        .nav-tab.active {
+            background: rgba(0,217,255,0.2);
+            color: #00d9ff;
+        }
+
+        .nav-tab .icon {
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-header {
+            padding: 1.5rem 2rem;
+            background: #16213e;
+            border-bottom: 1px solid rgba(0,217,255,0.2);
+        }
+
+        .content-header h2 {
+            font-weight: 400;
+            color: #fff;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Placeholder content */
+        .placeholder {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+
+        .placeholder .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .placeholder h3 {
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            color: #888;
+        }
+
+        .placeholder p {
+            font-size: 0.9rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #00d9ff;
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            background: #00b8d9;
+        }
+
+        /* Status bar */
+        .status-bar {
+            padding: 0.5rem 1rem;
+            background: #0f0f1a;
+            border-top: 1px solid rgba(0,217,255,0.2);
+            font-size: 0.75rem;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <!-- Lock Screen -->
+    <div id="lockScreen">
+        <div class="lock-logo">🐬</div>
+        <h1 class="lock-title">KELPHI</h1>
+        <input type="password" class="lock-input" id="passwordInput" maxlength="4" placeholder="••••" autofocus>
+    </div>
+
+    <!-- Main App -->
+    <div id="app">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1>🐬 KELPHI</h1>
+                <span>The Compton Sales</span>
+            </div>
+            <div class="nav-tabs">
+                <div class="nav-tab active" data-tab="quotes">
+                    <span class="icon">📝</span>
+                    <span>Quote Generator</span>
+                </div>
+                <div class="nav-tab" data-tab="leads">
+                    <span class="icon">📋</span>
+                    <span>Leads</span>
+                </div>
+                <div class="nav-tab" data-tab="contracts">
+                    <span class="icon">📄</span>
+                    <span>Contracts</span>
+                </div>
+                <div class="nav-tab" data-tab="handover">
+                    <span class="icon">✅</span>
+                    <span>Handover</span>
+                </div>
+                <div class="nav-tab" data-tab="goals">
+                    <span class="icon">🎯</span>
+                    <span>Goals</span>
+                </div>
+                <div class="nav-tab" data-tab="wrapup">
+                    <span class="icon">🎁</span>
+                    <span>Post Booking</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2 id="contentTitle">Quote Generator</h2>
+            </header>
+            
+            <div class="content-body">
+                <!-- Quote Generator Tab -->
+                <div class="tab-content active" id="tab-quotes">
+                    <div class="placeholder">
+                        <div class="icon">📝</div>
+                        <h3>Quote Generator</h3>
+                        <p>Generate estimates and optionally create leads</p>
+                    </div>
+                </div>
+
+                <!-- Leads Tab -->
+                <div class="tab-content" id="tab-leads">
+                    <div class="placeholder">
+                        <div class="icon">📋</div>
+                        <h3>Leads</h3>
+                        <p>Master list of all leads — your single source of truth</p>
+                    </div>
+                </div>
+
+                <!-- Contracts Tab -->
+                <div class="tab-content" id="tab-contracts">
+                    <div class="placeholder">
+                        <div class="icon">📄</div>
+                        <h3>Contracts</h3>
+                        <p>Generate, preview, and download contracts</p>
+                    </div>
+                </div>
+
+                <!-- Handover Tab -->
+                <div class="tab-content" id="tab-handover">
+                    <div class="placeholder">
+                        <div class="icon">✅</div>
+                        <h3>Handover Checklists</h3>
+                        <p>Track progress from Tentative through Definite</p>
+                    </div>
+                </div>
+
+                <!-- Goals Tab -->
+                <div class="tab-content" id="tab-goals">
+                    <div class="placeholder">
+                        <div class="icon">🎯</div>
+                        <h3>Goals Tracker</h3>
+                        <p>Bonus calculator and revenue tracking</p>
+                    </div>
+                </div>
+
+                <!-- Post Booking Wrap Up Tab -->
+                <div class="tab-content" id="tab-wrapup">
+                    <div class="placeholder">
+                        <div class="icon">🎁</div>
+                        <h3>Post Booking Wrap Up</h3>
+                        <p>Final checklists for completed bookings</p>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="status-bar">
+                <span id="statusLeft">Ready</span>
+                <span id="statusRight"></span>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Password: 4273
+        const CORRECT_PASSWORD = '4273';
+        
+        // DOM Elements
+        const lockScreen = document.getElementById('lockScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const app = document.getElementById('app');
+        const navTabs = document.querySelectorAll('.nav-tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const contentTitle = document.getElementById('contentTitle');
+        const statusRight = document.getElementById('statusRight');
+
+        // Tab titles
+        const tabTitles = {
+            'quotes': 'Quote Generator',
+            'leads': 'Leads',
+            'contracts': 'Contracts',
+            'handover': 'Handover Checklists',
+            'goals': 'Goals Tracker',
+            'wrapup': 'Post Booking Wrap Up'
+        };
+
+        // Check for saved unlock state (session only)
+        if (sessionStorage.getItem('kelphi_unlocked') === 'true') {
+            lockScreen.classList.add('hidden');
+            app.classList.add('visible');
+        }
+
+        // Password input handler
+        passwordInput.addEventListener('input', function() {
+            if (this.value.length === 4) {
+                if (this.value === CORRECT_PASSWORD) {
+                    // Correct password
+                    sessionStorage.setItem('kelphi_unlocked', 'true');
+                    lockScreen.classList.add('hidden');
+                    app.classList.add('visible');
+                } else {
+                    // Wrong password
+                    this.classList.add('error');
+                    setTimeout(() => {
+                        this.classList.remove('error');
+                        this.value = '';
+                    }, 500);
+                }
+            }
+        });
+
+        // Tab navigation
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.dataset.tab;
+                
+                // Update active states
+                navTabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                this.classList.add('active');
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+                
+                // Update title
+                contentTitle.textContent = tabTitles[tabId];
+            });
+        });
+
+        // Update status bar with current date/time
+        function updateStatus() {
+            const now = new Date();
+            statusRight.textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+        updateStatus();
+        setInterval(updateStatus, 60000);
+
+        // Data storage structure (localStorage)
+        const STORAGE_KEY = 'kelphi_data';
+        
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return {
+                leads: [],
+                contracts: [],
+                settings: {
+                    savedViews: []
+                }
+            };
+        }
+
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // Initialize data
+        let appData = loadData();
+        console.log('Kelphi initialized', appData);
+    </script>
+</body>
+</html>

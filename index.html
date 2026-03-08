@@ -2356,6 +2356,7 @@ The Compton Bentonville`;
                     <td><input type="checkbox" class="signed-checkbox" ${c.signed ? 'checked' : ''} onchange="toggleContractSigned('${c.id}', this.checked)"></td>
                     <td>
                         <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: transparent; border: 1px solid rgba(0,217,255,0.3); color: #00d9ff;" onclick="regenerateContract('${c.leadId}')">Regenerate</button>
+                        <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #888; margin-left: 4px;" onclick="copyEmailForContract('${c.leadId}')">Email</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -2400,6 +2401,32 @@ The Compton Bentonville`;
             document.getElementById('contract-lead-select').value = leadId;
             onContractLeadSelect();
             openGenerateContractModal();
+        }
+        
+        function copyEmailForContract(leadId) {
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            const contactName = lead.contactFirstName || 'there';
+            const eventName = lead.bookingName || lead.account || 'your event';
+            const arrivalDate = lead.arrival ? new Date(lead.arrival + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'your arrival date';
+            const businessDays = calculateBusinessDaysToExpiry(lead.arrival);
+            const expiryDate = getExpiryDate(businessDays);
+            
+            const snippet = `Hi ${contactName},
+
+Attached is the contract for ${eventName} arriving ${arrivalDate}. Please review and sign at your earliest convenience.
+
+This signature document will expire in ${businessDays} business days (${expiryDate}), so please let me know if you need an extension on the deadline.
+
+Warmly,
+Kelsey McIntyre
+Sales Manager
+The Compton Bentonville`;
+            
+            navigator.clipboard.writeText(snippet).then(() => {
+                alert('Email snippet copied to clipboard!');
+            });
         }
         
         function generateContractFromPanel() {
@@ -2448,8 +2475,8 @@ The Compton Bentonville`;
                     updateDashboard();
                 }
                 
-                closeGenerateContractModal();
                 renderContracts();
+                // Modal stays open so user can click "Copy Email"
                 
             } catch (err) {
                 console.error('Error generating contract:', err);

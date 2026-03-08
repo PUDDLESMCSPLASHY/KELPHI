@@ -2611,30 +2611,66 @@ The Compton Bentonville`;
             return data;
         }
         
+        // Load docxtemplater libraries
+        let docxLibsLoaded = false;
+        async function loadDocxLibs() {
+            if (docxLibsLoaded) return;
+            
+            await Promise.all([
+                new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/pizzip@3.1.4/dist/pizzip.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                }),
+                new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/docxtemplater@3.37.12/build/docxtemplater.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                })
+            ]);
+            
+            docxLibsLoaded = true;
+        }
+        
         async function createContractDocument(lead, version) {
+            // Load libraries if needed
+            await loadDocxLibs();
+            
             // Get the appropriate template
             const templateBase64 = CONTRACT_TEMPLATES[lead.type] || CONTRACT_TEMPLATES.rooms;
-            const templateBuffer = base64ToArrayBuffer(templateBase64);
             
             // Calculate all the data
             const data = calculateContractData(lead);
             
             try {
-                // Dynamically import docx-templates (ES module)
-                const { createReport } = await import('https://unpkg.com/docx-templates@4.11.4/lib/browser.js');
+                // Load the template
+                const zip = new PizZip(templateBase64, { base64: true });
                 
-                // Use docx-templates to fill the template
-                const result = await createReport({
-                    template: templateBuffer,
-                    data: data,
-                    cmdDelimiter: ['{', '}'],
-                    processLineBreaks: true,
-                    failFast: false
+                // Create docxtemplater instance with custom delimiters
+                const doc = new window.docxtemplater(zip, {
+                    delimiters: { start: '{', end: '}' },
+                    paragraphLoop: true,
+                    linebreaks: true
+                });
+                
+                // Set the data
+                doc.setData(data);
+                
+                // Render the document
+                doc.render();
+                
+                // Generate output
+                const output = doc.getZip().generate({
+                    type: 'blob',
+                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                 });
                 
                 // Download the result
-                const blob = new Blob([result], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-                const url = URL.createObjectURL(blob);
+                const url = URL.createObjectURL(output);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = getContractFileName(lead);
@@ -2645,6 +2681,9 @@ The Compton Bentonville`;
                 
             } catch (err) {
                 console.error('Template error:', err);
+                if (err.properties && err.properties.errors) {
+                    console.error('Template errors:', err.properties.errors);
+                }
                 alert('Error generating contract: ' + err.message);
                 throw err;
             }

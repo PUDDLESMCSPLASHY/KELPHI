@@ -2604,7 +2604,9 @@ The Compton Bentonville`;
             data.isPayIndividual = lead.roomPayment === 'individual';
             data.isPayRoomTaxMaster = lead.roomPayment === 'room-tax-master';
             data.hasWaivedRental = !!lead.waiveRental;
+            data.notWaivedRental = !lead.waiveRental;
             data.hasFbCombined = !!lead.fbCombined;
+            data.notFbCombined = !lead.fbCombined;
             
             // Room calculations
             let totalRoomNights = 0;

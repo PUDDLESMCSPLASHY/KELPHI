@@ -2621,7 +2621,7 @@ The Compton Bentonville`;
             
             try {
                 // Dynamically import docx-templates (ES module)
-                const { createReport } = await import('https://cdn.jsdelivr.net/npm/docx-templates@4.11.4/+esm');
+                const { createReport } = await import('https://unpkg.com/docx-templates@4.11.4/lib/browser.js');
                 
                 // Use docx-templates to fill the template
                 const result = await createReport({

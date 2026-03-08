@@ -2527,7 +2527,7 @@ The Compton Bentonville`;
             data.cutoff_date = formatContractDate(lead.cutoff);
             data.reservation_number = lead.reservationNumber || '';
             
-            // Conditionals
+            // Conditionals - raw values
             data.concessions = lead.concessions || '';
             data.commissionable = lead.commissionable || false;
             data.commission = lead.commission || '';
@@ -2536,6 +2536,21 @@ The Compton Bentonville`;
             data.room_payment = lead.roomPayment || '';
             data.waive_rental = lead.waiveRental || false;
             data.fb_combined = lead.fbCombined || false;
+            
+            // Boolean flags for docxtemplater conditionals
+            data.hasConcessions = !!lead.concessions;
+            data.hasCommission = !!lead.commissionable;
+            data.isCreditCard = lead.billingType === 'credit-card';
+            data.isDeposit = lead.billingType === 'deposit';
+            data.isDirect = lead.billingType === 'direct';
+            data.isResIndividual = lead.resProcedure === 'individual';
+            data.isResRooming = lead.resProcedure === 'rooming';
+            data.isResSpecial = lead.resProcedure === 'special';
+            data.isPayAllMaster = lead.roomPayment === 'all-master';
+            data.isPayIndividual = lead.roomPayment === 'individual';
+            data.isPayRoomTaxMaster = lead.roomPayment === 'room-tax-master';
+            data.hasWaivedRental = !!lead.waiveRental;
+            data.hasFbCombined = !!lead.fbCombined;
             
             // Room calculations
             let totalRoomNights = 0;

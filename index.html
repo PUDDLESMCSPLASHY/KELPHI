@@ -366,6 +366,7 @@
                                 <option value="all">All Contracts</option>
                                 <option value="pending">Pending Signature</option>
                                 <option value="signed">Signed</option>
+                                <option value="archived">Archived</option>
                             </select>
                             <input type="text" class="search-input" id="contracts-search" placeholder="Search contracts...">
                         </div>
@@ -2329,8 +2330,16 @@ The Compton Bentonville`;
             let contracts = appData.contracts || [];
             
             // Apply filter
-            if (filter === 'pending') contracts = contracts.filter(c => !c.signed);
-            if (filter === 'signed') contracts = contracts.filter(c => c.signed);
+            if (filter === 'archived') {
+                contracts = contracts.filter(c => c.archived);
+            } else if (filter === 'pending') {
+                contracts = contracts.filter(c => !c.signed && !c.archived);
+            } else if (filter === 'signed') {
+                contracts = contracts.filter(c => c.signed && !c.archived);
+            } else {
+                // 'all' - show non-archived by default
+                contracts = contracts.filter(c => !c.archived);
+            }
             
             // Apply search
             if (search) {
@@ -2356,7 +2365,7 @@ The Compton Bentonville`;
                 return `<tr data-id="${c.id}">
                     <td class="lead-name-cell">${c.bookingName || c.account || 'Untitled'}</td>
                     <td>${contractTypes[c.type] || c.type}</td>
-                    <td>${new Date(c.generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td>${new Date(c.generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${new Date(c.generatedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</td>
                     <td>v${c.version}</td>
                     <td><span class="days-out ${daysClass}">${daysOut} day${daysOut !== 1 ? 's' : ''}</span></td>
                     <td><input type="checkbox" class="signed-checkbox" ${c.signed ? 'checked' : ''} onchange="toggleContractSigned('${c.id}', this.checked)"></td>
@@ -2403,10 +2412,48 @@ The Compton Bentonville`;
             updateDashboard();
         }
         
-        function regenerateContract(leadId) {
-            document.getElementById('contract-lead-select').value = leadId;
-            onContractLeadSelect();
-            openGenerateContractModal();
+        async function regenerateContract(leadId) {
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) {
+                alert('Lead not found');
+                return;
+            }
+            
+            // Check for existing contracts to determine version
+            const existingContracts = appData.contracts.filter(c => c.leadId === leadId && !c.archived);
+            const version = existingContracts.length + 1;
+            
+            // Auto-archive previous versions for this lead
+            existingContracts.forEach(c => {
+                c.archived = true;
+                c.archivedAt = new Date().toISOString();
+            });
+            
+            // Create contract record
+            const contract = {
+                id: generateId(),
+                leadId: leadId,
+                bookingName: lead.bookingName,
+                account: lead.account,
+                type: lead.type,
+                version: version,
+                generatedAt: new Date().toISOString(),
+                signed: false,
+                signedAt: null,
+                archived: false
+            };
+            
+            appData.contracts.push(contract);
+            saveData();
+            
+            // Generate the Word document directly
+            try {
+                await createContractDocument(lead, version);
+                renderContracts();
+            } catch (err) {
+                console.error('Error regenerating contract:', err);
+                alert('Error generating contract. Please try again.');
+            }
         }
         
         function copyEmailForContract(leadId) {
@@ -2449,8 +2496,14 @@ The Compton Bentonville`;
             if (!lead) return;
             
             // Check for existing contract for this lead to determine version
-            const existingContracts = appData.contracts.filter(c => c.leadId === leadId);
+            const existingContracts = appData.contracts.filter(c => c.leadId === leadId && !c.archived);
             const version = existingContracts.length + 1;
+            
+            // Auto-archive previous versions for this lead
+            existingContracts.forEach(c => {
+                c.archived = true;
+                c.archivedAt = new Date().toISOString();
+            });
             
             // Create contract record
             const contract = {
@@ -2462,7 +2515,8 @@ The Compton Bentonville`;
                 version: version,
                 generatedAt: new Date().toISOString(),
                 signed: false,
-                signedAt: null
+                signedAt: null,
+                archived: false
             };
             
             appData.contracts.push(contract);

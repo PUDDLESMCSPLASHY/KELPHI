@@ -36,8 +36,53 @@
         #app { display: none; flex-direction: column; height: 100vh; }
         #app.visible { display: flex; }
 
+        /* Light Mode Theme (Delphi-inspired) */
+        body.light-mode { background: #f5f6fa; color: #2d3436; }
+        body.light-mode .top-header { background: #fff; border-bottom-color: #e1e4e8; }
+        body.light-mode .brand { color: #0984e3; }
+        body.light-mode .tab-nav { background: #fff; border-bottom-color: #e1e4e8; }
+        body.light-mode .nav-tab { color: #636e72; }
+        body.light-mode .nav-tab:hover { color: #2d3436; }
+        body.light-mode .nav-tab.active { color: #0984e3; border-bottom-color: #0984e3; }
+        body.light-mode .dashboard-card, body.light-mode .leads-panel { background: #fff; border-color: #e1e4e8; }
+        body.light-mode .card-header, body.light-mode .section-header { color: #636e72; border-bottom-color: #e1e4e8; }
+        body.light-mode .card-item { border-bottom-color: #f0f0f0; color: #2d3436; }
+        body.light-mode .leads-table th { background: #f8f9fa; color: #636e72; border-bottom-color: #e1e4e8; }
+        body.light-mode .leads-table td { border-bottom-color: #f0f0f0; color: #2d3436; }
+        body.light-mode .leads-table tr:hover { background: #f8f9fa; }
+        body.light-mode .lead-panel { background: #fff; border-left-color: #e1e4e8; }
+        body.light-mode .panel-header { border-bottom-color: #e1e4e8; }
+        body.light-mode .panel-header h2, body.light-mode .panel-header .account-name { color: #2d3436; }
+        body.light-mode .form-label { color: #636e72; }
+        body.light-mode .form-input, body.light-mode .form-select, body.light-mode .form-textarea { background: #f8f9fa; border-color: #e1e4e8; color: #2d3436; }
+        body.light-mode .form-input:focus, body.light-mode .form-select:focus { border-color: #0984e3; }
+        body.light-mode .btn { border-color: #e1e4e8; color: #636e72; }
+        body.light-mode .btn:hover { border-color: #0984e3; color: #0984e3; }
+        body.light-mode .btn-primary { background: #0984e3; border-color: #0984e3; color: #fff; }
+        body.light-mode .btn-primary:hover { background: #0770c2; }
+        body.light-mode .modal-content { background: #fff; }
+        body.light-mode .modal-header { border-bottom-color: #e1e4e8; }
+        body.light-mode .modal-header h3 { color: #2d3436; }
+        body.light-mode .filter-select, body.light-mode .search-input { background: #f8f9fa; border-color: #e1e4e8; color: #2d3436; }
+        body.light-mode .notes-sidebar { background: #fff; border-left-color: #e1e4e8; }
+        body.light-mode .status-badge { opacity: 0.9; }
+        body.light-mode #lockScreen { background: linear-gradient(135deg, #f5f6fa 0%, #dfe6e9 100%); }
+        body.light-mode .lock-title { color: #0984e3; }
+        body.light-mode .lock-input { border-color: rgba(9,132,227,0.3); color: #2d3436; }
+        body.light-mode .lock-input:focus { border-color: #0984e3; }
+        
+        /* Theme Toggle */
+        .theme-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
+        .theme-toggle-track { width: 36px; height: 20px; background: #2d3436; border-radius: 10px; position: relative; transition: background 0.3s; }
+        .theme-toggle-thumb { width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.3s; }
+        body.light-mode .theme-toggle-track { background: #0984e3; }
+        body.light-mode .theme-toggle-thumb { transform: translateX(16px); }
+        .theme-toggle-label { font-size: 0.75rem; color: #666; }
+        body.light-mode .theme-toggle-label { color: #636e72; }
+
         /* Top Header */
         .top-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 60px; background: #12121c; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .header-left { display: flex; align-items: center; gap: 1.5rem; }
         .brand { font-size: 1.1rem; font-weight: 300; color: #00d9ff; letter-spacing: 0.4rem; }
         .header-right { font-size: 0.8rem; color: #666; }
 
@@ -260,7 +305,13 @@
     <!-- Main App -->
     <div id="app">
         <header class="top-header">
-            <div class="brand">KELPHI</div>
+            <div class="header-left">
+                <div class="brand">KELPHI</div>
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <div class="theme-toggle-track"><div class="theme-toggle-thumb"></div></div>
+                    <span class="theme-toggle-label" id="themeLabel">Dark</span>
+                </div>
+            </div>
             <div class="header-right" id="headerDate"></div>
         </header>
 
@@ -691,6 +742,26 @@
         ];
         const FUNCTION_ROOMS = ['Dogwood Ballroom', 'Dogwood Ballroom A', 'Dogwood Ballroom B', 'The Gallery', 'Ozark Room', 'The Front Porch', 'Guestroom Suite', 'Reception Foyer', 'Lobby Lounge', 'The Atrium', 'The Eddy', 'The Sunroom', 'Sestina', 'Private Dining Room', 'Sestina Terrace', 'Crystal Room', 'Field Notes'];
         const SETUP_STYLES = ['Classroom', 'Classroom Chevron', 'Conference/Boardroom', 'Crescent Rounds', 'Empty', 'Exhibition', 'Existing Setup', 'Hollow Square', 'Hollow Rectangle', 'Reception', 'Road Show', 'Rounds', 'See Floor Plan', 'Special Setup', 'Theatre', 'U Shape'];
+
+        // ============ THEME ============
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.getElementById('themeLabel').textContent = isLight ? 'Light' : 'Dark';
+            localStorage.setItem('kelphi_theme', isLight ? 'light' : 'dark');
+        }
+        
+        // Load saved theme preference
+        (function() {
+            const savedTheme = localStorage.getItem('kelphi_theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                setTimeout(() => {
+                    const label = document.getElementById('themeLabel');
+                    if (label) label.textContent = 'Light';
+                }, 0);
+            }
+        })();
 
         // ============ DATA ============
         let appData = loadData();

@@ -565,7 +565,7 @@
                             <div id="creditCardSection" style="display: none; margin-top: 16px;">
                                 <div class="form-group">
                                     <label class="form-label">Credit Card Deposit Amount <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(1 night + tax, editable)</span></label>
-                                    <input type="number" class="form-input" id="lead-ccDeposit" placeholder="0.00" step="0.01">
+                                    <input type="number" class="form-input" id="lead-ccDeposit" placeholder="0.00" step="0.01" oninput="markCCDepositManual()">
                                 </div>
                             </div>
                             
@@ -901,6 +901,11 @@
             }
 
             calculateTotalRevenue();
+            
+            // Recalculate CC deposit if billing type is credit-card
+            if (document.getElementById('lead-billingType').value === 'credit-card') {
+                calculateCreditCardDeposit();
+            }
         }
 
         // ============ EVENTS ============
@@ -1068,6 +1073,8 @@
             currentLeadId = null;
             currentRoomBlock = [];
             currentEvents = [];
+            cutoffManuallySet = false;
+            ccDepositManuallySet = false;
             clearPanel();
             document.getElementById('panelTitle').textContent = 'New Lead';
             document.getElementById('panelSubtitle').textContent = '';
@@ -1121,8 +1128,9 @@
             document.getElementById('lead-commissionable').checked = lead.commissionable || false;
             toggleCommissionField();
             
-            // Reset cutoff manual flag - if there's a cutoff value, consider it manually set
-            cutoffManuallySet = !!lead.cutoff;
+            // Reset manual flags from saved lead data
+            cutoffManuallySet = lead.cutoffManuallySet || false;
+            ccDepositManuallySet = lead.ccDepositManuallySet || false;
             document.getElementById('lead-revenue').value = formatCurrency(lead.revenue || 0);
 
             updatePanelTabs();
@@ -1209,6 +1217,8 @@
                 fbCombined: document.getElementById('lead-fbCombined').checked,
                 billingType: document.getElementById('lead-billingType').value,
                 ccDeposit: document.getElementById('lead-ccDeposit').value,
+                cutoffManuallySet: cutoffManuallySet,
+                ccDepositManuallySet: ccDepositManuallySet,
                 concessions: document.getElementById('lead-concessions').value,
                 notes: document.getElementById('lead-notes').value,
                 handoverNotes: document.getElementById('lead-handoverNotes').value,
@@ -1280,10 +1290,16 @@
             if (!checkbox.checked) field.value = '';
         }
         
-        // Mark cutoff date as manually set
+        // Mark cutoff date as manually set (stored per-lead)
         let cutoffManuallySet = false;
+        let ccDepositManuallySet = false;
+        
         function markCutoffManual() {
             cutoffManuallySet = true;
+        }
+        
+        function markCCDepositManual() {
+            ccDepositManuallySet = true;
         }
         
         // Auto-calculate cutoff date (30 days before arrival) for room bookings
@@ -2082,8 +2098,10 @@
         
         // Calculate credit card deposit (one night + 13.5% tax)
         function calculateCreditCardDeposit() {
+            // Don't overwrite if user manually set a value
+            if (ccDepositManuallySet) return;
+            
             const ccInput = document.getElementById('lead-ccDeposit');
-            if (ccInput.value) return; // Don't overwrite if already set
             
             // Get first night's room revenue from room block
             let oneNightTotal = 0;
@@ -2097,7 +2115,7 @@
             
             // Add 13.5% tax
             const withTax = oneNightTotal * 1.135;
-            ccInput.value = withTax.toFixed(2);
+            ccInput.value = withTax > 0 ? withTax.toFixed(2) : '';
         }
         function parseCurrency(str) { return parseFloat((str || '').replace(/[$,]/g, '')) || 0; }
         function formatDate(dateStr) { return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; }

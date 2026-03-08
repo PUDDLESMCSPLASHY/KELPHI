@@ -2654,14 +2654,39 @@ The Compton Bentonville`;
                 const doc = new window.docxtemplater(zip, {
                     delimiters: { start: '{', end: '}' },
                     paragraphLoop: true,
-                    linebreaks: true
+                    linebreaks: true,
+                    // Don't throw on missing data - just leave blank
+                    nullGetter: function(part) {
+                        if (!part.module) {
+                            return '';  // Return empty string for undefined placeholders
+                        }
+                        if (part.module === 'rawxml') {
+                            return '';
+                        }
+                        return '';
+                    }
                 });
                 
                 // Set the data
                 doc.setData(data);
                 
                 // Render the document
-                doc.render();
+                try {
+                    doc.render();
+                } catch (renderErr) {
+                    // Log detailed errors for debugging
+                    if (renderErr.properties && renderErr.properties.errors) {
+                        const errors = renderErr.properties.errors;
+                        console.error('Detailed template errors:');
+                        errors.forEach((e, i) => {
+                            console.error(`Error ${i + 1}:`, e.message, 'Properties:', e.properties);
+                        });
+                        // Show user-friendly message with first few errors
+                        const errorMessages = errors.slice(0, 3).map(e => e.message).join('\n');
+                        alert('Template errors:\n' + errorMessages + (errors.length > 3 ? `\n...and ${errors.length - 3} more` : ''));
+                    }
+                    throw renderErr;
+                }
                 
                 // Generate output
                 const output = doc.getZip().generate({

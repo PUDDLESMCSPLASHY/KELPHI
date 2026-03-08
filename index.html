@@ -2697,12 +2697,64 @@ The Compton Bentonville`;
             // Credit card deposit
             data.cc_deposit = lead.ccDeposit ? formatCurrencyValue(parseFloat(lead.ccDeposit)) : '';
             
-            // Deposit schedule (placeholder text for now)
-            data.deposit_schedule = 'See attached deposit schedule';
+            // Deposit schedule
+            data.deposit_schedule = lead.depositSchedule || '';
             
-            // Tables (placeholder - docx-templates handles these differently)
-            data.room_block_table = '[Room Block Table]';
-            data.events_table = '[Events Table]';
+            // Format room block as readable text
+            if (lead.roomBlock && lead.roomBlock.length > 0) {
+                const dates = [];
+                if (lead.arrival && lead.departure) {
+                    let current = new Date(lead.arrival + 'T12:00:00');
+                    const end = new Date(lead.departure + 'T12:00:00');
+                    while (current < end) {
+                        dates.push(new Date(current));
+                        current.setDate(current.getDate() + 1);
+                    }
+                }
+                
+                const roomLines = lead.roomBlock
+                    .filter(row => row.type && row.rate)
+                    .map(row => {
+                        const rate = parseFloat(row.rate) || 0;
+                        const qtyParts = (row.quantities || []).map((qty, i) => {
+                            const q = parseInt(qty) || 0;
+                            if (q === 0) return null;
+                            const dateStr = dates[i] ? dates[i].toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }) : `Day ${i + 1}`;
+                            return `${dateStr}: ${q}`;
+                        }).filter(Boolean);
+                        
+                        if (qtyParts.length === 0) return null;
+                        return `${row.type} @ $${rate.toFixed(2)}/night — ${qtyParts.join(', ')}`;
+                    })
+                    .filter(Boolean);
+                
+                data.room_block_table = roomLines.length > 0 
+                    ? roomLines.join('\n') + `\n\nTotal: ${totalRoomNights} room nights | ${formatCurrencyValue(roomRevenue)} (before tax)`
+                    : '';
+            } else {
+                data.room_block_table = '';
+            }
+            
+            // Format events as readable text
+            if (lead.events && lead.events.length > 0) {
+                const eventLines = lead.events.map(evt => {
+                    const parts = [];
+                    if (evt.date) parts.push(new Date(evt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+                    if (evt.name) parts.push(evt.name);
+                    if (evt.space) parts.push(`in ${evt.space}`);
+                    if (evt.startTime && evt.endTime) parts.push(`(${evt.startTime} - ${evt.endTime})`);
+                    
+                    const costs = [];
+                    if (evt.rental && parseFloat(evt.rental) > 0) costs.push(`Rental: ${formatCurrencyValue(parseFloat(evt.rental))}`);
+                    if (evt.fbMin && parseFloat(evt.fbMin) > 0) costs.push(`F&B Min: ${formatCurrencyValue(parseFloat(evt.fbMin))}`);
+                    
+                    return parts.join(' ') + (costs.length > 0 ? ` — ${costs.join(', ')}` : '');
+                });
+                
+                data.events_table = eventLines.join('\n');
+            } else {
+                data.events_table = '';
+            }
             
             return data;
         }

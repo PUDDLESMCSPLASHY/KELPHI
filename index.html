@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelphi</title>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -78,6 +79,19 @@
         .item-badge.definite { background: rgba(0,217,143,0.1); color: #00d98f; }
         .item-badge.completed { background: rgba(0,100,200,0.1); color: #66b3ff; }
         .item-badge.lost { background: rgba(255,71,87,0.1); color: #ff4757; }
+        
+        /* Days Out Indicators */
+        .days-out { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+        .days-out.green { background: rgba(0,217,143,0.15); color: #00d98f; }
+        .days-out.yellow { background: rgba(255,200,0,0.15); color: #ffc800; }
+        .days-out.orange { background: rgba(255,140,0,0.15); color: #ff8c00; }
+        .days-out.red { background: rgba(255,71,87,0.15); color: #ff4757; }
+        
+        /* Signed Checkbox */
+        .signed-checkbox { width: 18px; height: 18px; accent-color: #00d98f; cursor: pointer; }
+        
+        /* Contract Badge in Leads */
+        .contract-badge { display: inline-block; width: 16px; height: 16px; margin-left: 6px; color: #00d9ff; vertical-align: middle; font-size: 0.9rem; }
         .toggle-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #666; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.65rem; cursor: pointer; }
         .toggle-btn:hover { border-color: #00d9ff; color: #aaa; }
         .toggle-btn.active { background: rgba(0,217,255,0.15); border-color: #00d9ff; color: #00d9ff; }
@@ -221,11 +235,11 @@
         
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-content { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
-        .modal-header h3 { margin: 0; font-size: 1.1rem; }
-        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
-        .modal-close:hover { color: var(--text); }
+        .modal-content, .modal { background: #16161f; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .modal-header h3 { margin: 0; font-size: 1.1rem; color: #fff; }
+        .modal-close { background: none; border: none; color: #666; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
+        .modal-close:hover { color: #fff; }
         .modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
         .view-controls { display: flex; gap: 0.5rem; align-items: center; }
@@ -345,7 +359,66 @@
                 </div>
 
                 <!-- Other tabs -->
-                <div class="tab-content" id="tab-contracts"><div class="empty-state"><h3>Contracts</h3><p>Coming soon</p></div></div>
+                <div class="tab-content" id="tab-contracts">
+                    <div class="leads-toolbar">
+                        <div class="leads-filters">
+                            <select class="filter-select" id="contracts-filter">
+                                <option value="all">All Contracts</option>
+                                <option value="pending">Pending Signature</option>
+                                <option value="signed">Signed</option>
+                            </select>
+                            <input type="text" class="search-input" id="contracts-search" placeholder="Search contracts...">
+                        </div>
+                        <button class="btn btn-primary" onclick="openGenerateContractModal()">Generate Contract</button>
+                    </div>
+                    <table class="leads-table" id="contracts-table">
+                        <thead>
+                            <tr>
+                                <th>Booking</th>
+                                <th>Type</th>
+                                <th>Generated</th>
+                                <th>Version</th>
+                                <th>Days Out</th>
+                                <th>Signed</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contracts-table-body">
+                            <tr><td colspan="7" style="text-align: center; color: #666; padding: 3rem;">No contracts generated yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Generate Contract Modal -->
+                <div class="modal-overlay" id="generateContractModal" style="display: none;">
+                    <div class="modal" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3>Generate Contract</h3>
+                            <span class="modal-close" onclick="closeGenerateContractModal()">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Select Lead</label>
+                                <select class="form-select" id="contract-lead-select">
+                                    <option value="">Choose a lead...</option>
+                                </select>
+                            </div>
+                            <div id="contract-preview-area" style="display: none; margin-top: 1rem;">
+                                <div class="form-divider"></div>
+                                <div style="background: #1a1a24; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
+                                    <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 0.5rem;">Contract Preview</div>
+                                    <div id="contract-preview-name" style="font-size: 1.1rem; color: #fff; margin-bottom: 0.5rem;"></div>
+                                    <div id="contract-preview-type" style="font-size: 0.85rem; color: #00d9ff;"></div>
+                                    <div id="contract-preview-dates" style="font-size: 0.85rem; color: #888; margin-top: 0.25rem;"></div>
+                                </div>
+                                <div style="display: flex; gap: 0.75rem;">
+                                    <button class="btn btn-primary" onclick="generateContract()" style="flex: 1;">Download Contract</button>
+                                    <button class="btn" onclick="copyEmailSnippet()" style="background: #2a2a3e; color: #e0e0e0; border: 1px solid rgba(255,255,255,0.1);">Copy Email</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="tab-content" id="tab-handover"><iframe id="checklistFrame" src="https://puddlesmcsplashy.github.io/CHECKLIST/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-goals"><iframe id="goalsFrame" src="https://puddlesmcsplashy.github.io/GOALS/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-wrapup">
@@ -600,6 +673,7 @@
                 <div class="panel-actions">
                     <div id="lastUpdatedText" style="font-size: 12px; color: var(--text-muted); font-style: italic; flex: 1;"></div>
                     <button class="btn btn-ghost" id="panelCancel">Cancel</button>
+                    <button class="btn" id="panelContract" onclick="generateContractFromPanel()" style="background: #2a2a3e; color: #00d9ff; border: 1px solid rgba(0,217,255,0.3);">Generate Contract</button>
                     <button class="btn btn-primary" id="panelSave">Save Lead</button>
                 </div>
             </aside>
@@ -625,8 +699,12 @@
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) return JSON.parse(saved);
-            return { leads: [], settings: { goalTarget: 86000 } };
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (!data.contracts) data.contracts = [];
+                return data;
+            }
+            return { leads: [], contracts: [], settings: { goalTarget: 86000 } };
         }
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
         function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
@@ -669,6 +747,7 @@
             updateTableColumns();
             renderLeads();
             updateDashboard();
+            renderContracts();
             setupListeners();
             renderStickyNotes();
             requestGoalsData();
@@ -1958,6 +2037,10 @@
         
         function getColumnValue(lead, key) {
             switch(key) {
+                case 'bookingName':
+                    const hasContract = appData.contracts && appData.contracts.some(c => c.leadId === lead.id);
+                    const badge = hasContract ? '<span class="contract-badge" title="Contract generated">&#128196;</span>' : '';
+                    return `<span class="lead-name-cell">${lead.bookingName || lead.account || 'Untitled'}${badge}</span>`;
                 case 'status':
                     const statusLabels = { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost', 'turndown': 'Turndown' };
                     return `<span class="status-badge status-${lead.status}">${statusLabels[lead.status] || lead.status}</span>`;
@@ -2123,6 +2206,498 @@
         function formatStatus(s) { return { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost' }[s] || s; }
         function formatType(t) { return { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' }[t] || t; }
     
+        // ============ CONTRACTS TAB ============
+        
+        function openGenerateContractModal() {
+            const modal = document.getElementById('generateContractModal');
+            const select = document.getElementById('contract-lead-select');
+            
+            // Populate lead select with eligible leads (Working, Tentative, Contract Out)
+            const eligibleLeads = appData.leads.filter(l => ['working', 'tentative', 'contract-out'].includes(l.status));
+            select.innerHTML = '<option value="">Choose a lead...</option>' + 
+                eligibleLeads.map(l => `<option value="${l.id}">${l.bookingName || l.account || 'Untitled'} - ${formatDate(l.arrival)}</option>`).join('');
+            
+            document.getElementById('contract-preview-area').style.display = 'none';
+            modal.style.display = 'flex';
+            
+            // Add change listener
+            select.onchange = onContractLeadSelect;
+        }
+        
+        function closeGenerateContractModal() {
+            document.getElementById('generateContractModal').style.display = 'none';
+        }
+        
+        function onContractLeadSelect() {
+            const leadId = document.getElementById('contract-lead-select').value;
+            const previewArea = document.getElementById('contract-preview-area');
+            
+            if (!leadId) {
+                previewArea.style.display = 'none';
+                return;
+            }
+            
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            // Determine contract type
+            const contractTypes = {
+                'rooms': 'Sleeping Room Sales Agreement',
+                'events': 'Catering Sales Agreement',
+                'both': 'Group Sales Agreement'
+            };
+            
+            document.getElementById('contract-preview-name').textContent = lead.account || lead.bookingName || 'Untitled';
+            document.getElementById('contract-preview-type').textContent = contractTypes[lead.type] || 'Contract';
+            document.getElementById('contract-preview-dates').textContent = `${formatDate(lead.arrival)} - ${formatDate(lead.departure)}`;
+            previewArea.style.display = 'block';
+        }
+        
+        function getContractFileName(lead) {
+            const arrival = lead.arrival ? new Date(lead.arrival + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'TBD';
+            const name = lead.account || lead.bookingName || 'Contract';
+            return `${name} - ${arrival} at The Compton.docx`;
+        }
+        
+        function getDaysOutClass(daysOut) {
+            if (daysOut <= 3) return 'green';
+            if (daysOut <= 7) return 'yellow';
+            if (daysOut <= 14) return 'orange';
+            return 'red';
+        }
+        
+        function calculateBusinessDaysToExpiry(arrivalDate) {
+            const today = new Date();
+            const arrival = new Date(arrivalDate + 'T12:00:00');
+            const daysUntilArrival = Math.ceil((arrival - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysUntilArrival <= 10) return 3;
+            if (daysUntilArrival <= 21) return 5;
+            if (daysUntilArrival <= 45) return 7;
+            return 14;
+        }
+        
+        function getExpiryDate(businessDays) {
+            let date = new Date();
+            let added = 0;
+            while (added < businessDays) {
+                date.setDate(date.getDate() + 1);
+                const day = date.getDay();
+                if (day !== 0 && day !== 6) added++; // Skip weekends
+            }
+            return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        }
+        
+        function copyEmailSnippet() {
+            const leadId = document.getElementById('contract-lead-select').value;
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            const contactName = lead.contactFirstName || 'there';
+            const eventName = lead.bookingName || lead.account || 'your event';
+            const arrivalDate = lead.arrival ? new Date(lead.arrival + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'your arrival date';
+            const businessDays = calculateBusinessDaysToExpiry(lead.arrival);
+            const expiryDate = getExpiryDate(businessDays);
+            
+            const snippet = `Hi ${contactName},
+
+Attached is the contract for ${eventName} arriving ${arrivalDate}. Please review and sign at your earliest convenience.
+
+This signature document will expire in ${businessDays} business days (${expiryDate}), so please let me know if you need an extension on the deadline.
+
+Warmly,
+Kelsey McIntyre
+Sales Manager
+The Compton Bentonville`;
+            
+            navigator.clipboard.writeText(snippet).then(() => {
+                alert('Email snippet copied to clipboard!');
+            });
+        }
+        
+        function renderContracts() {
+            const tbody = document.getElementById('contracts-table-body');
+            const filter = document.getElementById('contracts-filter').value;
+            const search = document.getElementById('contracts-search').value.toLowerCase();
+            
+            let contracts = appData.contracts || [];
+            
+            // Apply filter
+            if (filter === 'pending') contracts = contracts.filter(c => !c.signed);
+            if (filter === 'signed') contracts = contracts.filter(c => c.signed);
+            
+            // Apply search
+            if (search) {
+                contracts = contracts.filter(c => 
+                    (c.bookingName || '').toLowerCase().includes(search) ||
+                    (c.account || '').toLowerCase().includes(search)
+                );
+            }
+            
+            // Sort by generated date (newest first)
+            contracts = contracts.sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
+            
+            if (contracts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666; padding: 3rem;">No contracts found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = contracts.map(c => {
+                const daysOut = Math.ceil((new Date() - new Date(c.generatedAt)) / (1000 * 60 * 60 * 24));
+                const daysClass = getDaysOutClass(daysOut);
+                const contractTypes = { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' };
+                
+                return `<tr data-id="${c.id}">
+                    <td class="lead-name-cell">${c.bookingName || c.account || 'Untitled'}</td>
+                    <td>${contractTypes[c.type] || c.type}</td>
+                    <td>${new Date(c.generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                    <td>v${c.version}</td>
+                    <td><span class="days-out ${daysClass}">${daysOut} day${daysOut !== 1 ? 's' : ''}</span></td>
+                    <td><input type="checkbox" class="signed-checkbox" ${c.signed ? 'checked' : ''} onchange="toggleContractSigned('${c.id}', this.checked)"></td>
+                    <td>
+                        <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: transparent; border: 1px solid rgba(0,217,255,0.3); color: #00d9ff;" onclick="regenerateContract('${c.leadId}')">Regenerate</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        function toggleContractSigned(contractId, signed) {
+            const contract = appData.contracts.find(c => c.id === contractId);
+            if (!contract) return;
+            
+            contract.signed = signed;
+            contract.signedAt = signed ? new Date().toISOString() : null;
+            
+            // Sync with lead status - if signed, flip to Definite
+            if (signed && contract.leadId) {
+                const lead = appData.leads.find(l => l.id === contract.leadId);
+                if (lead && lead.status !== 'definite' && lead.status !== 'completed') {
+                    lead.status = 'definite';
+                    lead.definiteDate = new Date().toISOString();
+                    
+                    // Add to GOALS
+                    addBookingToGoals(lead);
+                }
+                
+                // Sync with Handover checklist
+                const checklistFrame = document.getElementById('checklistFrame');
+                if (checklistFrame && checklistFrame.contentWindow) {
+                    checklistFrame.contentWindow.postMessage({
+                        type: 'COMPLETE_TASK',
+                        leadId: contract.leadId,
+                        taskId: 'signatures-deposits'
+                    }, '*');
+                }
+            }
+            
+            saveData();
+            renderContracts();
+            renderLeads();
+            updateDashboard();
+        }
+        
+        function regenerateContract(leadId) {
+            document.getElementById('contract-lead-select').value = leadId;
+            onContractLeadSelect();
+            openGenerateContractModal();
+        }
+        
+        function generateContractFromPanel() {
+            if (!currentLeadId) {
+                alert('Please save the lead first before generating a contract.');
+                return;
+            }
+            regenerateContract(currentLeadId);
+        }
+        
+        async function generateContract() {
+            const leadId = document.getElementById('contract-lead-select').value;
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            // Check for existing contract for this lead to determine version
+            const existingContracts = appData.contracts.filter(c => c.leadId === leadId);
+            const version = existingContracts.length + 1;
+            
+            // Create contract record
+            const contract = {
+                id: generateId(),
+                leadId: leadId,
+                bookingName: lead.bookingName,
+                account: lead.account,
+                type: lead.type,
+                version: version,
+                generatedAt: new Date().toISOString(),
+                signed: false,
+                signedAt: null
+            };
+            
+            appData.contracts.push(contract);
+            saveData();
+            
+            // Generate the Word document
+            try {
+                await createContractDocument(lead, version);
+                
+                // Update lead status to Contract Out if it was Working or Tentative
+                if (lead.status === 'working' || lead.status === 'tentative') {
+                    lead.status = 'contract-out';
+                    lead.contractOutDate = new Date().toISOString();
+                    saveData();
+                    renderLeads();
+                    updateDashboard();
+                }
+                
+                closeGenerateContractModal();
+                renderContracts();
+                
+            } catch (err) {
+                console.error('Error generating contract:', err);
+                alert('Error generating contract. Please try again.');
+            }
+        }
+        
+        async function createContractDocument(lead, version) {
+            const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel } = docx;
+            
+            // Determine contract type
+            const contractTitles = {
+                'rooms': 'SLEEPING ROOM SALES AGREEMENT',
+                'events': 'CATERING SALES AGREEMENT',
+                'both': 'GROUP SALES AGREEMENT'
+            };
+            
+            const title = contractTitles[lead.type] || 'SALES AGREEMENT';
+            
+            // Build document sections
+            const children = [];
+            
+            // Title
+            children.push(new Paragraph({
+                children: [new TextRun({ text: title, bold: true, size: 32 })],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 400 }
+            }));
+            
+            // Intro paragraph
+            children.push(new Paragraph({
+                children: [
+                    new TextRun({ text: 'This Agreement is made by and between the legal owner entity of The Compton Bentonville (the "Hotel") located at 200 East Central Ave., Bentonville, AR 72712, and ' }),
+                    new TextRun({ text: lead.account || '[GROUP NAME]', bold: true }),
+                    new TextRun({ text: ' (the "Group").' })
+                ],
+                spacing: { after: 300 }
+            }));
+            
+            // Description of Group
+            children.push(new Paragraph({
+                children: [new TextRun({ text: 'DESCRIPTION OF GROUP', bold: true, size: 24 })],
+                spacing: { before: 400, after: 200 }
+            }));
+            
+            const contactInfo = [
+                ['Primary Contact Name', `${lead.contactFirstName || ''} ${lead.contactLastName || ''}`.trim() || '[CONTACT NAME]'],
+                ['Primary Contact Phone', lead.contactPhone || '[PHONE]'],
+                ['Primary Contact Email', lead.contactEmail || '[EMAIL]'],
+                ['Primary Contact Address', lead.signerAddress || '[ADDRESS]'],
+                ['Event Name', lead.bookingName || '[EVENT NAME]'],
+                ['Event Dates', `${formatDate(lead.arrival)} - ${formatDate(lead.departure)}`]
+            ];
+            
+            contactInfo.forEach(([label, value]) => {
+                children.push(new Paragraph({
+                    children: [
+                        new TextRun({ text: label + ': ', bold: true }),
+                        new TextRun({ text: value })
+                    ],
+                    spacing: { after: 100 }
+                }));
+            });
+            
+            // Room Block (for rooms and both types)
+            if (lead.type === 'rooms' || lead.type === 'both') {
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: 'GROUP ROOM RESERVATIONS', bold: true, size: 24 })],
+                    spacing: { before: 400, after: 200 }
+                }));
+                
+                if (lead.roomBlock && lead.roomBlock.length > 0) {
+                    const dates = getDatesArray(lead.arrival, lead.departure);
+                    
+                    // Create room block table
+                    const headerRow = new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Room Type', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rate', bold: true })] })] }),
+                            ...dates.map(d => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatShortDate(d), bold: true, size: 18 })] })] }))
+                        ]
+                    });
+                    
+                    const dataRows = lead.roomBlock.map(row => new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph({ text: row.type || '' })] }),
+                            new TableCell({ children: [new Paragraph({ text: '$' + (row.rate || 0) })] }),
+                            ...row.quantities.map(q => new TableCell({ children: [new Paragraph({ text: String(q || 0), alignment: AlignmentType.CENTER })] }))
+                        ]
+                    }));
+                    
+                    children.push(new Table({
+                        rows: [headerRow, ...dataRows],
+                        width: { size: 100, type: WidthType.PERCENTAGE }
+                    }));
+                }
+                
+                // Cut-off date
+                if (lead.cutoff) {
+                    children.push(new Paragraph({
+                        children: [
+                            new TextRun({ text: 'Cut-Off Date: ', bold: true }),
+                            new TextRun({ text: new Date(lead.cutoff + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) })
+                        ],
+                        spacing: { before: 300, after: 200 }
+                    }));
+                }
+            }
+            
+            // Events (for events and both types)
+            if (lead.type === 'events' || lead.type === 'both') {
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: 'FUNCTION AGENDA', bold: true, size: 24 })],
+                    spacing: { before: 400, after: 200 }
+                }));
+                
+                if (lead.events && lead.events.length > 0) {
+                    const eventHeaderRow = new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Date', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Time', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Event Type', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Room', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Setup', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Attendance', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rental', bold: true })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'F&B Min', bold: true })] })] })
+                        ]
+                    });
+                    
+                    const eventRows = lead.events.map(evt => new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph({ text: evt.date ? new Date(evt.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }) : '' })] }),
+                            new TableCell({ children: [new Paragraph({ text: `${evt.startTime || ''} - ${evt.endTime || ''}` })] }),
+                            new TableCell({ children: [new Paragraph({ text: evt.classification || '' })] }),
+                            new TableCell({ children: [new Paragraph({ text: evt.room || '' })] }),
+                            new TableCell({ children: [new Paragraph({ text: evt.setup || '' })] }),
+                            new TableCell({ children: [new Paragraph({ text: String(evt.headcount || '') })] }),
+                            new TableCell({ children: [new Paragraph({ text: evt.rental ? '$' + evt.rental : '$0' })] }),
+                            new TableCell({ children: [new Paragraph({ text: evt.fbMin ? '$' + evt.fbMin : '' })] })
+                        ]
+                    }));
+                    
+                    children.push(new Table({
+                        rows: [eventHeaderRow, ...eventRows],
+                        width: { size: 100, type: WidthType.PERCENTAGE }
+                    }));
+                }
+            }
+            
+            // Special Concessions (conditional)
+            if (lead.concessions && lead.concessions.trim()) {
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: 'SPECIAL CONCESSIONS', bold: true, size: 24 })],
+                    spacing: { before: 400, after: 200 }
+                }));
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: lead.concessions })],
+                    spacing: { after: 200 }
+                }));
+            }
+            
+            // Commission (conditional)
+            if (lead.commissionable && lead.commission) {
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: 'COMMISSIONS', bold: true, size: 24 })],
+                    spacing: { before: 400, after: 200 }
+                }));
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: `The sleeping room rates are commissionable at ${lead.commission}%.` })],
+                    spacing: { after: 200 }
+                }));
+            }
+            
+            // Billing Section (conditional based on billingType)
+            children.push(new Paragraph({
+                children: [new TextRun({ text: 'BILLING AND PAYMENT', bold: true, size: 24 })],
+                spacing: { before: 400, after: 200 }
+            }));
+            
+            if (lead.billingType === 'credit-card') {
+                children.push(new Paragraph({
+                    children: [
+                        new TextRun({ text: 'Credit Card Deposit: ', bold: true }),
+                        new TextRun({ text: lead.ccDeposit ? '$' + parseFloat(lead.ccDeposit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '[AMOUNT]' })
+                    ],
+                    spacing: { after: 200 }
+                }));
+            } else if (lead.billingType === 'direct') {
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: 'Subject to the Hotel\'s prior credit approval, the Group may be invoiced for all charges without an advance deposit.' })],
+                    spacing: { after: 200 }
+                }));
+            } else {
+                // Default to deposit schedule
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: 'A deposit schedule will be provided based on the Group\'s arrival date and total anticipated revenue.' })],
+                    spacing: { after: 200 }
+                }));
+            }
+            
+            // Signature Section
+            children.push(new Paragraph({
+                children: [new TextRun({ text: 'EXECUTION OF AGREEMENT', bold: true, size: 24 })],
+                spacing: { before: 400, after: 200 }
+            }));
+            
+            children.push(new Paragraph({
+                children: [new TextRun({ text: 'The Compton Bentonville', bold: true })],
+                spacing: { before: 300, after: 100 }
+            }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Name: Kelsey McIntyre' })], spacing: { after: 50 } }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Title: Sales Manager' })], spacing: { after: 50 } }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Date: _______________' })], spacing: { after: 50 } }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Signature: _______________' })], spacing: { after: 200 } }));
+            
+            children.push(new Paragraph({
+                children: [new TextRun({ text: 'The Group', bold: true })],
+                spacing: { before: 300, after: 100 }
+            }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Name: _______________' })], spacing: { after: 50 } }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Title: _______________' })], spacing: { after: 50 } }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Date: _______________' })], spacing: { after: 50 } }));
+            children.push(new Paragraph({ children: [new TextRun({ text: 'Signature: _______________' })], spacing: { after: 200 } }));
+            
+            // Create document
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: children
+                }]
+            });
+            
+            // Generate and download
+            const blob = await Packer.toBlob(doc);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = getContractFileName(lead);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Initialize contracts tab listeners
+        document.getElementById('contracts-filter').addEventListener('change', renderContracts);
+        document.getElementById('contracts-search').addEventListener('input', renderContracts);
 
         // Listen for CREATE_LEAD messages from embedded Quote Generator
         window.addEventListener('message', function(event) {

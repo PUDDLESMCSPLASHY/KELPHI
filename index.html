@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelphi</title>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
+    <script src="templates.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -2201,7 +2201,13 @@
             ccInput.value = withTax > 0 ? withTax.toFixed(2) : '';
         }
         function parseCurrency(str) { return parseFloat((str || '').replace(/[$,]/g, '')) || 0; }
-        function formatDate(dateStr) { return dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; }
+        function formatDate(dateStr) { 
+            if (!dateStr) return '';
+            // Parse as local date to avoid timezone shift
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); 
+        }
         function formatShortDate(d) { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }); }
         function formatStatus(s) { return { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost' }[s] || s; }
         function formatType(t) { return { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' }[t] || t; }
@@ -2484,242 +2490,164 @@ The Compton Bentonville`;
             }
         }
         
+        // Helper: Convert base64 to ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+        
+        // Helper: Format currency
+        function formatCurrencyValue(amount) {
+            return '$' + (amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        // Helper: Format date for contracts
+        function formatContractDate(dateStr) {
+            if (!dateStr) return '';
+            return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+        
+        // Calculate all contract data from lead
+        function calculateContractData(lead) {
+            const data = {};
+            
+            // Basic info
+            data.account = lead.account || '';
+            data.contact_name = `${lead.contactFirstName || ''} ${lead.contactLastName || ''}`.trim();
+            data.contact_phone = lead.contactPhone || '';
+            data.contact_email = lead.contactEmail || '';
+            data.contact_address = lead.signerAddress || '';
+            data.booking_name = lead.bookingName || '';
+            data.arrival_date = formatContractDate(lead.arrival);
+            data.departure_date = formatContractDate(lead.departure);
+            data.cutoff_date = formatContractDate(lead.cutoff);
+            data.reservation_number = lead.reservationNumber || '';
+            
+            // Conditionals
+            data.concessions = lead.concessions || '';
+            data.commissionable = lead.commissionable || false;
+            data.commission = lead.commission || '';
+            data.billingType = lead.billingType || '';
+            data.res_procedure = lead.resProcedure || '';
+            data.room_payment = lead.roomPayment || '';
+            data.waive_rental = lead.waiveRental || false;
+            data.fb_combined = lead.fbCombined || false;
+            
+            // Room calculations
+            let totalRoomNights = 0;
+            let roomRevenue = 0;
+            let totalRates = 0;
+            let rateCount = 0;
+            
+            if (lead.roomBlock && lead.roomBlock.length > 0) {
+                lead.roomBlock.forEach(row => {
+                    const rate = parseFloat(row.rate) || 0;
+                    const nights = row.quantities ? row.quantities.reduce((sum, q) => sum + (parseInt(q) || 0), 0) : 0;
+                    totalRoomNights += nights;
+                    roomRevenue += rate * nights;
+                    if (rate > 0 && nights > 0) {
+                        totalRates += rate * nights;
+                        rateCount += nights;
+                    }
+                });
+            }
+            
+            const avgNightlyRate = rateCount > 0 ? totalRates / rateCount : 0;
+            const roomTax = roomRevenue * 0.135;
+            const roomRevenueWithTax = roomRevenue + roomTax;
+            
+            data.total_room_nights = String(totalRoomNights);
+            data.avg_nightly_rate = formatCurrencyValue(avgNightlyRate);
+            data.room_revenue = formatCurrencyValue(roomRevenue);
+            data.room_tax_amount = formatCurrencyValue(roomTax);
+            data.room_revenue_with_tax = formatCurrencyValue(roomRevenueWithTax);
+            
+            // Event calculations
+            let totalRental = 0;
+            let totalFbMin = 0;
+            
+            if (lead.events && lead.events.length > 0) {
+                lead.events.forEach(evt => {
+                    totalRental += parseFloat(evt.rental) || 0;
+                    totalFbMin += parseFloat(evt.fbMin) || 0;
+                });
+            }
+            
+            // Event tax: 2% A&P + 23% service + 9.5% on service
+            const eventSubtotal = totalRental + totalFbMin;
+            const apTax = eventSubtotal * 0.02;
+            const serviceFee = eventSubtotal * 0.23;
+            const taxOnService = serviceFee * 0.095;
+            const eventTax = apTax + serviceFee + taxOnService;
+            
+            const rentalWithTax = totalRental + (totalRental > 0 ? (totalRental * 0.02 + totalRental * 0.23 + totalRental * 0.23 * 0.095) : 0);
+            const fbWithTax = totalFbMin + (totalFbMin > 0 ? (totalFbMin * 0.02 + totalFbMin * 0.23 + totalFbMin * 0.23 * 0.095) : 0);
+            
+            data.total_rental = formatCurrencyValue(totalRental);
+            data.total_rental_with_tax = formatCurrencyValue(rentalWithTax);
+            data.total_fb_minimum = formatCurrencyValue(totalFbMin);
+            data.total_fb_with_tax = formatCurrencyValue(fbWithTax);
+            data.event_revenue = formatCurrencyValue(eventSubtotal);
+            data.event_revenue_with_tax = formatCurrencyValue(eventSubtotal + eventTax);
+            
+            // Combined totals
+            data.subtotal = formatCurrencyValue(roomRevenue + eventSubtotal);
+            data.grand_total = formatCurrencyValue(roomRevenueWithTax + eventSubtotal + eventTax);
+            
+            // Credit card deposit
+            data.cc_deposit = lead.ccDeposit ? formatCurrencyValue(parseFloat(lead.ccDeposit)) : '';
+            
+            // Deposit schedule (placeholder text for now)
+            data.deposit_schedule = 'See attached deposit schedule';
+            
+            // Tables (placeholder - docx-templates handles these differently)
+            data.room_block_table = '[Room Block Table]';
+            data.events_table = '[Events Table]';
+            
+            return data;
+        }
+        
         async function createContractDocument(lead, version) {
-            const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel } = docx;
+            // Get the appropriate template
+            const templateBase64 = CONTRACT_TEMPLATES[lead.type] || CONTRACT_TEMPLATES.rooms;
+            const templateBuffer = base64ToArrayBuffer(templateBase64);
             
-            // Determine contract type
-            const contractTitles = {
-                'rooms': 'SLEEPING ROOM SALES AGREEMENT',
-                'events': 'CATERING SALES AGREEMENT',
-                'both': 'GROUP SALES AGREEMENT'
-            };
+            // Calculate all the data
+            const data = calculateContractData(lead);
             
-            const title = contractTitles[lead.type] || 'SALES AGREEMENT';
-            
-            // Build document sections
-            const children = [];
-            
-            // Title
-            children.push(new Paragraph({
-                children: [new TextRun({ text: title, bold: true, size: 32 })],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 400 }
-            }));
-            
-            // Intro paragraph
-            children.push(new Paragraph({
-                children: [
-                    new TextRun({ text: 'This Agreement is made by and between the legal owner entity of The Compton Bentonville (the "Hotel") located at 200 East Central Ave., Bentonville, AR 72712, and ' }),
-                    new TextRun({ text: lead.account || '[GROUP NAME]', bold: true }),
-                    new TextRun({ text: ' (the "Group").' })
-                ],
-                spacing: { after: 300 }
-            }));
-            
-            // Description of Group
-            children.push(new Paragraph({
-                children: [new TextRun({ text: 'DESCRIPTION OF GROUP', bold: true, size: 24 })],
-                spacing: { before: 400, after: 200 }
-            }));
-            
-            const contactInfo = [
-                ['Primary Contact Name', `${lead.contactFirstName || ''} ${lead.contactLastName || ''}`.trim() || '[CONTACT NAME]'],
-                ['Primary Contact Phone', lead.contactPhone || '[PHONE]'],
-                ['Primary Contact Email', lead.contactEmail || '[EMAIL]'],
-                ['Primary Contact Address', lead.signerAddress || '[ADDRESS]'],
-                ['Event Name', lead.bookingName || '[EVENT NAME]'],
-                ['Event Dates', `${formatDate(lead.arrival)} - ${formatDate(lead.departure)}`]
-            ];
-            
-            contactInfo.forEach(([label, value]) => {
-                children.push(new Paragraph({
-                    children: [
-                        new TextRun({ text: label + ': ', bold: true }),
-                        new TextRun({ text: value })
-                    ],
-                    spacing: { after: 100 }
-                }));
-            });
-            
-            // Room Block (for rooms and both types)
-            if (lead.type === 'rooms' || lead.type === 'both') {
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: 'GROUP ROOM RESERVATIONS', bold: true, size: 24 })],
-                    spacing: { before: 400, after: 200 }
-                }));
+            try {
+                // Dynamically import docx-templates (ES module)
+                const { createReport } = await import('https://cdn.jsdelivr.net/npm/docx-templates@4.11.4/+esm');
                 
-                if (lead.roomBlock && lead.roomBlock.length > 0) {
-                    const dates = getDatesArray(lead.arrival, lead.departure);
-                    
-                    // Create room block table
-                    const headerRow = new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Room Type', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rate', bold: true })] })] }),
-                            ...dates.map(d => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: formatShortDate(d), bold: true, size: 18 })] })] }))
-                        ]
-                    });
-                    
-                    const dataRows = lead.roomBlock.map(row => new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph({ text: row.type || '' })] }),
-                            new TableCell({ children: [new Paragraph({ text: '$' + (row.rate || 0) })] }),
-                            ...row.quantities.map(q => new TableCell({ children: [new Paragraph({ text: String(q || 0), alignment: AlignmentType.CENTER })] }))
-                        ]
-                    }));
-                    
-                    children.push(new Table({
-                        rows: [headerRow, ...dataRows],
-                        width: { size: 100, type: WidthType.PERCENTAGE }
-                    }));
-                }
+                // Use docx-templates to fill the template
+                const result = await createReport({
+                    template: templateBuffer,
+                    data: data,
+                    cmdDelimiter: ['{', '}'],
+                    processLineBreaks: true,
+                    failFast: false
+                });
                 
-                // Cut-off date
-                if (lead.cutoff) {
-                    children.push(new Paragraph({
-                        children: [
-                            new TextRun({ text: 'Cut-Off Date: ', bold: true }),
-                            new TextRun({ text: new Date(lead.cutoff + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) })
-                        ],
-                        spacing: { before: 300, after: 200 }
-                    }));
-                }
-            }
-            
-            // Events (for events and both types)
-            if (lead.type === 'events' || lead.type === 'both') {
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: 'FUNCTION AGENDA', bold: true, size: 24 })],
-                    spacing: { before: 400, after: 200 }
-                }));
+                // Download the result
+                const blob = new Blob([result], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = getContractFileName(lead);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
                 
-                if (lead.events && lead.events.length > 0) {
-                    const eventHeaderRow = new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Date', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Time', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Event Type', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Room', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Setup', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Attendance', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Rental', bold: true })] })] }),
-                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'F&B Min', bold: true })] })] })
-                        ]
-                    });
-                    
-                    const eventRows = lead.events.map(evt => new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph({ text: evt.date ? new Date(evt.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }) : '' })] }),
-                            new TableCell({ children: [new Paragraph({ text: `${evt.startTime || ''} - ${evt.endTime || ''}` })] }),
-                            new TableCell({ children: [new Paragraph({ text: evt.classification || '' })] }),
-                            new TableCell({ children: [new Paragraph({ text: evt.room || '' })] }),
-                            new TableCell({ children: [new Paragraph({ text: evt.setup || '' })] }),
-                            new TableCell({ children: [new Paragraph({ text: String(evt.headcount || '') })] }),
-                            new TableCell({ children: [new Paragraph({ text: evt.rental ? '$' + evt.rental : '$0' })] }),
-                            new TableCell({ children: [new Paragraph({ text: evt.fbMin ? '$' + evt.fbMin : '' })] })
-                        ]
-                    }));
-                    
-                    children.push(new Table({
-                        rows: [eventHeaderRow, ...eventRows],
-                        width: { size: 100, type: WidthType.PERCENTAGE }
-                    }));
-                }
+            } catch (err) {
+                console.error('Template error:', err);
+                alert('Error generating contract: ' + err.message);
+                throw err;
             }
-            
-            // Special Concessions (conditional)
-            if (lead.concessions && lead.concessions.trim()) {
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: 'SPECIAL CONCESSIONS', bold: true, size: 24 })],
-                    spacing: { before: 400, after: 200 }
-                }));
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: lead.concessions })],
-                    spacing: { after: 200 }
-                }));
-            }
-            
-            // Commission (conditional)
-            if (lead.commissionable && lead.commission) {
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: 'COMMISSIONS', bold: true, size: 24 })],
-                    spacing: { before: 400, after: 200 }
-                }));
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: `The sleeping room rates are commissionable at ${lead.commission}%.` })],
-                    spacing: { after: 200 }
-                }));
-            }
-            
-            // Billing Section (conditional based on billingType)
-            children.push(new Paragraph({
-                children: [new TextRun({ text: 'BILLING AND PAYMENT', bold: true, size: 24 })],
-                spacing: { before: 400, after: 200 }
-            }));
-            
-            if (lead.billingType === 'credit-card') {
-                children.push(new Paragraph({
-                    children: [
-                        new TextRun({ text: 'Credit Card Deposit: ', bold: true }),
-                        new TextRun({ text: lead.ccDeposit ? '$' + parseFloat(lead.ccDeposit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '[AMOUNT]' })
-                    ],
-                    spacing: { after: 200 }
-                }));
-            } else if (lead.billingType === 'direct') {
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: 'Subject to the Hotel\'s prior credit approval, the Group may be invoiced for all charges without an advance deposit.' })],
-                    spacing: { after: 200 }
-                }));
-            } else {
-                // Default to deposit schedule
-                children.push(new Paragraph({
-                    children: [new TextRun({ text: 'A deposit schedule will be provided based on the Group\'s arrival date and total anticipated revenue.' })],
-                    spacing: { after: 200 }
-                }));
-            }
-            
-            // Signature Section
-            children.push(new Paragraph({
-                children: [new TextRun({ text: 'EXECUTION OF AGREEMENT', bold: true, size: 24 })],
-                spacing: { before: 400, after: 200 }
-            }));
-            
-            children.push(new Paragraph({
-                children: [new TextRun({ text: 'The Compton Bentonville', bold: true })],
-                spacing: { before: 300, after: 100 }
-            }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Name: Kelsey McIntyre' })], spacing: { after: 50 } }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Title: Sales Manager' })], spacing: { after: 50 } }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Date: _______________' })], spacing: { after: 50 } }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Signature: _______________' })], spacing: { after: 200 } }));
-            
-            children.push(new Paragraph({
-                children: [new TextRun({ text: 'The Group', bold: true })],
-                spacing: { before: 300, after: 100 }
-            }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Name: _______________' })], spacing: { after: 50 } }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Title: _______________' })], spacing: { after: 50 } }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Date: _______________' })], spacing: { after: 50 } }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Signature: _______________' })], spacing: { after: 200 } }));
-            
-            // Create document
-            const doc = new Document({
-                sections: [{
-                    properties: {},
-                    children: children
-                }]
-            });
-            
-            // Generate and download
-            const blob = await Packer.toBlob(doc);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = getContractFileName(lead);
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
         }
         
         // Initialize contracts tab listeners

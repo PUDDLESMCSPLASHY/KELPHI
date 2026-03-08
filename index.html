@@ -2700,18 +2700,58 @@ The Compton Bentonville`;
             // Deposit schedule
             data.deposit_schedule = lead.depositSchedule || '';
             
-            // Format room block as readable text
-            if (lead.roomBlock && lead.roomBlock.length > 0) {
-                const dates = [];
-                if (lead.arrival && lead.departure) {
-                    let current = new Date(lead.arrival + 'T12:00:00');
-                    const end = new Date(lead.departure + 'T12:00:00');
-                    while (current < end) {
-                        dates.push(new Date(current));
-                        current.setDate(current.getDate() + 1);
+            // Build dates array for room block
+            const dates = [];
+            if (lead.arrival && lead.departure) {
+                let current = new Date(lead.arrival + 'T12:00:00');
+                const end = new Date(lead.departure + 'T12:00:00');
+                while (current < end) {
+                    dates.push(new Date(current));
+                    current.setDate(current.getDate() + 1);
+                }
+            }
+            
+            // Night-by-night date/day placeholders (up to 8 nights)
+            for (let i = 0; i < 8; i++) {
+                const nightNum = i + 1;
+                if (dates[i]) {
+                    data[`night${nightNum}_day`] = dates[i].toLocaleDateString('en-US', { weekday: 'long' });
+                    data[`night${nightNum}_date`] = dates[i].toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+                } else {
+                    data[`night${nightNum}_day`] = '';
+                    data[`night${nightNum}_date`] = '';
+                }
+            }
+            
+            // Row-by-row room type placeholders (up to 4 rows)
+            const nightTotals = new Array(8).fill(0);
+            for (let r = 0; r < 4; r++) {
+                const rowNum = r + 1;
+                const row = lead.roomBlock && lead.roomBlock[r];
+                if (row && row.type) {
+                    data[`row${rowNum}_type`] = row.type || '';
+                    data[`row${rowNum}_rate`] = row.rate ? `$${parseFloat(row.rate).toFixed(2)}` : '';
+                    for (let n = 0; n < 8; n++) {
+                        const qty = row.quantities && row.quantities[n] ? parseInt(row.quantities[n]) || 0 : 0;
+                        data[`row${rowNum}_n${n + 1}`] = qty > 0 ? String(qty) : '';
+                        nightTotals[n] += qty;
+                    }
+                } else {
+                    data[`row${rowNum}_type`] = '';
+                    data[`row${rowNum}_rate`] = '';
+                    for (let n = 0; n < 8; n++) {
+                        data[`row${rowNum}_n${n + 1}`] = '';
                     }
                 }
-                
+            }
+            
+            // Night totals
+            for (let i = 0; i < 8; i++) {
+                data[`night${i + 1}_total`] = nightTotals[i] > 0 ? String(nightTotals[i]) : '';
+            }
+            
+            // Text-based room block (for templates that use it)
+            if (lead.roomBlock && lead.roomBlock.length > 0) {
                 const roomLines = lead.roomBlock
                     .filter(row => row.type && row.rate)
                     .map(row => {

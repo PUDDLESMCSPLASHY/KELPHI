@@ -392,6 +392,7 @@
                                 <option value="definite">Definite</option>
                                 <option value="completed">Completed</option>
                                 <option value="lost">Lost / Turndown</option>
+                                <option value="archived">Archived</option>
                             </select>
                             <input type="text" class="search-input" id="leadSearch" placeholder="Search leads...">
                         </div>
@@ -709,6 +710,23 @@
                         
                         <!-- Delete Section -->
                         <div class="panel-section" id="section-delete">
+                            <!-- Archive Option (hidden if already archived) -->
+                            <div id="archiveOption" style="background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3); border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 24px; margin-bottom: 12px;">📁</div>
+                                <div style="font-weight: 600; color: #ffc107; margin-bottom: 8px;">Consider Archiving Instead?</div>
+                                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Archived leads are hidden from your active list but can be restored anytime.</div>
+                                <button class="btn" style="background: transparent; border: 1px solid rgba(255,193,7,0.5); color: #ffc107;" onclick="archiveLead()">Archive This Lead</button>
+                            </div>
+                            
+                            <!-- Unarchive Option (shown if archived) -->
+                            <div id="unarchiveOption" style="display: none; background: rgba(0,217,255,0.1); border: 1px solid rgba(0,217,255,0.3); border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 24px; margin-bottom: 12px;">📤</div>
+                                <div style="font-weight: 600; color: #00d9ff; margin-bottom: 8px;">This Lead is Archived</div>
+                                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Restore it to your active leads list.</div>
+                                <button class="btn" style="background: transparent; border: 1px solid rgba(0,217,255,0.5); color: #00d9ff;" onclick="unarchiveLead(currentLeadId)">Restore This Lead</button>
+                            </div>
+                            
+                            <!-- Danger Zone -->
                             <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 20px; text-align: center;">
                                 <div style="font-size: 24px; margin-bottom: 12px;">⚠️</div>
                                 <div style="font-weight: 600; color: var(--danger); margin-bottom: 8px;">Danger Zone</div>
@@ -1197,6 +1215,13 @@
             const search = leadSearch.value.toLowerCase();
             
             let leads = appData.leads.filter(lead => {
+                // Handle archived filter
+                if (filter === 'archived') {
+                    return lead.archived && (!search || (lead.bookingName || '').toLowerCase().includes(search) || (lead.account || '').toLowerCase().includes(search));
+                }
+                // Hide archived leads from all other views
+                if (lead.archived) return false;
+                
                 if (filter === 'active' && ['completed', 'lost'].includes(lead.status)) return false;
                 if (filter !== 'all' && filter !== 'active' && lead.status !== filter) return false;
                 if (search && !(lead.bookingName || '').toLowerCase().includes(search) && !(lead.account || '').toLowerCase().includes(search)) return false;
@@ -1272,6 +1297,10 @@
             
             // Clear delete confirmation field
             document.getElementById('deleteConfirmText').value = '';
+            
+            // Show archive or unarchive option based on lead status
+            document.getElementById('archiveOption').style.display = lead.archived ? 'none' : 'block';
+            document.getElementById('unarchiveOption').style.display = lead.archived ? 'block' : 'none';
 
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
             document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
@@ -2085,6 +2114,35 @@
         }
         
         // Delete lead functionality
+        function archiveLead() {
+            if (!currentLeadId) return;
+            
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead) return;
+            
+            lead.archived = true;
+            lead.archivedAt = new Date().toISOString();
+            
+            saveData();
+            closePanel();
+            renderLeads();
+            updateDashboard();
+            
+            alert('Lead archived! You can find it in the "Archived" filter.');
+        }
+        
+        function unarchiveLead(leadId) {
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            lead.archived = false;
+            lead.archivedAt = null;
+            
+            saveData();
+            renderLeads();
+            updateDashboard();
+        }
+        
         function initiateDelete() {
             const confirmText = document.getElementById('deleteConfirmText').value.trim().toLowerCase();
             if (confirmText !== 'bye bye birdy') {

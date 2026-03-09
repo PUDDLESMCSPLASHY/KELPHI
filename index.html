@@ -2727,6 +2727,16 @@ The Compton Bentonville`;
             return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         }
         
+        // Format 24h time to 12h format
+        function formatTime12h(time24) {
+            if (!time24) return '';
+            const [hours, minutes] = time24.split(':');
+            const h = parseInt(hours);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12}:${minutes} ${ampm}`;
+        }
+        
         // Calculate all contract data from lead
         function calculateContractData(lead) {
             const data = {};
@@ -2855,10 +2865,19 @@ The Compton Bentonville`;
                 const deposit3Date = new Date(arrivalDate);
                 deposit3Date.setDate(deposit3Date.getDate() - 30);
                 data.deposit3_date = deposit3Date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+                
+                // deposit4 for events-only: 14 days before arrival (placeholder for different deposit schedule)
+                const deposit4Date = new Date(arrivalDate);
+                deposit4Date.setDate(deposit4Date.getDate() - 14);
+                data.deposit4_date = deposit4Date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
             } else {
                 data.deposit2_date = '';
                 data.deposit3_date = '';
+                data.deposit4_date = '';
             }
+            
+            // Additional deposit amount placeholder (for different deposit schedules)
+            data.deposit4_amount = formatCurrencyValue(totalForDeposits * 0.25);
             
             // Build dates array for room block
             const dates = [];
@@ -2954,6 +2973,35 @@ The Compton Bentonville`;
                 data.events_table = eventLines.join('\n');
             } else {
                 data.events_table = '';
+            }
+            
+            // Per-event placeholders (up to 6 events)
+            for (let i = 0; i < 6; i++) {
+                const eventNum = i + 1;
+                const evt = lead.events && lead.events[i];
+                if (evt) {
+                    data[`event${eventNum}_name`] = evt.name || '';
+                    data[`event${eventNum}_date`] = evt.date ? new Date(evt.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }) : '';
+                    data[`event${eventNum}_day`] = evt.date ? new Date(evt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }) : '';
+                    data[`event${eventNum}_start`] = evt.startTime ? formatTime12h(evt.startTime) : '';
+                    data[`event${eventNum}_end`] = evt.endTime ? formatTime12h(evt.endTime) : '';
+                    data[`event${eventNum}_space`] = evt.room || '';
+                    data[`event${eventNum}_setup`] = evt.setup || '';
+                    data[`event${eventNum}_rental`] = evt.rental ? formatCurrencyValue(parseFloat(evt.rental)) : '';
+                    data[`event${eventNum}_fb_min`] = evt.fbMin ? formatCurrencyValue(parseFloat(evt.fbMin)) : '';
+                    data[`event${eventNum}_attendance`] = evt.attendance || '';
+                } else {
+                    data[`event${eventNum}_name`] = '';
+                    data[`event${eventNum}_date`] = '';
+                    data[`event${eventNum}_day`] = '';
+                    data[`event${eventNum}_start`] = '';
+                    data[`event${eventNum}_end`] = '';
+                    data[`event${eventNum}_space`] = '';
+                    data[`event${eventNum}_setup`] = '';
+                    data[`event${eventNum}_rental`] = '';
+                    data[`event${eventNum}_fb_min`] = '';
+                    data[`event${eventNum}_attendance`] = '';
+                }
             }
             
             return data;

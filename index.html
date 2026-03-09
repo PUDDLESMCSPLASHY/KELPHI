@@ -2879,6 +2879,14 @@ The Compton Bentonville`;
             // Additional deposit amount placeholder (for different deposit schedules)
             data.deposit4_amount = formatCurrencyValue(totalForDeposits * 0.25);
             
+            // Events-only deposit amounts (for IPO room contracts where rooms are paid individually)
+            const eventsOnlyTotal = eventSubtotal + eventTax;
+            data.deposit1_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
+            data.deposit2_events = formatCurrencyValue(eventsOnlyTotal * 0.50);
+            data.deposit3_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
+            data.deposit4_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
+            data.balance_due_events = formatCurrencyValue(eventsOnlyTotal);
+            
             // Build dates array for room block
             const dates = [];
             if (lead.arrival && lead.departure) {

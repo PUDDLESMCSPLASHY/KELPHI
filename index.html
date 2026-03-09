@@ -1455,14 +1455,18 @@
         
         // Auto-calculate cutoff date (30 days before arrival) for room bookings
         function autoCalculateCutoff() {
+            console.log('autoCalculateCutoff called, cutoffManuallySet:', cutoffManuallySet);
             if (cutoffManuallySet) return;
             
             const type = document.getElementById('lead-type').value;
             const arrival = document.getElementById('lead-arrival').value;
             const cutoffField = document.getElementById('lead-cutoff');
             
-            // Only for bookings with rooms
+            console.log('type:', type, 'arrival:', arrival);
+            
+            // Only for bookings with rooms (rooms or both)
             if (type === 'events' || !arrival) {
+                console.log('Skipping - events only or no arrival');
                 return;
             }
             
@@ -1471,15 +1475,18 @@
             today.setHours(12, 0, 0, 0);
             
             const daysUntilArrival = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
+            console.log('daysUntilArrival:', daysUntilArrival);
             
             // If arrival is within 30 days, leave blank
             if (daysUntilArrival < 30) {
+                console.log('Skipping - arrival within 30 days');
                 return;
             }
             
             // Set cutoff to 30 days before arrival
             const cutoffDate = new Date(arrivalDate);
             cutoffDate.setDate(cutoffDate.getDate() - 30);
+            console.log('Setting cutoff to:', cutoffDate.toISOString().split('T')[0]);
             cutoffField.value = cutoffDate.toISOString().split('T')[0];
         }
         

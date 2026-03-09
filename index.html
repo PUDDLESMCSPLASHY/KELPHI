@@ -652,7 +652,7 @@
                             <div id="roomContractFields">
                                 <div class="form-divider"></div>
                                 <div class="form-row">
-                                    <div class="form-group"><label class="form-label">Reservation Procedure</label><select class="form-select" id="lead-resProcedure"><option value="">Select...</option><option value="rooming-list">Rooming List</option><option value="individual">Individual Reservations</option></select></div>
+                                    <div class="form-group"><label class="form-label">Reservation Procedure</label><select class="form-select" id="lead-resProcedure"><option value="">Select...</option><option value="rooming-list">Rooming List</option><option value="individual">Individual Reservations</option><option value="special">Special Instructions</option></select></div>
                                     <div class="form-group"><label class="form-label">Room Payment</label><select class="form-select" id="lead-roomPayment"><option value="">Select...</option><option value="individual">Individual Pays Own</option><option value="room-tax">Room & Tax to Master</option><option value="all-master">All Charges to Master</option></select></div>
                                 </div>
                                 <div class="form-row">
@@ -2694,11 +2694,11 @@ The Compton Bentonville`;
             data.isDeposit = lead.billingType === 'deposit';
             data.isDirect = lead.billingType === 'direct';
             data.isResIndividual = lead.resProcedure === 'individual';
-            data.isResRooming = lead.resProcedure === 'rooming';
+            data.isResRooming = lead.resProcedure === 'rooming-list';
             data.isResSpecial = lead.resProcedure === 'special';
             data.isPayAllMaster = lead.roomPayment === 'all-master';
             data.isPayIndividual = lead.roomPayment === 'individual';
-            data.isPayRoomTaxMaster = lead.roomPayment === 'room-tax-master';
+            data.isPayRoomTaxMaster = lead.roomPayment === 'room-tax';
             data.hasWaivedRental = !!lead.waiveRental;
             data.notWaivedRental = !lead.waiveRental;
             data.hasFbCombined = !!lead.fbCombined;

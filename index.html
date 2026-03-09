@@ -1142,6 +1142,7 @@
                         <div class="form-group"><label class="form-label">Headcount</label><input type="number" class="form-input event-headcount" data-idx="${idx}" value="${evt.headcount || ''}" min="1"></div>
                         <div class="form-group"><label class="form-label">Room Rental</label><input type="number" class="form-input event-rental" data-idx="${idx}" value="${evt.rental || ''}" min="0" step="0.01"></div>
                         <div class="form-group"><label class="form-label">F&B Minimum</label><input type="number" class="form-input event-fb" data-idx="${idx}" value="${evt.fbMin || ''}" min="0" step="0.01"></div>
+                        <div class="form-group"><label class="form-label">Attendance</label><input type="number" class="form-input event-attendance" data-idx="${idx}" value="${evt.attendance || ''}" min="0"></div>
                     </div>
                 </div>
             `).join('');
@@ -1154,14 +1155,14 @@
                 });
             });
 
-            const fields = ['name', 'date', 'classification', 'startTime:start', 'endTime:end', 'room', 'setup', 'headcount', 'rental', 'fbMin:fb'];
+            const fields = ['name', 'date', 'classification', 'startTime:start', 'endTime:end', 'room', 'setup', 'headcount', 'rental', 'fbMin:fb', 'attendance'];
             fields.forEach(f => {
                 const [key, cls] = f.includes(':') ? f.split(':') : [f, f];
                 container.querySelectorAll(`.event-${cls}`).forEach(el => {
                     el.addEventListener('input', e => {
                         const idx = parseInt(e.target.dataset.idx);
                         let val = e.target.value;
-                        if (['headcount', 'rental', 'fbMin'].includes(key)) val = parseFloat(val) || 0;
+                        if (['headcount', 'rental', 'fbMin', 'attendance'].includes(key)) val = parseFloat(val) || 0;
                         currentEvents[idx][key] = val;
                         calculateEventTotals();
                     });
@@ -1177,7 +1178,7 @@
         }
 
         function addEventCard() {
-            currentEvents.push({ name: '', date: '', classification: '', startTime: '', endTime: '', room: '', setup: '', headcount: 0, rental: 0, fbMin: 0 });
+            currentEvents.push({ name: '', date: '', classification: '', startTime: '', endTime: '', room: '', setup: '', headcount: 0, rental: 0, fbMin: 0, attendance: 0 });
             renderEvents();
         }
 
@@ -2632,12 +2633,13 @@ The Compton Bentonville`;
 
 Attached is the contract for ${eventName} arriving ${arrivalDate}. Please review and sign at your earliest convenience.
 
+Important: When adding your payment information, please only enter it in the first deposit tab. Do not add payment info to the other deposit tabs — those will be processed separately as each due date approaches.
+
 This signature document will expire in ${businessDays} business days (${expiryDate}), so please let me know if you need an extension on the deadline.
 
-Warmly,
+Your friend at The Compton,
 Kelsey McIntyre
-Sales Manager
-The Compton Bentonville`;
+Sales Manager`;
             
             navigator.clipboard.writeText(snippet).then(() => {
                 alert('Email snippet copied to clipboard!');

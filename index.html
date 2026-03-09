@@ -2768,8 +2768,31 @@ The Compton Bentonville`;
             // Credit card deposit
             data.cc_deposit = lead.ccDeposit ? formatCurrencyValue(parseFloat(lead.ccDeposit)) : '';
             
-            // Deposit schedule
+            // Deposit schedule calculations
             data.deposit_schedule = lead.depositSchedule || '';
+            
+            // Calculate deposit amounts based on total with tax
+            const totalForDeposits = roomRevenueWithTax + eventSubtotal + eventTax;
+            data.deposit1_amount = formatCurrencyValue(totalForDeposits * 0.25);
+            data.deposit2_amount = formatCurrencyValue(totalForDeposits * 0.50);
+            data.deposit3_amount = formatCurrencyValue(totalForDeposits * 0.25);
+            data.balance_due = formatCurrencyValue(totalForDeposits);
+            
+            // Calculate deposit dates (90 and 30 days before arrival)
+            if (lead.arrival) {
+                const arrivalDate = new Date(lead.arrival + 'T12:00:00');
+                
+                const deposit2Date = new Date(arrivalDate);
+                deposit2Date.setDate(deposit2Date.getDate() - 90);
+                data.deposit2_date = deposit2Date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+                
+                const deposit3Date = new Date(arrivalDate);
+                deposit3Date.setDate(deposit3Date.getDate() - 30);
+                data.deposit3_date = deposit3Date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+            } else {
+                data.deposit2_date = '';
+                data.deposit3_date = '';
+            }
             
             // Build dates array for room block
             const dates = [];

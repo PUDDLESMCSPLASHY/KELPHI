@@ -1502,14 +1502,21 @@
             
             const daysUntilArrival = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
             
-            // If arrival is within 30 days, leave blank
-            if (daysUntilArrival < 30) {
-                return;
+            // Calculate cutoff based on lead time:
+            // 45+ days out → 30 days prior
+            // 30-44 days out → 14 days prior
+            // Less than 30 days out → 7 days prior
+            let cutoffDaysBefore;
+            if (daysUntilArrival >= 45) {
+                cutoffDaysBefore = 30;
+            } else if (daysUntilArrival >= 30) {
+                cutoffDaysBefore = 14;
+            } else {
+                cutoffDaysBefore = 7;
             }
             
-            // Set cutoff to 30 days before arrival
             const cutoffDate = new Date(arrivalDate);
-            cutoffDate.setDate(cutoffDate.getDate() - 30);
+            cutoffDate.setDate(cutoffDate.getDate() - cutoffDaysBefore);
             cutoffField.value = cutoffDate.toISOString().split('T')[0];
         }
         
@@ -3086,8 +3093,13 @@ The Compton Bentonville`;
                 renderLeads();
                 updateDashboard();
                 
-                // Open the new lead
-                setTimeout(() => openLead(leadData.id), 100);
+                // Open the new lead and auto-calculate cutoff
+                setTimeout(() => {
+                    openLead(leadData.id);
+                    // Trigger cutoff auto-calculation for new leads from Quote Generator
+                    cutoffManuallySet = false;
+                    autoCalculateCutoff();
+                }, 100);
             }
         });
     </script>

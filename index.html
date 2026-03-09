@@ -2871,8 +2871,8 @@ The Compton Bentonville`;
                 }
             }
             
-            // Night-by-night date/day placeholders (up to 8 nights)
-            for (let i = 0; i < 8; i++) {
+            // Night-by-night date/day placeholders (up to 9 nights)
+            for (let i = 0; i < 9; i++) {
                 const nightNum = i + 1;
                 if (dates[i]) {
                     data[`night${nightNum}_day`] = dates[i].toLocaleDateString('en-US', { weekday: 'long' });
@@ -2884,14 +2884,14 @@ The Compton Bentonville`;
             }
             
             // Row-by-row room type placeholders (up to 4 rows)
-            const nightTotals = new Array(8).fill(0);
+            const nightTotals = new Array(9).fill(0);
             for (let r = 0; r < 4; r++) {
                 const rowNum = r + 1;
                 const row = lead.roomBlock && lead.roomBlock[r];
                 if (row && row.type) {
                     data[`row${rowNum}_type`] = row.type || '';
                     data[`row${rowNum}_rate`] = row.rate ? `$${parseFloat(row.rate).toFixed(2)}` : '';
-                    for (let n = 0; n < 8; n++) {
+                    for (let n = 0; n < 9; n++) {
                         const qty = row.quantities && row.quantities[n] ? parseInt(row.quantities[n]) || 0 : 0;
                         data[`row${rowNum}_n${n + 1}`] = qty > 0 ? String(qty) : '';
                         nightTotals[n] += qty;
@@ -2899,14 +2899,14 @@ The Compton Bentonville`;
                 } else {
                     data[`row${rowNum}_type`] = '';
                     data[`row${rowNum}_rate`] = '';
-                    for (let n = 0; n < 8; n++) {
+                    for (let n = 0; n < 9; n++) {
                         data[`row${rowNum}_n${n + 1}`] = '';
                     }
                 }
             }
             
             // Night totals
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 9; i++) {
                 data[`night${i + 1}_total`] = nightTotals[i] > 0 ? String(nightTotals[i]) : '';
             }
             

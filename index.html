@@ -3059,7 +3059,18 @@ The Compton Bentonville`;
                 if (lead.type === 'rooms') {
                     templateBase64 = CONTRACT_TEMPLATES[`rooms_${numNights}`] || CONTRACT_TEMPLATES.rooms_3;
                 } else {
-                    templateBase64 = CONTRACT_TEMPLATES.both;
+                    // Both type: pick based on payment type and lead time
+                    let daysOut = 999;
+                    if (lead.arrival) {
+                        const arr = new Date(lead.arrival + 'T12:00:00');
+                        const today = new Date();
+                        daysOut = Math.round((arr - today) / (1000 * 60 * 60 * 24));
+                    }
+                    const isShortLead = daysOut < 61;
+                    const isIPO = lead.roomPayment === 'individual';
+                    const suffix = isShortLead ? '_short' : '';
+                    const paymentType = isIPO ? 'individual' : 'master';
+                    templateBase64 = CONTRACT_TEMPLATES[`both_${paymentType}${suffix}`] || CONTRACT_TEMPLATES.both_master || CONTRACT_TEMPLATES.both;
                 }
             } else if (lead.type === 'events') {
                 // Calculate number of events and lead time

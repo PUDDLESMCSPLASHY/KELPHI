@@ -826,6 +826,8 @@
             { key: 'cutoff', label: 'Cut-off Date', default: false }
         ];
         let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
+        let stickyNotes = JSON.parse(localStorage.getItem('kelphi_notes') || '[]');
+        const STICKY_COLORS = ['#FFF9C4', '#F8BBD9', '#B3E5FC', '#C8E6C9', '#FFE0B2', '#E1BEE7'];
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -1859,9 +1861,6 @@
         });
         
         // ============ STICKY NOTES ============
-        const STICKY_COLORS = ['#FFF9C4', '#F8BBD9', '#B3E5FC', '#C8E6C9', '#FFE0B2', '#E1BEE7'];
-        let stickyNotes = JSON.parse(localStorage.getItem('kelphi_notes') || '[]');
-        
         function toggleNotesSidebar() {
             document.getElementById('notesSidebar').classList.toggle('open');
         }

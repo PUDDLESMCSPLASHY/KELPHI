@@ -2822,15 +2822,23 @@ Sales Manager`;
                 });
             }
             
-            // Event tax: 2% A&P + 23% service + 9.5% on service
-            const eventSubtotal = totalRental + totalFbMin;
-            const apTax = eventSubtotal * 0.02;
-            const serviceFee = eventSubtotal * 0.23;
-            const taxOnService = serviceFee * 0.095;
-            const eventTax = apTax + serviceFee + taxOnService;
+            // Room Rental tax: 2% A&P + 23% service + 9.5% tax on service
+            const rentalApTax = totalRental * 0.02;
+            const rentalServiceFee = totalRental * 0.23;
+            const rentalTaxOnService = rentalServiceFee * 0.095;
+            const rentalTax = rentalApTax + rentalServiceFee + rentalTaxOnService;
+            const rentalWithTax = totalRental + rentalTax;
             
-            const rentalWithTax = totalRental + (totalRental > 0 ? (totalRental * 0.02 + totalRental * 0.23 + totalRental * 0.23 * 0.095) : 0);
-            const fbWithTax = totalFbMin + (totalFbMin > 0 ? (totalFbMin * 0.02 + totalFbMin * 0.23 + totalFbMin * 0.23 * 0.095) : 0);
+            // F&B Min tax: 10.5% sales tax + 23% service + 9.5% tax on service
+            const fbSalesTax = totalFbMin * 0.105;
+            const fbServiceFee = totalFbMin * 0.23;
+            const fbTaxOnService = fbServiceFee * 0.095;
+            const fbTax = fbSalesTax + fbServiceFee + fbTaxOnService;
+            const fbWithTax = totalFbMin + fbTax;
+            
+            // Combined event totals
+            const eventSubtotal = totalRental + totalFbMin;
+            const eventTax = rentalTax + fbTax;
             
             data.total_rental = formatCurrencyValue(totalRental);
             data.total_rental_with_tax = formatCurrencyValue(rentalWithTax);
@@ -2841,7 +2849,7 @@ Sales Manager`;
             
             // Combined totals
             data.subtotal = formatCurrencyValue(roomRevenue + eventSubtotal);
-            data.grand_total = formatCurrencyValue(roomRevenueWithTax + eventSubtotal + eventTax);
+            data.grand_total = formatCurrencyValue(roomRevenueWithTax + rentalWithTax + fbWithTax);
             
             // Credit card deposit
             data.cc_deposit = lead.ccDeposit ? formatCurrencyValue(parseFloat(lead.ccDeposit)) : '';
@@ -2850,11 +2858,19 @@ Sales Manager`;
             data.deposit_schedule = lead.depositSchedule || '';
             
             // Calculate deposit amounts based on total with tax
-            const totalForDeposits = roomRevenueWithTax + eventSubtotal + eventTax;
-            data.deposit1_amount = formatCurrencyValue(totalForDeposits * 0.25);
-            data.deposit2_amount = formatCurrencyValue(totalForDeposits * 0.50);
-            data.deposit3_amount = formatCurrencyValue(totalForDeposits * 0.25);
-            data.balance_due = formatCurrencyValue(totalForDeposits);
+            const grandTotal = roomRevenueWithTax + rentalWithTax + fbWithTax;
+            const fbOverage = fbWithTax * 0.10; // 10% F&B overage (deposit4)
+            
+            data.deposit1_amount = formatCurrencyValue(grandTotal * 0.25);
+            data.deposit2_amount = formatCurrencyValue(grandTotal * 0.50);
+            data.deposit3_amount = formatCurrencyValue(grandTotal * 0.25);
+            data.deposit4_amount = formatCurrencyValue(fbOverage); // 10% F&B overage
+            data.balance_due = formatCurrencyValue(grandTotal + fbOverage); // 110% if events
+            
+            // Short schedule deposits
+            data.deposit1_short = formatCurrencyValue(grandTotal * 0.50);
+            data.deposit2_short = formatCurrencyValue(grandTotal * 0.50);
+            data.deposit3_short = formatCurrencyValue(fbOverage); // 10% F&B overage (only if events)
             
             // Calculate deposit dates (90 and 30 days before arrival)
             if (lead.arrival) {
@@ -2878,16 +2894,19 @@ Sales Manager`;
                 data.deposit4_date = '';
             }
             
-            // Additional deposit amount placeholder (for different deposit schedules)
-            data.deposit4_amount = formatCurrencyValue(totalForDeposits * 0.25);
-            
             // Events-only deposit amounts (for IPO room contracts where rooms are paid individually)
-            const eventsOnlyTotal = eventSubtotal + eventTax;
+            const eventsOnlyTotal = rentalWithTax + fbWithTax;
+            const eventsOnlyOverage = fbWithTax * 0.10;
             data.deposit1_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
             data.deposit2_events = formatCurrencyValue(eventsOnlyTotal * 0.50);
             data.deposit3_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
-            data.deposit4_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
-            data.balance_due_events = formatCurrencyValue(eventsOnlyTotal);
+            data.deposit4_events = formatCurrencyValue(eventsOnlyOverage); // 10% F&B overage
+            data.balance_due_events = formatCurrencyValue(eventsOnlyTotal + eventsOnlyOverage);
+            
+            // Short schedule for events-only (IPO)
+            data.deposit1_events_short = formatCurrencyValue(eventsOnlyTotal * 0.50);
+            data.deposit2_events_short = formatCurrencyValue(eventsOnlyTotal * 0.50);
+            data.deposit3_events_short = formatCurrencyValue(eventsOnlyOverage);
             
             // Build dates array for room block
             const dates = [];

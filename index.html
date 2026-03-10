@@ -806,6 +806,26 @@
         let currentRoomBlock = [];
         let currentEvents = [];
         let savedViews = JSON.parse(localStorage.getItem('kelphi_views') || '{}');
+        
+        const ALL_COLUMNS = [
+            { key: 'bookingName', label: 'Booking Name', default: true },
+            { key: 'account', label: 'Account', default: true },
+            { key: 'contactFirstName', label: 'Contact First Name', default: false },
+            { key: 'contactLastName', label: 'Contact Last Name', default: false },
+            { key: 'segment', label: 'Market Segment', default: false },
+            { key: 'contactEmail', label: 'Contact Email', default: false },
+            { key: 'contactPhone', label: 'Contact Phone', default: false },
+            { key: 'status', label: 'Status', default: true },
+            { key: 'arrival', label: 'Arrival', default: true },
+            { key: 'departure', label: 'Departure', default: false },
+            { key: 'type', label: 'Type', default: true },
+            { key: 'revenue', label: 'Revenue', default: true },
+            { key: 'signerName', label: 'Signer Name', default: false },
+            { key: 'billingType', label: 'Billing Type', default: false },
+            { key: 'createdAt', label: 'Created Date', default: false },
+            { key: 'cutoff', label: 'Cut-off Date', default: false }
+        ];
+        let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -2161,27 +2181,6 @@
         function formatCurrency(val) { return '$' + (parseFloat(val) || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
         
         // ============ VIEW CONFIGURATION ============
-        const ALL_COLUMNS = [
-            { key: 'bookingName', label: 'Booking Name', default: true },
-            { key: 'account', label: 'Account', default: true },
-            { key: 'contactFirstName', label: 'Contact First Name', default: false },
-            { key: 'contactLastName', label: 'Contact Last Name', default: false },
-            { key: 'segment', label: 'Market Segment', default: false },
-            { key: 'contactEmail', label: 'Contact Email', default: false },
-            { key: 'contactPhone', label: 'Contact Phone', default: false },
-            { key: 'status', label: 'Status', default: true },
-            { key: 'arrival', label: 'Arrival', default: true },
-            { key: 'departure', label: 'Departure', default: false },
-            { key: 'type', label: 'Type', default: true },
-            { key: 'revenue', label: 'Revenue', default: true },
-            { key: 'signerName', label: 'Signer Name', default: false },
-            { key: 'billingType', label: 'Billing Type', default: false },
-            { key: 'createdAt', label: 'Created Date', default: false },
-            { key: 'cutoff', label: 'Cut-off Date', default: false }
-        ];
-        
-        let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
-        
         function openViewModal() {
             const modal = document.getElementById('viewModal');
             const checkboxes = document.getElementById('columnCheckboxes');

@@ -828,6 +828,20 @@
         let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
         let stickyNotes = JSON.parse(localStorage.getItem('kelphi_notes') || '[]');
         const STICKY_COLORS = ['#FFF9C4', '#F8BBD9', '#B3E5FC', '#C8E6C9', '#FFE0B2', '#E1BEE7'];
+        let completedViewMode = 'total';
+        let goalsData = JSON.parse(localStorage.getItem('kelphi_goalsCache') || 'null');
+        let cutoffManuallySet = false;
+        let ccDepositManuallySet = false;
+        let mentionDropdown = null;
+        let currentMentionNoteId = null;
+        let docxLibsLoaded = false;
+        const WRAPUP_TASKS = [
+            { id: 'review-actuals', label: 'Review actuals in Delphi' },
+            { id: 'turnover-complete', label: 'Check turnover complete box' },
+            { id: 'review-invoice', label: 'Review final invoice' },
+            { id: 'add-summary', label: 'Add summary notes to booking and account in Delphi' },
+            { id: 'done', label: 'Done' }
+        ];
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -1542,9 +1556,6 @@
         }
         
         // Mark cutoff date as manually set (stored per-lead)
-        let cutoffManuallySet = false;
-        let ccDepositManuallySet = false;
-        
         function markCutoffManual() {
             cutoffManuallySet = true;
         }
@@ -1646,8 +1657,6 @@
         }
 
         // ============ DASHBOARD ============
-        let completedViewMode = 'total';
-        
         function toggleCompletedView(mode) {
             completedViewMode = mode;
             document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -1802,8 +1811,6 @@
         }
 
         // ============ GOALS DATA ============
-        let goalsData = JSON.parse(localStorage.getItem('kelphi_goalsCache') || 'null');
-        
         function requestGoalsData() {
             const goalsFrame = document.getElementById('goalsFrame');
             if (goalsFrame && goalsFrame.contentWindow) {
@@ -1937,9 +1944,6 @@
                 saveNotes();
             }
         }
-        
-        let mentionDropdown = null;
-        let currentMentionNoteId = null;
         
         function handleNoteKeyup(noteId, event) {
             const el = event.target;
@@ -2113,14 +2117,6 @@
         }
         
         // ============ POST BOOKING WRAP UP ============
-        const WRAPUP_TASKS = [
-            { id: 'review-actuals', label: 'Review actuals in Delphi' },
-            { id: 'turnover-complete', label: 'Check turnover complete box' },
-            { id: 'review-invoice', label: 'Review final invoice' },
-            { id: 'add-summary', label: 'Add summary notes to booking and account in Delphi' },
-            { id: 'done', label: 'Done' }
-        ];
-        
         function renderWrapUp() {
             const wrapupList = document.getElementById('wrapupList');
             const definiteLeads = appData.leads.filter(l => l.status === 'definite');
@@ -3196,7 +3192,6 @@ Sales Manager`;
         }
         
         // Load docxtemplater libraries
-        let docxLibsLoaded = false;
         async function loadDocxLibs() {
             if (docxLibsLoaded) return;
             

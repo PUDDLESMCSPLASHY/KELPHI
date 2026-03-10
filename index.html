@@ -161,6 +161,13 @@
         .sticky-note-back-actions { display: flex; flex-direction: column; gap: 0.5rem; }
         .sticky-note-back-actions button { background: rgba(0,0,0,0.1); border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: rgba(0,0,0,0.7); }
         .sticky-note-back-actions button:hover { background: rgba(0,0,0,0.2); }
+        .sticky-note-text:empty:before { content: 'Click to add note...'; color: #999; pointer-events: none; }
+        .sticky-note-text:focus:before { content: ''; }
+        .mention-dropdown { position: absolute; background: #1e293b; border: 1px solid #334155; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .mention-item { padding: 8px 12px; cursor: pointer; font-size: 0.85rem; color: #e2e8f0; }
+        .mention-item:hover { background: #334155; }
+        .mention-tag { background: rgba(124,58,237,0.3); color: #a78bfa; padding: 1px 4px; border-radius: 3px; cursor: pointer; }
+        .mention-tag:hover { background: rgba(124,58,237,0.5); }
         .notes-trash { padding: 0.75rem 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #888; font-size: 0.8rem; }
         .notes-trash:hover { background: rgba(255,255,255,0.05); color: #e0e0e0; }
         .section-header { font-size: 0.8rem; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 1rem; }
@@ -711,6 +718,13 @@
                             <div class="form-group"><label class="form-label">Handover Notes <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(syncs with Handover tab)</span></label><textarea class="form-textarea" id="lead-handoverNotes" placeholder="Notes for the handover process..." style="min-height: 100px;" oninput="syncMirroredField('handoverNotes', this.value)"></textarea></div>
                             <div class="form-divider"></div>
                             <div class="form-group"><label class="form-label">Special Concessions <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(syncs with Contract tab)</span></label><textarea class="form-textarea" id="lead-concessionsMirror" placeholder="Enter concessions (one per line)..." style="min-height: 100px;" oninput="syncMirroredField('concessions', this.value)"></textarea></div>
+                            <div class="form-divider"></div>
+                            <div class="form-group">
+                                <label class="form-label">Sticky Notes <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(tagged with @mention)</span></label>
+                                <div id="lead-sticky-notes" style="min-height: 60px; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 12px;">
+                                    <div style="color: #666; font-size: 13px;">No sticky notes tagged to this lead</div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Delete Section -->
@@ -1347,8 +1361,34 @@
             document.querySelector('.panel-tab').classList.add('active');
             document.getElementById('section-booking').classList.add('active');
 
+            // Render sticky notes tagged to this lead
+            renderLeadStickyNotes(id);
+
             leadPanel.classList.add('open');
             renderLeads();
+        }
+        
+        function renderLeadStickyNotes(leadId) {
+            const container = document.getElementById('lead-sticky-notes');
+            if (!container) return;
+            
+            // Find all notes linked to this lead (including completed/archived)
+            const linkedNotes = stickyNotes.filter(n => n.linkedLeads && n.linkedLeads.includes(leadId))
+                .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            
+            if (linkedNotes.length === 0) {
+                container.innerHTML = '<div style="color: #666; font-size: 13px;">No sticky notes tagged to this lead</div>';
+                return;
+            }
+            
+            container.innerHTML = linkedNotes.map(note => {
+                const status = note.deleted ? '🗑️ Deleted' : (note.completed ? '✓ Completed' : '');
+                const dateStr = new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                return `<div style="background: ${note.color}; padding: 10px; border-radius: 4px; margin-bottom: 8px; color: #333; font-size: 13px; ${note.completed || note.deleted ? 'opacity: 0.6;' : ''}">
+                    <div style="font-family: 'Caveat', cursive; font-size: 1.1rem; margin-bottom: 4px;">${note.text || '<em>Empty note</em>'}</div>
+                    <div style="font-size: 11px; color: rgba(0,0,0,0.5);">${dateStr}${status ? ' • ' + status : ''}</div>
+                </div>`;
+            }).join('');
         }
 
         function closePanel() {
@@ -1816,7 +1856,8 @@
                 color: STICKY_COLORS[Math.floor(Math.random() * STICKY_COLORS.length)],
                 createdAt: new Date().toISOString(),
                 completed: false,
-                deleted: false
+                deleted: false,
+                linkedLeads: []
             };
             stickyNotes.unshift(note);
             saveNotes();
@@ -1842,7 +1883,8 @@
                     <div class="sticky-note-front">
                         <div class="sticky-note-text" contenteditable="true" style="color: #333; outline: none; min-height: 80px;" 
                             onblur="updateNoteText('${note.id}', this.innerText)"
-                            onclick="event.stopPropagation()">${note.text || '<span style="color: #999;">Click to add note...</span>'}</div>
+                            onkeyup="handleNoteKeyup('${note.id}', event)"
+                            onclick="event.stopPropagation()">${note.text || ''}</div>
                     </div>
                     <div class="sticky-note-back" style="background: ${note.color};">
                         <div class="sticky-note-back-meta">Created: ${new Date(note.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>
@@ -1865,9 +1907,121 @@
         function updateNoteText(noteId, text) {
             const note = stickyNotes.find(n => n.id === noteId);
             if (note) {
+                // Extract mentions from text and update linkedLeads
+                const mentionMatches = text.match(/@\[([^\]]+)\]\(([^)]+)\)/g) || [];
+                note.linkedLeads = mentionMatches.map(m => {
+                    const match = m.match(/@\[([^\]]+)\]\(([^)]+)\)/);
+                    return match ? match[2] : null;
+                }).filter(Boolean);
                 note.text = text.replace(/<[^>]*>/g, '').trim();
                 saveNotes();
             }
+        }
+        
+        let mentionDropdown = null;
+        let currentMentionNoteId = null;
+        
+        function handleNoteKeyup(noteId, event) {
+            const el = event.target;
+            const text = el.innerText;
+            const cursorPos = window.getSelection().getRangeAt(0).startOffset;
+            
+            // Check if we're typing after @
+            const beforeCursor = text.substring(0, cursorPos);
+            const atMatch = beforeCursor.match(/@([^@\s]*)$/);
+            
+            if (atMatch) {
+                const searchTerm = atMatch[1].toLowerCase();
+                const matches = appData.leads.filter(l => 
+                    (l.bookingName && l.bookingName.toLowerCase().includes(searchTerm)) ||
+                    (l.account && l.account.toLowerCase().includes(searchTerm))
+                ).slice(0, 5);
+                
+                if (matches.length > 0) {
+                    showMentionDropdown(el, matches, noteId, atMatch[0].length);
+                } else {
+                    hideMentionDropdown();
+                }
+            } else {
+                hideMentionDropdown();
+            }
+        }
+        
+        function showMentionDropdown(anchor, leads, noteId, replaceLength) {
+            hideMentionDropdown();
+            currentMentionNoteId = noteId;
+            
+            mentionDropdown = document.createElement('div');
+            mentionDropdown.className = 'mention-dropdown';
+            mentionDropdown.innerHTML = leads.map(l => 
+                `<div class="mention-item" data-lead-id="${l.id}" data-name="${l.bookingName || l.account}" data-replace="${replaceLength}">${l.bookingName || 'Untitled'}${l.account ? ` (${l.account})` : ''}</div>`
+            ).join('');
+            
+            const rect = anchor.getBoundingClientRect();
+            mentionDropdown.style.position = 'fixed';
+            mentionDropdown.style.top = (rect.bottom + 5) + 'px';
+            mentionDropdown.style.left = rect.left + 'px';
+            
+            mentionDropdown.addEventListener('click', (e) => {
+                if (e.target.classList.contains('mention-item')) {
+                    insertMention(e.target.dataset.leadId, e.target.dataset.name, parseInt(e.target.dataset.replace));
+                }
+            });
+            
+            document.body.appendChild(mentionDropdown);
+        }
+        
+        function hideMentionDropdown() {
+            if (mentionDropdown) {
+                mentionDropdown.remove();
+                mentionDropdown = null;
+            }
+        }
+        
+        function insertMention(leadId, name, replaceLength) {
+            const noteEl = document.querySelector(`[data-note-id="${currentMentionNoteId}"] .sticky-note-text`);
+            if (!noteEl) return;
+            
+            const sel = window.getSelection();
+            const range = sel.getRangeAt(0);
+            
+            // Delete the @ and search text
+            range.setStart(range.startContainer, range.startOffset - replaceLength);
+            range.deleteContents();
+            
+            // Insert mention span
+            const mention = document.createElement('span');
+            mention.className = 'mention-tag';
+            mention.dataset.leadId = leadId;
+            mention.textContent = '@' + name;
+            mention.onclick = (e) => { e.stopPropagation(); openLead(leadId); };
+            range.insertNode(mention);
+            
+            // Move cursor after mention
+            range.setStartAfter(mention);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            
+            // Add space after
+            const space = document.createTextNode(' ');
+            range.insertNode(space);
+            range.setStartAfter(space);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            
+            // Update note with linked lead
+            const note = stickyNotes.find(n => n.id === currentMentionNoteId);
+            if (note) {
+                if (!note.linkedLeads) note.linkedLeads = [];
+                if (!note.linkedLeads.includes(leadId)) {
+                    note.linkedLeads.push(leadId);
+                }
+                note.text = noteEl.innerText;
+                saveNotes();
+            }
+            
+            hideMentionDropdown();
         }
         
         function moveNoteToTop(noteId) {

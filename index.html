@@ -680,6 +680,11 @@
                                 <select class="form-select" id="lead-billingType" onchange="updateBillingDisplay()"><option value="">Select...</option><option value="deposit">Deposit Schedule</option><option value="credit-card">Credit Card Deposit</option><option value="direct">Direct Billing</option></select>
                             </div>
                             
+                            <div class="form-group">
+                                <label class="form-label">Payment Method</label>
+                                <select class="form-select" id="lead-paymentMethod"><option value="">Select...</option><option value="Card/ACH">Card/ACH</option><option value="Card">Card</option></select>
+                            </div>
+                            
                             <!-- Deposit Schedule Preview -->
                             <div id="depositSchedulePreview" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0,217,255,0.05); border: 1px solid rgba(0,217,255,0.2); border-radius: 8px;">
                                 <div style="font-weight: 600; margin-bottom: 12px; color: var(--accent);">Deposit Schedule Preview</div>
@@ -1277,7 +1282,7 @@
             // Simple fields
             ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'arrival', 'departure', 'type', 'status', 'segment',
              'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
-             'billingType', 'concessions', 'notes', 'handoverNotes', 'ccDeposit'].forEach(f => {
+             'billingType', 'paymentMethod', 'concessions', 'notes', 'handoverNotes', 'ccDeposit'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
                 if (el) el.value = lead[f] || '';
             });
@@ -1398,6 +1403,7 @@
                 waiveRental: document.getElementById('lead-waiveRental').checked,
                 fbCombined: document.getElementById('lead-fbCombined').checked,
                 billingType: document.getElementById('lead-billingType').value,
+                paymentMethod: document.getElementById('lead-paymentMethod').value,
                 ccDeposit: document.getElementById('lead-ccDeposit').value,
                 cutoffManuallySet: cutoffManuallySet,
                 ccDepositManuallySet: ccDepositManuallySet,
@@ -2760,6 +2766,7 @@ Sales Manager`;
             data.commissionable = lead.commissionable || false;
             data.commission = lead.commission || '';
             data.billingType = lead.billingType || '';
+            data.payment_method = lead.paymentMethod || '';
             data.res_procedure = lead.resProcedure || '';
             data.room_payment = lead.roomPayment || '';
             data.waive_rental = lead.waiveRental || false;

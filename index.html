@@ -805,6 +805,7 @@
         let currentLeadId = null;
         let currentRoomBlock = [];
         let currentEvents = [];
+        let savedViews = JSON.parse(localStorage.getItem('kelphi_views') || '{}');
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -2180,7 +2181,6 @@
         ];
         
         let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
-        let savedViews = JSON.parse(localStorage.getItem('kelphi_views') || '{}');
         
         function openViewModal() {
             const modal = document.getElementById('viewModal');

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelphi</title>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="templates.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -773,6 +774,39 @@
         // ============ CONFIG ============
         const CORRECT_PASSWORD = '4273';
         const STORAGE_KEY = 'kelphi_data';
+        
+        // ============ SUPABASE ============
+        const SUPABASE_URL = 'https://jwxdolqobyspalaymkyq.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_GycZLniEUNac_j5hzQxSKA_uF6cbjY-';
+        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        let syncEnabled = !!supabase;
+        let isSyncing = false;
+        
+        async function syncToCloud() {
+            if (!syncEnabled || isSyncing) return;
+            isSyncing = true;
+            try {
+                // Save leads
+                const leadsData = { id: 'main', data: appData, updated_at: new Date().toISOString() };
+                await supabase.from('leads').upsert(leadsData);
+                console.log('☁️ Synced to cloud');
+            } catch (err) {
+                console.error('Sync error:', err);
+            }
+            isSyncing = false;
+        }
+        
+        async function loadFromCloud() {
+            if (!syncEnabled) return null;
+            try {
+                const { data, error } = await supabase.from('leads').select('*').eq('id', 'main').single();
+                if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+                return data?.data || null;
+            } catch (err) {
+                console.error('Load from cloud error:', err);
+                return null;
+            }
+        }
         const ROOM_TYPES = [
             'Run of House', 'Deluxe King', 'Deluxe Two Queen', 'Premium King', 
             'Premium Two Queen', 'Studio Suite King', 'One Bedroom Suite King', 'Presidential Suite King'
@@ -852,7 +886,45 @@
             }
             return { leads: [], contracts: [], settings: { goalTarget: 86000 } };
         }
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
+        
+        function saveData() { 
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            // Sync to cloud (non-blocking)
+            syncToCloud();
+        }
+        
+        // Initial cloud sync on load
+        async function initialCloudSync() {
+            const cloudData = await loadFromCloud();
+            if (cloudData) {
+                const localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+                // If cloud has data and local is empty, use cloud
+                if (!localData || !localData.leads || localData.leads.length === 0) {
+                    appData = cloudData;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                    renderLeads();
+                    updateDashboard();
+                    console.log('☁️ Loaded from cloud');
+                } else {
+                    // Merge: keep whichever has more leads (simple strategy)
+                    if (cloudData.leads && cloudData.leads.length > appData.leads.length) {
+                        appData = cloudData;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                        renderLeads();
+                        updateDashboard();
+                        console.log('☁️ Updated from cloud (more data)');
+                    } else {
+                        // Push local to cloud
+                        syncToCloud();
+                        console.log('☁️ Pushed local to cloud');
+                    }
+                }
+            } else if (appData.leads && appData.leads.length > 0) {
+                // No cloud data, push local
+                syncToCloud();
+                console.log('☁️ Initial push to cloud');
+            }
+        }
         function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
 
         // ============ DOM ============
@@ -897,6 +969,8 @@
             setupListeners();
             renderStickyNotes();
             requestGoalsData();
+            // Cloud sync
+            initialCloudSync();
         }
 
         function setupListeners() {

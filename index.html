@@ -777,7 +777,7 @@
         
         // ============ SUPABASE ============
         const SUPABASE_URL = 'https://jwxdolqobyspalaymkyq.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_GycZLniEUNac_j5hzQxSKA_uF6cbjY-';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3eGRvbHFvYnlzcGFsYXlta3lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNzIwOTMsImV4cCI6MjA4ODg0ODA5M30.kagxIB5lhbriS5fcGXzA6fcY5wfK1KRekWP-Fc4BhPU';
         const supabaseClient = (typeof supabase !== 'undefined' && supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
         let syncEnabled = !!supabaseClient;
         let isSyncing = false;

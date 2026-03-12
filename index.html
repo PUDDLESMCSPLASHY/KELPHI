@@ -184,6 +184,10 @@
         /* Leads Table */
         .leads-table { width: 100%; background: #16161f; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); border-collapse: collapse; overflow: hidden; }
         .leads-table th { text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.05rem; border-bottom: 1px solid rgba(255,255,255,0.06); background: #12121c; }
+        .leads-table th.sortable:hover { color: #00d9ff; }
+        .leads-table th.sortable::after { content: ' ↕'; opacity: 0.4; }
+        .leads-table th.sortable.asc::after { content: ' ↑'; opacity: 1; }
+        .leads-table th.sortable.desc::after { content: ' ↓'; opacity: 1; }
         .leads-table td { padding: 1rem 1.5rem; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .leads-table tr:last-child td { border-bottom: none; }
         .leads-table tbody tr { cursor: pointer; transition: background 0.2s; }
@@ -856,10 +860,12 @@
             { key: 'revenue', label: 'Revenue', default: true },
             { key: 'signerName', label: 'Signer Name', default: false },
             { key: 'billingType', label: 'Billing Type', default: false },
-            { key: 'createdAt', label: 'Created Date', default: false },
+            { key: 'createdAt', label: 'Created', default: true },
             { key: 'cutoff', label: 'Cut-off Date', default: false }
         ];
         let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
+        let leadsSortColumn = null;
+        let leadsSortDirection = 'asc';
         let stickyNotes = JSON.parse(localStorage.getItem('kelphi_notes') || '[]');
         const STICKY_COLORS = ['#FFF9C4', '#F8BBD9', '#B3E5FC', '#C8E6C9', '#FFE0B2', '#E1BEE7'];
         let completedViewMode = 'total';
@@ -1359,6 +1365,25 @@
                 if (search && !(lead.bookingName || '').toLowerCase().includes(search) && !(lead.account || '').toLowerCase().includes(search)) return false;
                 return true;
             });
+            
+            // Sort leads if a sort column is selected
+            if (leadsSortColumn) {
+                leads.sort((a, b) => {
+                    let valA, valB;
+                    if (leadsSortColumn === 'bookingName') {
+                        valA = (a.bookingName || a.account || '').toLowerCase();
+                        valB = (b.bookingName || b.account || '').toLowerCase();
+                    } else if (leadsSortColumn === 'arrival') {
+                        valA = a.arrival || '';
+                        valB = b.arrival || '';
+                    } else if (leadsSortColumn === 'createdAt') {
+                        valA = a.createdAt || '';
+                        valB = b.createdAt || '';
+                    }
+                    const cmp = valA.localeCompare(valB);
+                    return leadsSortDirection === 'asc' ? cmp : -cmp;
+                });
+            }
 
             if (leads.length === 0) {
                 leadsTableBody.innerHTML = `<tr><td colspan="${currentViewColumns.length}" style="text-align: center; color: #666; padding: 3rem;">No leads found. Click "+ New Lead" to create one.</td></tr>`;
@@ -2350,10 +2375,27 @@
         
         function updateTableColumns() {
             const thead = document.querySelector('.leads-table thead tr');
+            const sortableColumns = ['bookingName', 'arrival', 'createdAt'];
             thead.innerHTML = currentViewColumns.map(key => {
                 const col = ALL_COLUMNS.find(c => c.key === key);
-                return `<th>${col ? col.label : key}</th>`;
+                const label = col ? col.label : key;
+                if (sortableColumns.includes(key)) {
+                    const sortClass = leadsSortColumn === key ? (leadsSortDirection === 'asc' ? 'asc' : 'desc') : '';
+                    return `<th class="sortable ${sortClass}" onclick="toggleLeadsSort('${key}')" style="cursor:pointer;">${label}</th>`;
+                }
+                return `<th>${label}</th>`;
             }).join('');
+        }
+        
+        function toggleLeadsSort(column) {
+            if (leadsSortColumn === column) {
+                leadsSortDirection = leadsSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                leadsSortColumn = column;
+                leadsSortDirection = 'asc';
+            }
+            updateTableColumns();
+            renderLeads();
         }
         
         // Delete lead functionality

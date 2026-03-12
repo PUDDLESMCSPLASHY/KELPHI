@@ -1903,25 +1903,38 @@
                 ['oct', 'nov', 'dec']
             ][currentQuarter];
             
-            // Calculate actuals from leads
-            const definiteLeads = appData.leads.filter(l => l.status === 'definite');
-            const roomsActual = definiteLeads.reduce((sum, l) => sum + calcRoomRevenue(l), 0);
-            const cateringActual = definiteLeads.reduce((sum, l) => sum + calcEventRevenue(l), 0);
-            
-            // Get budgets from cached goals data or use defaults
+            // Get actuals and budgets from Goals tracker data
+            let roomsActual = 0;
+            let cateringActual = 0;
             let roomsBudget = 0;
             let cateringBudget = 0;
             
-            if (goalsData && goalsData.goals) {
-                quarterMonths.forEach(month => {
-                    roomsBudget += goalsData.goals.rooms?.[month] || 0;
-                    cateringBudget += goalsData.goals.catering?.[month] || 0;
-                });
-            } else {
-                // Default quarterly goals
-                roomsBudget = 77000;
-                cateringBudget = 67000;
+            if (goalsData) {
+                // Calculate actuals from Goals bookings for current quarter
+                if (goalsData.bookings) {
+                    goalsData.bookings.forEach(b => {
+                        if (quarterMonths.includes(b.month)) {
+                            // Room revenue (net = 80% of gross)
+                            const roomRev = (b.adr || 0) * (b.roomNights || 0) * 0.8;
+                            roomsActual += roomRev;
+                            // Catering revenue
+                            cateringActual += (b.roomRental || 0) + (b.fnb || 0) + (b.av || 0);
+                        }
+                    });
+                }
+                
+                // Get budgets from goals
+                if (goalsData.goals) {
+                    quarterMonths.forEach(month => {
+                        roomsBudget += goalsData.goals.rooms?.[month] || 0;
+                        cateringBudget += goalsData.goals.catering?.[month] || 0;
+                    });
+                }
             }
+            
+            // Fallback defaults if no goals data
+            if (roomsBudget === 0) roomsBudget = 77000;
+            if (cateringBudget === 0) cateringBudget = 67000;
             
             const totalActual = roomsActual + cateringActual;
             const totalBudget = roomsBudget + cateringBudget;

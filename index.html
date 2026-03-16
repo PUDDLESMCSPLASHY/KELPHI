@@ -767,6 +767,7 @@
                 <div class="panel-actions">
                     <div id="lastUpdatedText" style="font-size: 12px; color: var(--text-muted); font-style: italic; flex: 1;"></div>
                     <button class="btn btn-ghost" id="panelCancel">Cancel</button>
+                    <button class="btn" id="panelChecklist" onclick="addChecklistFromPanel()" style="background: #2a2a3e; color: #10b981; border: 1px solid rgba(16,185,129,0.3);">📋 Add Checklist</button>
                     <button class="btn" id="panelContract" onclick="generateContractFromPanel()" style="background: #2a2a3e; color: #00d9ff; border: 1px solid rgba(0,217,255,0.3);">Generate Contract</button>
                     <button class="btn btn-primary" id="panelSave">Save Lead</button>
                 </div>
@@ -1499,6 +1500,9 @@
 
             // Render sticky notes tagged to this lead
             renderLeadStickyNotes(id);
+            
+            // Update checklist button state
+            updateChecklistButton();
 
             leadPanel.classList.add('open');
             renderLeads();
@@ -1591,9 +1595,9 @@
                 updatedAt: new Date().toISOString()
             };
 
-            // Check if status changed to tentative (trigger checklist creation)
+            // Check if status changed to contract-out (trigger checklist creation)
             const oldLead = currentLeadId ? appData.leads.find(l => l.id === currentLeadId) : null;
-            const statusChangedToTentative = leadData.status === 'tentative' && (!oldLead || oldLead.status !== 'tentative');
+            const statusChangedToContractOut = leadData.status === 'contract-out' && (!oldLead || oldLead.status !== 'contract-out');
 
             if (currentLeadId) {
                 const idx = appData.leads.findIndex(l => l.id === currentLeadId);
@@ -1604,12 +1608,16 @@
 
             saveData();
             
-            // If status changed to tentative, create checklist and record date
-            if (statusChangedToTentative) {
-                leadData.tentativeDate = new Date().toISOString();
-                // Update the saved lead with tentativeDate
+            // If status changed to contract-out and no checklist exists, create one
+            if (statusChangedToContractOut && !leadData.hasChecklist) {
+                leadData.contractOutDate = new Date().toISOString();
+                leadData.hasChecklist = true;
+                // Update the saved lead
                 const idx = appData.leads.findIndex(l => l.id === leadData.id);
-                if (idx !== -1) appData.leads[idx].tentativeDate = leadData.tentativeDate;
+                if (idx !== -1) {
+                    appData.leads[idx].contractOutDate = leadData.contractOutDate;
+                    appData.leads[idx].hasChecklist = true;
+                }
                 saveData();
                 createChecklistForLead(leadData);
             }
@@ -1643,6 +1651,40 @@
                     type: 'CREATE_CHECKLIST',
                     data: lead
                 }, '*');
+            }
+        }
+        
+        // Add checklist manually from panel button
+        function addChecklistFromPanel() {
+            if (!currentLeadId) return;
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead || lead.hasChecklist) return;
+            
+            lead.hasChecklist = true;
+            saveData();
+            createChecklistForLead(lead);
+            updateChecklistButton();
+            renderLeads();
+        }
+        
+        // Update checklist button state based on current lead
+        function updateChecklistButton() {
+            const btn = document.getElementById('panelChecklist');
+            if (!btn) return;
+            
+            if (currentLeadId) {
+                const lead = appData.leads.find(l => l.id === currentLeadId);
+                if (lead && lead.hasChecklist) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    btn.textContent = '✓ Checklist Added';
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    btn.textContent = '📋 Add Checklist';
+                }
             }
         }
         
@@ -1976,6 +2018,17 @@
                 goalsData = event.data.data;
                 localStorage.setItem('kelphi_goalsCache', JSON.stringify(goalsData));
                 updateQuarterlyProduction();
+            }
+            // Listen for checklist deletion from CHECKLIST app
+            if (event.data && event.data.type === 'CHECKLIST_DELETED') {
+                const leadId = event.data.leadId;
+                const lead = appData.leads.find(l => l.id === leadId);
+                if (lead) {
+                    lead.hasChecklist = false;
+                    saveData();
+                    renderLeads();
+                    updateChecklistButton();
+                }
             }
         });
         
@@ -2461,8 +2514,9 @@
             switch(key) {
                 case 'bookingName':
                     const hasContract = appData.contracts && appData.contracts.some(c => c.leadId === lead.id);
-                    const badge = hasContract ? '<span class="contract-badge" title="Contract generated">&#128196;</span>' : '';
-                    return `<span class="lead-name-cell">${lead.bookingName || lead.account || 'Untitled'}${badge}</span>`;
+                    const contractBadge = hasContract ? '<span class="contract-badge" title="Contract generated">&#128196;</span>' : '';
+                    const checklistBadge = lead.hasChecklist ? '<span class="checklist-badge" title="Checklist active" style="margin-left: 4px;">📋</span>' : '';
+                    return `<span class="lead-name-cell">${lead.bookingName || lead.account || 'Untitled'}${contractBadge}${checklistBadge}</span>`;
                 case 'status':
                     const statusLabels = { 'working': 'Working', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost', 'turndown': 'Turndown' };
                     return `<span class="status-badge status-${lead.status}">${statusLabels[lead.status] || lead.status}</span>`;

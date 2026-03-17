@@ -4369,6 +4369,52 @@ Sales Manager`;
             });
         }
         
+        // Reference notes for each meal type
+        const BEO_MEAL_NOTES = {
+            breakfast: [
+                '20 person minimum for buffets',
+                'Buffets displayed & refreshed for 90 minutes',
+                'Field Notes coffee, hot tea, and OJ included with buffets',
+                'Chef stations (omelets) require $250 attendant fee',
+                'Gluten-free pastries available on request'
+            ],
+            brunch: [
+                'Pricing is per person',
+                'Field Notes coffee, iced tea, and water included',
+                'All food set according to guaranteed guest count'
+            ],
+            lunch: [
+                '20 person minimum for buffets',
+                'Buffets displayed & refreshed for 90 minutes',
+                'Field Notes coffee, iced tea, and water included',
+                'Boxed lunch includes whole fruit, kettle chips, cookie, bottled water',
+                'Compton Spread includes bread & butter',
+                'Gluten-free dessert available on request (additional fees may apply)'
+            ],
+            snacks: [
+                'All food set according to guaranteed guest count',
+                'Coffee bars include assortment of milks, creamers, sugars, and syrups',
+                'Half Day = 4 hours, Full Day = 8 hours'
+            ],
+            dinner: [
+                '20 person minimum for buffets',
+                'Buffets displayed & refreshed for 90 minutes',
+                'Includes bread & butter, Field Notes coffee, iced tea, and water',
+                'Plated: 3+ entrée options = $5/person surcharge',
+                'Gluten-free dessert available on request'
+            ],
+            reception: [
+                '15 guest minimum per canapé order',
+                'Pricing is per person',
+                'Reception beverages served for 2 hours'
+            ],
+            bar: [
+                'Bartenders, setup, and breakdown included',
+                '1 bartender per 75 guests for Beer & Wine packages',
+                'Tableside wine is per bottle'
+            ]
+        };
+        
         function renderBeoMenu() {
             const mealType = document.getElementById('beo-mealType').value;
             const container = document.getElementById('beoMenuContent');
@@ -4381,6 +4427,19 @@ Sales Manager`;
             
             const menuData = BEO_MENU_DATA[mealType];
             let html = '';
+            
+            // Show reference notes for this meal type
+            const notes = BEO_MEAL_NOTES[mealType];
+            if (notes && notes.length > 0) {
+                html += `
+                    <div style="background: rgba(0,217,255,0.08); border: 1px solid rgba(0,217,255,0.2); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem;">
+                        <div style="font-size: 0.7rem; color: #00d9ff; text-transform: uppercase; margin-bottom: 0.5rem;">📋 Quick Reference</div>
+                        <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.8rem; color: #ccc; line-height: 1.6;">
+                            ${notes.map(note => `<li>${note}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
             
             // Render packages as accordions
             if (menuData.packages) {

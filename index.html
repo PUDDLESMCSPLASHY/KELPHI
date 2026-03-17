@@ -4622,12 +4622,82 @@ Sales Manager`;
                 }
             };
             
+            // Collect menu selections
+            beoData.mealType = document.getElementById('beo-mealType').value;
+            beoData.menuSelections = collectBeoMenuSelections();
+            
             // Generate HTML for print/PDF
             const printWindow = window.open('', '_blank');
             printWindow.document.write(generateBeoHtml(beoData));
             printWindow.document.close();
             printWindow.focus();
             setTimeout(() => printWindow.print(), 500);
+        }
+        
+        function collectBeoMenuSelections() {
+            const selections = [];
+            const mealType = document.getElementById('beo-mealType').value;
+            if (!mealType) return selections;
+            
+            const menuData = BEO_MENU_DATA[mealType];
+            if (!menuData) return selections;
+            
+            // Collect selected packages
+            if (menuData.packages) {
+                menuData.packages.forEach(pkg => {
+                    const checkbox = document.getElementById(`chk-pkg-${pkg.id}`);
+                    if (checkbox && checkbox.checked) {
+                        const qtyInput = document.querySelector(`input[data-pkg="${pkg.id}"]`);
+                        const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+                        
+                        // Get selected items within package
+                        const pkgItems = [];
+                        if (pkg.items) {
+                            pkg.items.forEach((item, i) => {
+                                const itemChk = document.querySelector(`.pkg-item-pkg-${pkg.id}`);
+                                // For now, include all items if package is checked
+                                pkgItems.push(item.name);
+                            });
+                        }
+                        
+                        selections.push({
+                            type: 'package',
+                            name: pkg.name,
+                            price: pkg.price,
+                            perPerson: pkg.perPerson,
+                            qty: qty,
+                            items: pkgItems,
+                            description: pkg.description || pkg.desc
+                        });
+                    }
+                });
+            }
+            
+            // Collect selected individual items from sections
+            const sections = ['starters', 'entrees', 'sides', 'desserts', 'addons', 'canapes', 'beverages', 'tableside'];
+            sections.forEach(section => {
+                if (menuData[section]) {
+                    menuData[section].forEach((item, i) => {
+                        const itemId = `${mealType}-${section}-${i}`;
+                        const checkbox = document.getElementById(`item-${itemId}`);
+                        if (checkbox && checkbox.checked) {
+                            const qtyInput = document.getElementById(`qty-${itemId}`);
+                            const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+                            selections.push({
+                                type: 'item',
+                                section: section,
+                                name: item.name,
+                                desc: item.desc,
+                                price: item.price,
+                                qty: qty,
+                                tags: item.tags
+                            });
+                        }
+                    });
+                }
+            });
+            
+            return selections;
         }
         
         function generateBeoHtml(data) {
@@ -4727,8 +4797,39 @@ Sales Manager`;
                     </div>
                     
                     <div class="section">
-                        <div class="section-title">Menu</div>
-                        <p style="color: #666; font-style: italic;">Menu selections to be added based on client preferences.</p>
+                        <div class="section-title">Menu${data.mealType ? ` — ${data.mealType.charAt(0).toUpperCase() + data.mealType.slice(1)}` : ''}</div>
+                        ${data.menuSelections && data.menuSelections.length > 0 ? `
+                            ${data.menuSelections.filter(s => s.type === 'package').map(pkg => `
+                                <div style="margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">${pkg.name} <span style="color: #666; font-weight: normal;">@ $${pkg.price}${pkg.perPerson ? '/person' : ''} × ${pkg.qty}</span></div>
+                                    ${pkg.description ? `<div style="font-size: 11px; color: #666; margin-bottom: 5px;">${pkg.description}</div>` : ''}
+                                    ${pkg.items && pkg.items.length > 0 ? `<ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 11px;">${pkg.items.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}
+                                </div>
+                            `).join('')}
+                            ${data.menuSelections.filter(s => s.type === 'item').length > 0 ? `
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                    <thead>
+                                        <tr>
+                                            <th style="padding: 6px; border: 1px solid #ddd; text-align: left; font-size: 11px; background: #f5f5f5;">Item</th>
+                                            <th style="padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 11px; background: #f5f5f5; width: 60px;">Qty</th>
+                                            <th style="padding: 6px; border: 1px solid #ddd; text-align: right; font-size: 11px; background: #f5f5f5; width: 80px;">Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.menuSelections.filter(s => s.type === 'item').map(item => `
+                                            <tr>
+                                                <td style="padding: 6px; border: 1px solid #ddd; font-size: 11px;">
+                                                    ${item.name}${item.tags ? ` <span style="color: #888; font-size: 9px;">(${item.tags})</span>` : ''}
+                                                    ${item.desc ? `<div style="color: #666; font-size: 10px;">${item.desc}</div>` : ''}
+                                                </td>
+                                                <td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 11px;">${item.qty}</td>
+                                                <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-size: 11px;">${item.price > 0 ? `$${item.price}` : 'Incl.'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            ` : ''}
+                        ` : '<p style="color: #666; font-style: italic;">No menu items selected.</p>'}
                     </div>
                     
                     ${avItems.length > 0 ? `

@@ -566,6 +566,7 @@
                         <div class="panel-tab" data-section="contract">Contract</div>
                         <div class="panel-tab" data-section="billing">Billing</div>
                         <div class="panel-tab" data-section="notes">Notes</div>
+                        <div class="panel-tab" data-section="templates">Templates</div>
                         <div class="panel-tab" data-section="delete" style="color: var(--danger);">Delete</div>
                     </div>
                     <div class="panel-content">
@@ -729,6 +730,50 @@
                                 <div id="lead-sticky-notes" style="min-height: 60px; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 12px;">
                                     <div style="color: #666; font-size: 13px;">No sticky notes tagged to this lead</div>
                                 </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Templates Section -->
+                        <div class="panel-section" id="section-templates">
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px;">📧 Email Templates</div>
+                                <div style="font-size: 12px; color: #64748b;">Click to generate a personalized template, then copy to clipboard.</div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <button class="btn template-btn" onclick="showEmailTemplate('pre-contract')" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; text-align: left; padding: 12px 16px;">
+                                    <div style="font-weight: 600;">📝 Pre-Contract Details</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Request signer info, reservation procedure, payment method</div>
+                                </button>
+                                
+                                <button class="btn template-btn" onclick="showEmailTemplate('nudge')" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; text-align: left; padding: 12px 16px;">
+                                    <div style="font-weight: 600;">👋 Nudge</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Friendly follow-up after sending quote</div>
+                                </button>
+                                
+                                <button class="btn template-btn" onclick="showEmailTemplate('last-call')" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; text-align: left; padding: 12px 16px;">
+                                    <div style="font-weight: 600;">⏰ Last Call</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">~21 days out, time to lock it in</div>
+                                </button>
+                                
+                                <button class="btn template-btn" onclick="showEmailTemplate('final-poke')" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; text-align: left; padding: 12px 16px;">
+                                    <div style="font-weight: 600;">🔔 Final Poke</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Last chance before opening availability</div>
+                                </button>
+                                
+                                <button class="btn template-btn" onclick="showEmailTemplate('intro-arianna')" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; text-align: left; padding: 12px 16px;">
+                                    <div style="font-weight: 600;">🤝 Intro to Arianna</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Handover introduction to Conference Services Manager</div>
+                                </button>
+                            </div>
+                            
+                            <!-- Template Preview Area -->
+                            <div id="templatePreview" style="display: none; margin-top: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">Preview</div>
+                                    <button class="btn" id="copyTemplateBtn" onclick="copyTemplate()" style="background: #7c3aed; color: white; padding: 6px 12px; font-size: 12px;">📋 Copy</button>
+                                </div>
+                                <div id="templateText" style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; color: #e2e8f0; font-size: 13px; line-height: 1.7; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"></div>
                             </div>
                         </div>
                         
@@ -1686,6 +1731,150 @@
                     btn.textContent = '📋 Add Checklist';
                 }
             }
+        }
+        
+        // Email Templates
+        function showEmailTemplate(templateType) {
+            if (!currentLeadId) return;
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead) return;
+            
+            const firstName = lead.contactFirstName || '[First Name]';
+            const groupName = lead.bookingName || lead.account || '[group name]';
+            const arrivalMonth = lead.arrival 
+                ? new Date(lead.arrival + 'T00:00:00').toLocaleDateString('en-US', { month: 'long' })
+                : '[month]';
+            const arrivalDate = lead.arrival
+                ? new Date(lead.arrival + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+                : '[arrival date]';
+            const bookingType = lead.type || 'rooms';
+            
+            let template = '';
+            
+            switch(templateType) {
+                case 'pre-contract':
+                    if (bookingType === 'events') {
+                        template = `Hey ${firstName},
+
+I'm excited that you all are moving forward with the ${groupName} here at The Compton. I'm going to start working on your agreement to lock everything in, but before I just want to confirm a few details first:
+
+Contract Signer:
+• Name: 
+• Email: 
+• Phone: 
+
+If you're going to be the one signing the agreement, just let me know and I will add your name to the doc!
+
+Your friend at The Compton,
+Kelsey`;
+                    } else {
+                        template = `Hi ${firstName},
+
+I'm excited to finalize the details to secure your group booking for this ${arrivalMonth}. I'm going to start preparing an agreement for your review, but I need a few extra details first:
+
+Contract Signer:
+• Name: 
+• Email: 
+• Phone: 
+
+Reservation Procedure:
+1. Rooming List — you provide a list of guests and we handle the reservations
+2. Individual Booking Link — guests book their own rooms using a personalized link
+
+Sleeping Room Payment:
+1. Individual Pays Own — each guest is responsible for their own charges
+2. Room and Tax to Master — room and tax billed to one account; incidentals remain the guest's responsibility
+3. All Charges to Master — all charges (room, tax, and incidentals) billed to one account
+
+Once I get these details, I can get to work on this agreement and have it sent your way for review. If all looks good, I'll submit a link for digital signature and secure payment for your deposit.
+
+Your friend at The Compton,
+Kelsey`;
+                    }
+                    break;
+                    
+                case 'nudge':
+                    template = `Hi ${firstName},
+
+Just floating back to the top of your inbox! I wanted to check in on the ${groupName} and see if you had any questions about the proposal I sent over.
+
+No rush at all — I'm here whenever you're ready to chat.
+
+Your friend at The Compton,
+Kelsey`;
+                    break;
+                    
+                case 'last-call':
+                    template = `Hi ${firstName},
+
+With ${arrivalDate} just around the corner, I wanted to reach out one more time about the ${groupName}.
+
+If you're still interested, now's the time to lock things in. I'd hate for us to miss the chance to host you!
+
+Let me know if there's anything I can help with — happy to hop on a quick call if that's easier.
+
+Your friend at The Compton,
+Kelsey`;
+                    break;
+                    
+                case 'final-poke':
+                    template = `Hey there, ${firstName}-
+
+I hope you're doing well. I wanted to reach out one last time about the ${groupName} visit to The Compton.
+
+I've enjoyed mapping out the experience we could offer to you all this ${arrivalMonth}. I completely understand if you've decided to go a different direction, and maybe our stars will align someday soon! For now, I'm going to open up this availability to other inquiries, but if you're still interested, I'd love to hear from you.
+
+Either way, no hard feelings- the door's open if timing works out better down the road, and I'm always happy to help.
+
+Your friend at The Compton,
+Kelsey`;
+                    break;
+                    
+                case 'intro-arianna':
+                    let detailsSection = '';
+                    let closingLine = '';
+                    
+                    if (bookingType === 'rooms') {
+                        detailsSection = `For next steps, I wanted to e-introduce you to Arianna Evans, our Conference Services Manager. I've brought her up to speed on everything we've discussed so far. She'll be working with you on all the details of your group's visit, like arrival times, room assignments, ADA accommodations, and anything else you need to make your ${arrivalDate} stay seamless.`;
+                        closingLine = `Here's to great things ahead in our little corner of the Ozarks. See you soon!`;
+                    } else if (bookingType === 'events') {
+                        detailsSection = `For next steps, I wanted to e-introduce you to Arianna Evans, our Conference Services Manager. I've brought her up to speed on everything we've discussed so far. She'll be working with you on all the details of your event, like space set-up, menu selections, timing, and anything else you need to make your ${arrivalDate} event seamless.`;
+                        closingLine = `Here's to great things ahead.`;
+                    } else {
+                        detailsSection = `For next steps, I wanted to e-introduce you to Arianna Evans, our Conference Services Manager. I've brought her up to speed on everything we've discussed so far. She'll be working with you on all the details of your visit, like arrival times and room assignments, event set-up and menu selections, and everything else to make your ${arrivalDate} stay seamless.`;
+                        closingLine = `We're excited to welcome you to our little corner of the Ozarks. Here's to good times and great company.`;
+                    }
+                    
+                    template = `Hi ${firstName},
+
+Thank you so much for getting everything completed for the ${groupName}! We're excited to have you.
+
+${detailsSection}
+
+You can expect to hear from Arianna in the next few days. In the meantime, I'm still here if you need anything; don't hesitate to reach out.
+
+${closingLine}
+
+Your friend at The Compton,
+Kelsey`;
+                    break;
+            }
+            
+            document.getElementById('templateText').textContent = template;
+            document.getElementById('templatePreview').style.display = 'block';
+        }
+        
+        function copyTemplate() {
+            const text = document.getElementById('templateText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyTemplateBtn');
+                btn.textContent = '✓ Copied!';
+                btn.style.background = '#22c55e';
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy';
+                    btn.style.background = '#7c3aed';
+                }, 2000);
+            });
         }
         
         // Toggle commission percentage field visibility

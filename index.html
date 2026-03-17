@@ -649,6 +649,11 @@
                                 <textarea class="form-textarea" id="beo-notes" rows="4" placeholder="Any special instructions, dietary requirements, or additional details..."></textarea>
                             </div>
                         </div>
+                        
+                        <!-- Bottom Generate Button -->
+                        <div style="display: flex; justify-content: flex-end; padding: 1rem 0;">
+                            <button class="btn btn-primary" onclick="generateBeoPdf()" style="padding: 0.75rem 2rem; font-size: 1rem;">📄 Generate BEO PDF</button>
+                        </div>
                     </div>
                     
                     <div id="beoEmptyState" style="text-align: center; color: #666; padding: 4rem;">
@@ -4399,27 +4404,37 @@ Sales Manager`;
                 html += '</div>';
             }
             
-            // Render item sections (starters, entrees, etc.)
+            // Render item sections as accordions (starters, entrees, etc.)
             const sections = ['starters', 'entrees', 'sides', 'desserts', 'addons', 'canapes', 'beverages', 'tableside'];
             sections.forEach(section => {
                 if (menuData[section] && menuData[section].length > 0) {
                     const sectionName = section.charAt(0).toUpperCase() + section.slice(1);
-                    html += `<div style="margin-bottom: 1rem;"><div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem;">${sectionName}</div>`;
-                    html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">';
+                    const sectionId = `section-${mealType}-${section}`;
+                    html += `
+                        <div class="beo-section-accordion" style="border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <div style="display: flex; align-items: center; padding: 0.75rem; cursor: pointer; background: rgba(255,255,255,0.02);" onclick="toggleBeoSection('${sectionId}')">
+                                <span style="flex: 1; font-weight: 500;">${sectionName}</span>
+                                <span style="color: #666; font-size: 0.8rem; margin-right: 0.5rem;">${menuData[section].length} items</span>
+                                <span style="color: #666;" id="expand-${sectionId}">▼</span>
+                            </div>
+                            <div id="items-${sectionId}" style="display: none; padding: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                    `;
                     menuData[section].forEach((item, i) => {
                         const itemId = `${mealType}-${section}-${i}`;
                         html += `
-                            <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.02); border-radius: 4px; font-size: 0.85rem;">
-                                <input type="checkbox" id="item-${itemId}" onchange="toggleBeoMenuItem('${itemId}', this.checked)">
+                            <div style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.02); border-radius: 4px; font-size: 0.85rem;">
+                                <input type="checkbox" id="item-${itemId}" onchange="toggleBeoMenuItem('${itemId}', this.checked, '${item.name}')">
                                 <div style="flex: 1;">
                                     <div>${item.name}${item.tags ? ` <span style="color: #888; font-size: 0.7rem;">${item.tags}</span>` : ''}</div>
                                     ${item.desc ? `<div style="color: #666; font-size: 0.75rem;">${item.desc}</div>` : ''}
                                 </div>
+                                <input type="number" id="qty-${itemId}" class="form-input beo-item-qty" style="width: 55px; padding: 0.2rem; font-size: 0.8rem; display: none;" value="${guestCount}" min="1" placeholder="Qty">
                                 ${item.price > 0 ? `<span style="color: #00d9ff;">$${item.price}${item.perBottle ? '/btl' : ''}</span>` : ''}
-                            </label>
+                            </div>
                         `;
                     });
-                    html += '</div></div>';
+                    html += '</div></div></div>';
                 }
             });
             
@@ -4438,18 +4453,38 @@ Sales Manager`;
             }
         }
         
+        function toggleBeoSection(sectionId) {
+            const items = document.getElementById(`items-${sectionId}`);
+            const expand = document.getElementById(`expand-${sectionId}`);
+            if (items.style.display === 'none') {
+                items.style.display = 'block';
+                expand.textContent = '▲';
+            } else {
+                items.style.display = 'none';
+                expand.textContent = '▼';
+            }
+        }
+        
         function toggleBeoPackageItems(pkgId) {
             const checkbox = document.getElementById(`chk-${pkgId}`);
             const items = document.querySelectorAll(`.pkg-item-${pkgId}`);
             items.forEach(item => item.checked = checkbox.checked);
         }
         
-        function toggleBeoMenuItem(itemId, checked) {
+        function toggleBeoMenuItem(itemId, checked, itemName) {
+            // Show/hide quantity field
+            const qtyField = document.getElementById(`qty-${itemId}`);
+            if (qtyField) {
+                qtyField.style.display = checked ? 'block' : 'none';
+            }
             // Track selected items for PDF generation
             if (checked) {
-                if (!beoSelectedMenuItems.includes(itemId)) beoSelectedMenuItems.push(itemId);
+                if (!beoSelectedMenuItems.find(m => m.id === itemId)) {
+                    const qty = qtyField ? parseInt(qtyField.value) || 1 : 1;
+                    beoSelectedMenuItems.push({ id: itemId, name: itemName, qty: qty });
+                }
             } else {
-                beoSelectedMenuItems = beoSelectedMenuItems.filter(id => id !== itemId);
+                beoSelectedMenuItems = beoSelectedMenuItems.filter(m => m.id !== itemId);
             }
         }
         

@@ -334,6 +334,7 @@
             <div class="nav-tab" data-tab="leads">Leads</div>
             <div class="nav-tab" data-tab="contracts">Contracts</div>
             <div class="nav-tab" data-tab="handover">Handover</div>
+            <div class="nav-tab" data-tab="beo">BEO</div>
             <div class="nav-tab" data-tab="goals">Goals</div>
             <div class="nav-tab" data-tab="wrapup">Post Booking</div>
         </nav>
@@ -486,6 +487,169 @@
                     </div>
                 </div>
                 <div class="tab-content" id="tab-handover"><iframe id="checklistFrame" src="https://puddlesmcsplashy.github.io/CHECKLIST/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
+                
+                <!-- BEO Tab -->
+                <div class="tab-content" id="tab-beo">
+                    <div class="leads-toolbar">
+                        <div class="leads-filters">
+                            <select class="filter-select" id="beo-lead-select" onchange="loadBeoLead()">
+                                <option value="">Select a lead to create BEO...</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="generateBeoPdf()" id="beoGenerateBtn" disabled>Generate PDF</button>
+                    </div>
+                    
+                    <div id="beoContent" style="display: none;">
+                        <!-- Event Info Section -->
+                        <div class="dashboard-card" style="margin-bottom: 1.5rem;">
+                            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Event Information</span>
+                                <span style="font-size: 0.7rem; color: #00d9ff;" id="beoPopupIndicator"></span>
+                            </div>
+                            <div class="card-body" style="padding: 1rem;">
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                    <div class="form-group"><label class="form-label">Post As (Event Name)</label><input type="text" class="form-input" id="beo-postAs"></div>
+                                    <div class="form-group"><label class="form-label">Event Date</label><input type="text" class="form-input" id="beo-eventDate" readonly></div>
+                                    <div class="form-group"><label class="form-label">Account</label><input type="text" class="form-input" id="beo-account"></div>
+                                    <div class="form-group"><label class="form-label">Contact Name</label><input type="text" class="form-input" id="beo-contactName"></div>
+                                    <div class="form-group"><label class="form-label">Contact Phone</label><input type="text" class="form-input" id="beo-contactPhone"></div>
+                                    <div class="form-group"><label class="form-label">Contact Email</label><input type="text" class="form-input" id="beo-contactEmail"></div>
+                                    <div class="form-group"><label class="form-label">Onsite Contact</label><input type="text" class="form-input" id="beo-onsiteContact"></div>
+                                    <div class="form-group"><label class="form-label">Onsite Phone</label><input type="text" class="form-input" id="beo-onsitePhone"></div>
+                                    <div class="form-group"><label class="form-label">Payment Method</label>
+                                        <select class="form-select" id="beo-paymentMethod">
+                                            <option value="">Select...</option>
+                                            <option value="Credit Card">Credit Card</option>
+                                            <option value="PMS House Account">PMS House Account</option>
+                                            <option value="Direct Bill">Direct Bill</option>
+                                            <option value="Check">Check</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label class="form-label">F&B Minimum</label><input type="text" class="form-input" id="beo-fbMinimum" placeholder="$0"></div>
+                                    <div class="form-group"><label class="form-label">Guest Count</label><input type="number" class="form-input" id="beo-guestCount" min="1" value="50" onchange="updateBeoQuantities()"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline/Schedule Section -->
+                        <div class="dashboard-card" style="margin-bottom: 1.5rem;">
+                            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Event Schedule</span>
+                                <button class="btn" onclick="addTimelineRow()" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">+ Add Row</button>
+                            </div>
+                            <div class="card-body" style="padding: 0;">
+                                <table class="leads-table" style="margin: 0;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 30px;"></th>
+                                            <th style="width: 100px;">Start</th>
+                                            <th style="width: 100px;">End</th>
+                                            <th>Event Name</th>
+                                            <th style="width: 150px;">Location</th>
+                                            <th style="width: 130px;">Setup</th>
+                                            <th style="width: 70px;">Count</th>
+                                            <th style="width: 90px;">Rental</th>
+                                            <th style="width: 60px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="beoTimelineBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Menu Section -->
+                        <div class="dashboard-card" style="margin-bottom: 1.5rem;">
+                            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Menu</span>
+                                <select class="filter-select" id="beo-mealType" onchange="renderBeoMenu()" style="width: auto;">
+                                    <option value="">Select Meal Type...</option>
+                                    <option value="breakfast">Breakfast</option>
+                                    <option value="brunch">Brunch</option>
+                                    <option value="lunch">Lunch</option>
+                                    <option value="snacks">Snacks / Break</option>
+                                    <option value="dinner">Dinner</option>
+                                    <option value="reception">Reception / Canapés</option>
+                                    <option value="bar">Bar / Beverages</option>
+                                </select>
+                            </div>
+                            <div class="card-body" style="padding: 1rem;">
+                                <div id="beoMenuContent">
+                                    <div style="color: #666; text-align: center; padding: 2rem;">Select a meal type above to build your menu</div>
+                                </div>
+                                <div id="beoMenuSelected" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: none;">
+                                    <div style="font-size: 0.8rem; color: #888; margin-bottom: 0.5rem;">Selected Items</div>
+                                    <div id="beoMenuSelectedList"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- AV/Services Section -->
+                        <div class="dashboard-card" style="margin-bottom: 1.5rem;">
+                            <div class="card-header">Audio Visual & Services</div>
+                            <div class="card-body" style="padding: 1rem;">
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                    <div style="font-size: 0.75rem; color: #888; grid-column: span 3; margin-bottom: -0.5rem;">Equipment</div>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-projector" onchange="updateAvTotal()"> Projector <span style="color: #666; margin-left: auto;">$350</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-screen" onchange="updateAvTotal()"> Screen <span style="color: #666; margin-left: auto;">$150</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-speaker" onchange="updateAvTotal()"> Speaker System <span style="color: #666; margin-left: auto;">$150</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-monitor" onchange="updateAvTotal()"> 75" Monitor <span style="color: #666; margin-left: auto;">$300</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-handheld" onchange="updateAvTotal()"> Handheld Mic <span style="color: #666; margin-left: auto;">$75</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-lavalier" onchange="updateAvTotal()"> Lavalier Mic <span style="color: #666; margin-left: auto;">$75</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-podium" onchange="updateAvTotal()"> Podium <span style="color: #666; margin-left: auto;">$50</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-blotter" onchange="updateAvTotal()"> Executive Blotter <span style="color: #666; margin-left: auto;">$25</span>
+                                    </label>
+                                    
+                                    <div style="font-size: 0.75rem; color: #888; grid-column: span 3; margin-top: 0.5rem; margin-bottom: -0.5rem;">Staffing</div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-tech" onchange="updateAvTotal()">
+                                        <span>AV Technician</span>
+                                        <input type="number" class="form-input" id="av-tech-hours" min="0" value="0" style="width: 50px; padding: 0.25rem; font-size: 0.8rem;" onchange="updateAvTotal()">
+                                        <span style="color: #666; font-size: 0.8rem;">hrs @ $150/hr</span>
+                                    </div>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-chef" onchange="updateAvTotal()"> Chef Attendant <span style="color: #666; margin-left: auto;">$250</span>
+                                    </label>
+                                    <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="av-coat" onchange="updateAvTotal()"> Coat Check <span style="color: #666; margin-left: auto;">$175</span>
+                                    </label>
+                                </div>
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end;">
+                                    <span style="color: #888;">AV Total: </span><span id="avTotal" style="color: #00d9ff; margin-left: 0.5rem;">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notes Section -->
+                        <div class="dashboard-card" style="margin-bottom: 1.5rem;">
+                            <div class="card-header">Notes / Special Instructions</div>
+                            <div class="card-body" style="padding: 1rem;">
+                                <textarea class="form-textarea" id="beo-notes" rows="4" placeholder="Any special instructions, dietary requirements, or additional details..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="beoEmptyState" style="text-align: center; color: #666; padding: 4rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                        <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">No Lead Selected</div>
+                        <div style="font-size: 0.85rem;">Select a lead with events from the dropdown above to create a BEO</div>
+                    </div>
+                </div>
+                
                 <div class="tab-content" id="tab-goals"><iframe id="goalsFrame" src="https://puddlesmcsplashy.github.io/GOALS/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;" onload="requestGoalsData()"></iframe></div>
                 <div class="tab-content" id="tab-wrapup">
                     <div class="section-header">Post Booking Wrap Up</div>
@@ -3750,6 +3914,721 @@ Sales Manager`;
                 }, 100);
             }
         });
+        
+        // ============================================
+        // BEO (Banquet Event Order) Functions
+        // ============================================
+        
+        let beoTimelineRows = [];
+        let beoSelectedMenuItems = [];
+        let currentBeoLeadId = null;
+        
+        const BEO_MENU_DATA = {
+            breakfast: {
+                packages: [
+                    { id: 'continental', name: 'Continental', price: 22, perPerson: true, items: [
+                        { name: 'Seasonal Whole Fruit', included: true },
+                        { name: 'Steel-cut Oatmeal Bar', included: true },
+                        { name: 'Yogurt Parfait with Granola', included: true },
+                        { name: 'White, Wheat, and Rye Toast', included: true },
+                        { name: 'Whipped Butter and Assorted Jams', included: true },
+                        { name: 'Field Notes Coffee, Hot Tea, and OJ', included: true }
+                    ]},
+                    { id: 'ozark', name: 'Ozark Breakfast', price: 28, perPerson: true, items: [
+                        { name: 'Seasonal Fruit Display', included: true },
+                        { name: 'Scrambled Eggs', included: true },
+                        { name: 'Applewood Smoked Bacon', included: true },
+                        { name: 'Sausage Patties', included: true },
+                        { name: 'Homestyle Potatoes', included: true },
+                        { name: 'Mini Muffins, Croissants, and Bagels', included: true },
+                        { name: 'Cream Cheese, Assorted Jams, and Butter', included: true }
+                    ]},
+                    { id: 'compton', name: 'The Compton Breakfast', price: 36, perPerson: true, items: [
+                        { name: 'Greek Yogurt Bar with Nuts and Fruit', included: true },
+                        { name: 'Sliced Melons and Berries', included: true },
+                        { name: 'Bacon Frittata', included: true },
+                        { name: 'Smoked Salmon with Capers and Red Onion', included: true },
+                        { name: 'Chicken Sausage', included: true },
+                        { name: 'Assorted Pastries, Mini Quiches, Scones', included: true }
+                    ]}
+                ],
+                addons: [
+                    { name: 'Made-to-order Omelets', price: 18, note: '*$250 attendant fee' },
+                    { name: 'Applewood Smoked Bacon', price: 6 },
+                    { name: 'Sausage Patties', price: 6 },
+                    { name: 'Beyond Breakfast Sausage', price: 9 },
+                    { name: 'Turkey Bacon', price: 8 },
+                    { name: 'Turkey Sausage Links', price: 8 },
+                    { name: 'Chicken Sausage', price: 9 },
+                    { name: 'Eggs Florentine', price: 8 },
+                    { name: 'Scrambled Eggs', price: 6 },
+                    { name: 'Breakfast Quiche', price: 8 },
+                    { name: 'Yogurt Parfait', price: 8 },
+                    { name: 'Oatmeal Bar', price: 8 },
+                    { name: 'Bagels', price: 4 },
+                    { name: 'Croissants', price: 4 },
+                    { name: 'Cinnamon Rolls', price: 4 },
+                    { name: 'Muffins', price: 4 }
+                ]
+            },
+            brunch: {
+                starters: [
+                    { name: 'House Mixed Greens', price: 8, tags: 'GF, DF, V', desc: 'seasonal toppings, balsamic vinaigrette' },
+                    { name: 'Berry Pecan Salad', price: 9, tags: 'GF', desc: 'strawberries, blueberries, spinach, feta, poppyseed dressing' },
+                    { name: 'Classic Caesar', price: 9, desc: 'shaved parmesan, house croutons' },
+                    { name: 'Mixed Fruit', price: 6 },
+                    { name: 'Brûléed Grapefruit', price: 4 },
+                    { name: 'Yogurt Parfait', price: 10, tags: 'GF', desc: 'greek yogurt, local honey, house granola, fresh berries' }
+                ],
+                entrees: [
+                    { name: 'Eggs Benedict', price: 22, desc: 'hollandaise, breakfast potatoes, grilled asparagus' },
+                    { name: 'Crab and Avocado Toast', price: 22, tags: 'DF', desc: 'lemon aioli, local egg' },
+                    { name: 'French Toast', price: 20, desc: 'crispy bacon, home fries' },
+                    { name: 'Vegetable Hash', price: 20, tags: 'GF, DF, VEG', desc: 'sweet potato, brussels sprouts, red pepper, shallot, spinach, egg' },
+                    { name: 'Spinach Mushroom Frittata', price: 18, tags: 'GF, VEG', desc: 'cheddar, tomato, field greens' },
+                    { name: 'Baked Eggs', price: 18, tags: 'VEG', desc: 'tomato jam, hazelnut, grana padano, crostini' },
+                    { name: 'Bagels & Lox', price: 22, desc: 'capers, red onion' }
+                ]
+            },
+            lunch: {
+                packages: [
+                    { id: 'lunch-buffet-1', name: 'Lunch Buffet (1+1+1)', price: 24, perPerson: true, description: 'Choice of 1 starter, 1 entrée, 1 dessert' },
+                    { id: 'lunch-buffet-2', name: 'Lunch Buffet (2+2+2)', price: 32, perPerson: true, description: 'Choice of 2 starters, 2 entrées, 2 desserts' },
+                    { id: 'compton-spread', name: 'The Compton Spread', price: 42, perPerson: true, description: 'Choice of 1 starter, 2 entrées, 2 sides, 2 desserts. Includes bread, coffee, tea, water.' },
+                    { id: 'boxed-lunch', name: 'Boxed Lunch', price: 26, perPerson: true, description: 'Whole fruit, kettle chips, cookie, bottled water + entrée choice' }
+                ],
+                starters: [
+                    { name: 'Seasonal Salad', price: 0 },
+                    { name: 'Classic Caesar', price: 0 },
+                    { name: 'Pasta Salad', price: 0, tags: 'VEG' },
+                    { name: 'Southern Potato Salad', price: 0, tags: 'DF, VEG' },
+                    { name: 'Arkansas Salad', price: 0, tags: 'VEG', desc: 'tomatoes, ranch' },
+                    { name: 'Spinach Salad', price: 0, tags: 'VEG', desc: 'balsamic vinaigrette, strawberries, pecans, feta' },
+                    { name: 'Baby Kale', price: 0, tags: 'DF, VEG', desc: 'dried cranberries, pecans' },
+                    { name: 'Local Caprese', price: 0, tags: 'VEG', desc: 'balsamic drizzle' },
+                    { name: 'BLT Wedge', price: 0, desc: 'gorgonzola dressing' }
+                ],
+                entrees: [
+                    { name: 'Grilled Chicken Sandwich', price: 0, desc: 'swiss, honey mustard, brioche' },
+                    { name: 'Turkey Wrap', price: 0, tags: 'DF', desc: 'lettuce, tomato, garlic aioli' },
+                    { name: 'Hummus & Veggie Wrap', price: 0, tags: 'DF, VEG', desc: 'wheat tortilla' },
+                    { name: 'Chicken Salad Sandwich', price: 0, tags: 'DF', desc: 'garlic aioli, scallion' },
+                    { name: 'Club Sandwich', price: 0, tags: 'DF', desc: 'turkey, ham, BLT, wheat' },
+                    { name: 'Roasted Chicken Quarters', price: 0, tags: 'GF, DF', desc: 'lemon herb jus' },
+                    { name: 'Roasted Chicken Breast', price: 0, tags: 'GF, DF', desc: 'truffle jus, root vegetables' },
+                    { name: 'Trout Amandine', price: 0, tags: 'GF', desc: 'sliced almonds, brown butter' },
+                    { name: 'Grilled Salmon Filet', price: 0, tags: 'GF', desc: 'beurre blanc' },
+                    { name: 'Blackened Snapper', price: 0, tags: 'GF', desc: 'parsley, compound butter' },
+                    { name: 'Grilled Pork Chop', price: 0, tags: 'GF, DF', desc: 'apple compote' },
+                    { name: '6oz Filet', price: 0, tags: 'GF, DF', desc: 'chimichurri' }
+                ],
+                sides: [
+                    { name: 'Roasted Potatoes', price: 0 },
+                    { name: 'Whipped Potatoes', price: 0 },
+                    { name: 'Green Beans', price: 0 },
+                    { name: 'Seasonal Roasted Vegetables', price: 0 },
+                    { name: 'Israeli Couscous with Herbs', price: 0 },
+                    { name: 'Asparagus Spears with Lemon Zest', price: 0 },
+                    { name: 'Wild Rice Pilaf', price: 0 }
+                ],
+                desserts: [
+                    { name: 'Assorted Cookies', price: 0 },
+                    { name: 'Fudge Brownies', price: 0 },
+                    { name: 'Blondie Bars', price: 0 },
+                    { name: 'Lemon Squares', price: 0 },
+                    { name: 'Seasonal Fruit Tart', price: 0 },
+                    { name: 'Vanilla Bean Cheesecake', price: 0 },
+                    { name: 'Classic Fruit Tart', price: 0 },
+                    { name: 'Lemon Meringue Tart', price: 0 },
+                    { name: "S'mores Bites", price: 0 }
+                ]
+            },
+            snacks: {
+                packages: [
+                    { id: 'charcuterie', name: 'The Compton Charcuterie', price: 18, perPerson: true, desc: 'regional meats and cheese, pickled vegetables, toasted bread, fruit, jams, mustard' },
+                    { id: 'zen', name: 'Zen Fuel', price: 14, perPerson: true, desc: 'nut and grain snacks, jasmine tea, sparkling yuzu lemonade, prebiotic soda' },
+                    { id: 'glow', name: 'Glow Break', price: 14, perPerson: true, desc: 'coconut water, antioxidant berry bowls, granola' },
+                    { id: 'fresh', name: 'Fresh Press', price: 12, perPerson: true, desc: 'cold-pressed juices, protein bites, mixed fruit' },
+                    { id: 'protein', name: 'Protein Pause', price: 20, perPerson: true, desc: 'selection jerkys, hummus cups, cold brew coffee' },
+                    { id: 'farmstand', name: 'Farmstand Fuel', price: 12, perPerson: true, desc: 'roasted cauliflower bites, crudités, housemade hummus, lemongrass tea' }
+                ],
+                beverages: [
+                    { id: 'half-coffee', name: 'Half Day Coffee Bar', price: 8, perPerson: true, desc: 'Field Notes coffee & hot tea, iced tea, still & infused water' },
+                    { id: 'full-coffee', name: 'Full Day Coffee Bar', price: 14, perPerson: true, desc: 'Field Notes coffee & hot tea, iced tea, still & infused water' },
+                    { id: 'coffee-urn', name: '3 Gallon Coffee Urn', price: 140, perPerson: false },
+                    { id: 'decaf-urn', name: '3 Gallon Decaf Urn', price: 140, perPerson: false },
+                    { id: 'tea-urn', name: '3 Gallon Tea Urn', price: 60, perPerson: false }
+                ]
+            },
+            dinner: {
+                packages: [
+                    { id: 'dinner-buffet-1', name: 'Dinner Buffet (1+2+2)', price: 58, perPerson: true, description: 'Choice of 1 starter, 2 entrées, 2 sides' },
+                    { id: 'dinner-buffet-2', name: 'Dinner Buffet (2+2+3)', price: 74, perPerson: true, description: 'Choice of 2 starters, 2 entrées, 3 sides' }
+                ],
+                starters: [
+                    { name: 'Classic Caesar', price: 9, desc: 'shaved parmesan, house croutons' },
+                    { name: 'Quinoa Salad', price: 0, tags: 'GF, DF, VEG', desc: 'roasted vegetables' },
+                    { name: 'Heirloom Caprese', price: 9, tags: 'GF, VEG', desc: 'tomatoes, mozzarella' },
+                    { name: 'Baby Arugula', price: 9, tags: 'GF, VEG', desc: 'goat cheese, candied pecans' },
+                    { name: 'Golden Beet Salad', price: 10, tags: 'GF, VEG', desc: 'goat cheese, pistachio dust' },
+                    { name: 'Melon & Speck', price: 0, tags: 'GF', desc: 'feta, citrus vinaigrette' },
+                    { name: 'Lobster & Avocado', price: 18, tags: 'GF, DF', desc: 'microgreens' },
+                    { name: 'Frisee Salad', price: 12, tags: 'GF, VEG', desc: 'poached pear, bleu cheese, candied walnuts' }
+                ],
+                sides: [
+                    { name: 'Yukon Gold Mashed Potatoes', price: 0, tags: 'GF, VEG' },
+                    { name: 'Seasonal Steamed Vegetables', price: 0, tags: 'GF, DF, V' },
+                    { name: 'Green Beans with Butter & Herbs', price: 0, tags: 'GF, VEG' },
+                    { name: 'Honey Glazed Carrots', price: 0, tags: 'GF, DF, V' },
+                    { name: 'Roasted Brussels Sprouts', price: 0, tags: 'GF, DF, V' },
+                    { name: 'Wild Rice Pilaf', price: 0, tags: 'GF, DF, V' },
+                    { name: 'Roasted Broccolini', price: 0, tags: 'GF, DF, V' },
+                    { name: 'Garlic Parmesan Whipped Potatoes', price: 0, tags: 'GF, VEG' },
+                    { name: 'Asparagus with Olive Oil & Sea Salt', price: 0, tags: 'GF, DF, V' },
+                    { name: 'Roasted Fingerling Potatoes', price: 0, tags: 'GF, VEG' }
+                ],
+                entrees: [
+                    { name: 'Herb Roasted Chicken Breast', price: 30, tags: 'GF, DF', desc: 'roasted root vegetables, rosemary jus' },
+                    { name: 'Maple Glazed Pork Tenderloin', price: 34, tags: 'GF, DF', desc: 'sauteed kale, apple compote' },
+                    { name: 'Butternut Squash Risotto', price: 0, tags: 'GF, DF, V', desc: 'toasted pepitas' },
+                    { name: 'Tuscan Chicken', price: 30, desc: 'parmesan polenta, sundried tomato cream' },
+                    { name: 'Pasta Primavera', price: 0, tags: 'DF, V', desc: 'house marinara' },
+                    { name: 'Grilled Salmon', price: 0, tags: 'GF', desc: 'lemon-dill cream' },
+                    { name: 'Pan Seared Salmon', price: 36, tags: 'GF', desc: 'haricot verts, dill hollandaise' },
+                    { name: 'Shrimp Scampi', price: 34, tags: 'GF, DF', desc: 'sauteed swiss chard, garlic, white wine' },
+                    { name: 'Seared Halibut', price: 36, tags: 'GF', desc: 'parmesan brussels sprouts, caviar cream' },
+                    { name: 'Filet Mignon', price: 55, tags: 'GF', desc: 'wild mushroom risotto, red wine reduction' },
+                    { name: 'Carved Roast Beef', price: 50, tags: 'GF', desc: 'truffle potato puree, au jus' },
+                    { name: 'Seared Sea Bass', price: 42, tags: 'GF', desc: 'sweet potato puree, fennel cream' },
+                    { name: 'Roasted Duck Breast', price: 36, tags: 'GF, DF', desc: 'fried rice, cherry port reduction' },
+                    { name: 'Braised Short Rib', price: 42, tags: 'GF, DF', desc: 'fried rice, red wine jus' },
+                    { name: 'Wild Mushroom Ravioli', price: 30, tags: 'VEG', desc: 'ricotta, spiced marinara' },
+                    { name: 'Dry Aged Prime Rib', price: 50, tags: 'GF', desc: 'broccolini, truffle jus, horseradish creme' },
+                    { name: 'Bucatini', price: 30, tags: 'DF, V', desc: 'roasted tomato, basil pesto' }
+                ]
+            },
+            reception: {
+                canapes: [
+                    { name: 'Mini Crab Cake', price: 5, desc: 'remoulade, lemon zest' },
+                    { name: 'Burrata Crostini', price: 5, tags: 'VEG', desc: 'heirloom tomato, pesto' },
+                    { name: 'Caprese Skewer', price: 4, tags: 'VEG', desc: 'tomato, mozzarella, basil' },
+                    { name: 'Smoked Salmon Mille-Feuille', price: 8, desc: 'lemon-dill mascarpone' },
+                    { name: 'Falafel Ball', price: 5, tags: 'DF, VEG', desc: 'beet tahini, pickled onion' },
+                    { name: 'Wild Mushroom Duxelle', price: 6, tags: 'VEG', desc: 'puff pastry, black truffle shaving' },
+                    { name: 'Smoked Salmon Rosette', price: 6, tags: 'GF', desc: 'potato chip, crème fraiche, dill' },
+                    { name: 'Oysters on the Half Shell', price: 0, tags: 'GF, DF', desc: 'champagne mignonette (MKT)' }
+                ],
+                beverages: [
+                    { name: 'Sparkling Yuzu Lemonade', price: 5 },
+                    { name: 'Still & Infused Water', price: 3 },
+                    { name: 'Soft Drinks', price: 3 },
+                    { name: 'Field Notes Coffee & Tea', price: 6 },
+                    { name: 'Sparkling Water', price: 3 },
+                    { name: 'Assorted Hot Tea', price: 5 }
+                ]
+            },
+            bar: {
+                packages: [
+                    { id: 'premium-2hr', name: 'Premium Beer & Wine (2 hours)', price: 37, perPerson: true, desc: 'Local craft, domestic, and imported beers. Premium wine selection including Craggy Range, Post & Beam, Leviathan, Napa Cellars.' },
+                    { id: 'premium-extra', name: 'Premium Beer & Wine (+1 hour)', price: 15, perPerson: true },
+                    { id: 'compton-2hr', name: 'Compton Beer & Wine (2 hours)', price: 29, perPerson: true, desc: 'Local craft, domestic, and imported beers. Wine selection including Honig, Bezel, Anne Amie, J. Lohr, Decoy, Poggio Costa.' },
+                    { id: 'compton-extra', name: 'Compton Beer & Wine (+1 hour)', price: 12, perPerson: true }
+                ],
+                tableside: [
+                    { name: 'Honig Sauvignon Blanc', price: 68, perBottle: true, desc: 'Napa Valley, California' },
+                    { name: 'Bezel by Cakebread Chardonnay', price: 60, perBottle: true, desc: 'San Luis Obispo, California' },
+                    { name: 'Anne Amie Pinot Noir', price: 60, perBottle: true, desc: 'Willamette Valley, Oregon' },
+                    { name: 'J. Lohr "Pure Paso" Red Blend', price: 68, perBottle: true, desc: 'Paso Robles, California' },
+                    { name: 'Decoy by Duckhorn Cabernet Sauvignon', price: 48, perBottle: true, desc: 'Alexander Valley, California' },
+                    { name: 'Poggio Costa Prosecco', price: 36, perBottle: true, desc: 'Veneto, Italy' },
+                    { name: 'Craggy Range Sauvignon Blanc', price: 64, perBottle: true, desc: 'Martinborough, New Zealand' },
+                    { name: 'Post & Beam by Far Niente Chardonnay', price: 80, perBottle: true, desc: 'Napa Valley, California' },
+                    { name: 'Willamette Valley Pinot Noir', price: 96, perBottle: true, desc: 'Willamette Valley, Oregon' },
+                    { name: 'Leviathan Red Blend', price: 80, perBottle: true, desc: 'California' },
+                    { name: 'Napa Cellars Cabernet Sauvignon', price: 76, perBottle: true, desc: 'Napa County, California' },
+                    { name: 'Albert Bichot Crémant de Bourgogne', price: 88, perBottle: true, desc: 'Burgundy, France' }
+                ]
+            }
+        };
+        
+        const BEO_TIME_OPTIONS = [];
+        for (let h = 6; h <= 23; h++) {
+            for (let m = 0; m < 60; m += 15) {
+                const hour = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                const time = `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+                BEO_TIME_OPTIONS.push(time);
+            }
+        }
+        
+        function populateBeoLeadSelect() {
+            const select = document.getElementById('beo-lead-select');
+            if (!select) return;
+            
+            // Get leads with events (type = 'events' or 'both')
+            const eventLeads = appData.leads.filter(l => 
+                (l.type === 'events' || l.type === 'both') && 
+                l.status !== 'lost' && 
+                l.status !== 'cancelled'
+            );
+            
+            select.innerHTML = '<option value="">Select a lead to create BEO...</option>';
+            
+            eventLeads.forEach(lead => {
+                const daysOut = lead.arrival ? Math.ceil((new Date(lead.arrival) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                const isPopup = daysOut !== null && daysOut < 21;
+                const opt = document.createElement('option');
+                opt.value = lead.id;
+                opt.textContent = `${lead.bookingName || lead.account}${isPopup ? ' ⚡ POP-UP' : ''} (${lead.arrival || 'No date'})`;
+                select.appendChild(opt);
+            });
+        }
+        
+        function loadBeoLead() {
+            const leadId = document.getElementById('beo-lead-select').value;
+            const content = document.getElementById('beoContent');
+            const empty = document.getElementById('beoEmptyState');
+            const genBtn = document.getElementById('beoGenerateBtn');
+            
+            if (!leadId) {
+                content.style.display = 'none';
+                empty.style.display = 'block';
+                genBtn.disabled = true;
+                currentBeoLeadId = null;
+                return;
+            }
+            
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            currentBeoLeadId = leadId;
+            content.style.display = 'block';
+            empty.style.display = 'none';
+            genBtn.disabled = false;
+            
+            // Check if pop-up
+            const daysOut = lead.arrival ? Math.ceil((new Date(lead.arrival) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+            const isPopup = daysOut !== null && daysOut < 21;
+            document.getElementById('beoPopupIndicator').textContent = isPopup ? '⚡ POP-UP EVENT' : '';
+            
+            // Populate event info
+            document.getElementById('beo-postAs').value = lead.bookingName || lead.account || '';
+            document.getElementById('beo-eventDate').value = lead.arrival ? new Date(lead.arrival + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+            document.getElementById('beo-account').value = lead.account || '';
+            document.getElementById('beo-contactName').value = `${lead.contactFirstName || ''} ${lead.contactLastName || ''}`.trim();
+            document.getElementById('beo-contactPhone').value = lead.contactPhone || '';
+            document.getElementById('beo-contactEmail').value = lead.contactEmail || '';
+            document.getElementById('beo-onsiteContact').value = '';
+            document.getElementById('beo-onsitePhone').value = '';
+            document.getElementById('beo-paymentMethod').value = '';
+            document.getElementById('beo-fbMinimum').value = lead.fbMinimum ? `$${lead.fbMinimum.toLocaleString()}` : '';
+            
+            // Guest count from events
+            let guestCount = 50;
+            if (lead.events && lead.events.length > 0) {
+                const maxGuests = Math.max(...lead.events.map(e => parseInt(e.guests) || 0));
+                if (maxGuests > 0) guestCount = maxGuests;
+            }
+            document.getElementById('beo-guestCount').value = guestCount;
+            
+            // Populate timeline from lead events
+            beoTimelineRows = [];
+            if (lead.events && lead.events.length > 0) {
+                lead.events.forEach((evt, idx) => {
+                    beoTimelineRows.push({
+                        id: Date.now() + idx,
+                        startTime: evt.startTime || '',
+                        endTime: evt.endTime || '',
+                        eventName: evt.name || '',
+                        location: evt.room || '',
+                        setup: evt.setup || '',
+                        count: evt.guests || guestCount,
+                        rental: evt.rental || ''
+                    });
+                });
+            } else {
+                // Add one empty row
+                beoTimelineRows.push({ id: Date.now(), startTime: '', endTime: '', eventName: '', location: '', setup: '', count: guestCount, rental: '' });
+            }
+            renderBeoTimeline();
+            
+            // Reset menu and AV
+            beoSelectedMenuItems = [];
+            document.getElementById('beo-mealType').value = '';
+            document.getElementById('beoMenuContent').innerHTML = '<div style="color: #666; text-align: center; padding: 2rem;">Select a meal type above to build your menu</div>';
+            document.getElementById('beoMenuSelected').style.display = 'none';
+            resetAvCheckboxes();
+            document.getElementById('beo-notes').value = '';
+        }
+        
+        function renderBeoTimeline() {
+            const tbody = document.getElementById('beoTimelineBody');
+            const guestCount = parseInt(document.getElementById('beo-guestCount').value) || 50;
+            
+            tbody.innerHTML = beoTimelineRows.map((row, idx) => `
+                <tr data-row-id="${row.id}">
+                    <td style="padding: 0.5rem;">
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button onclick="moveTimelineRow(${idx}, -1)" class="btn" style="padding: 0; width: 20px; height: 16px; font-size: 10px;" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                            <button onclick="moveTimelineRow(${idx}, 1)" class="btn" style="padding: 0; width: 20px; height: 16px; font-size: 10px;" ${idx === beoTimelineRows.length - 1 ? 'disabled' : ''}>▼</button>
+                        </div>
+                    </td>
+                    <td><select class="form-select" style="font-size: 0.8rem; padding: 0.3rem;" onchange="updateTimelineRow(${idx}, 'startTime', this.value)">
+                        <option value="">--</option>
+                        ${BEO_TIME_OPTIONS.map(t => `<option value="${t}" ${row.startTime === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    </select></td>
+                    <td><select class="form-select" style="font-size: 0.8rem; padding: 0.3rem;" onchange="updateTimelineRow(${idx}, 'endTime', this.value)">
+                        <option value="">--</option>
+                        ${BEO_TIME_OPTIONS.map(t => `<option value="${t}" ${row.endTime === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    </select></td>
+                    <td><input type="text" class="form-input" style="font-size: 0.8rem; padding: 0.3rem;" value="${row.eventName}" onchange="updateTimelineRow(${idx}, 'eventName', this.value)"></td>
+                    <td><select class="form-select" style="font-size: 0.8rem; padding: 0.3rem;" onchange="updateTimelineRow(${idx}, 'location', this.value)">
+                        <option value="">--</option>
+                        ${FUNCTION_ROOMS.map(r => `<option value="${r}" ${row.location === r ? 'selected' : ''}>${r}</option>`).join('')}
+                    </select></td>
+                    <td><select class="form-select" style="font-size: 0.8rem; padding: 0.3rem;" onchange="updateTimelineRow(${idx}, 'setup', this.value)">
+                        <option value="">--</option>
+                        ${SETUP_STYLES.map(s => `<option value="${s}" ${row.setup === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select></td>
+                    <td><input type="number" class="form-input" style="font-size: 0.8rem; padding: 0.3rem; width: 60px;" value="${row.count}" onchange="updateTimelineRow(${idx}, 'count', this.value)"></td>
+                    <td><input type="text" class="form-input" style="font-size: 0.8rem; padding: 0.3rem;" value="${row.rental}" placeholder="$0" onchange="updateTimelineRow(${idx}, 'rental', this.value)"></td>
+                    <td><button onclick="deleteTimelineRow(${idx})" class="btn" style="padding: 0.2rem 0.5rem; color: #ff4757;" title="Delete">✕</button></td>
+                </tr>
+            `).join('');
+        }
+        
+        function addTimelineRow() {
+            const guestCount = parseInt(document.getElementById('beo-guestCount').value) || 50;
+            beoTimelineRows.push({ id: Date.now(), startTime: '', endTime: '', eventName: '', location: '', setup: '', count: guestCount, rental: '' });
+            renderBeoTimeline();
+        }
+        
+        function updateTimelineRow(idx, field, value) {
+            if (beoTimelineRows[idx]) beoTimelineRows[idx][field] = value;
+        }
+        
+        function moveTimelineRow(idx, direction) {
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= beoTimelineRows.length) return;
+            [beoTimelineRows[idx], beoTimelineRows[newIdx]] = [beoTimelineRows[newIdx], beoTimelineRows[idx]];
+            renderBeoTimeline();
+        }
+        
+        function deleteTimelineRow(idx) {
+            if (beoTimelineRows.length <= 1) return;
+            beoTimelineRows.splice(idx, 1);
+            renderBeoTimeline();
+        }
+        
+        function updateBeoQuantities() {
+            const guestCount = parseInt(document.getElementById('beo-guestCount').value) || 50;
+            // Update menu quantities
+            document.querySelectorAll('.beo-menu-qty').forEach(input => {
+                if (!input.dataset.manuallySet) input.value = guestCount;
+            });
+        }
+        
+        function renderBeoMenu() {
+            const mealType = document.getElementById('beo-mealType').value;
+            const container = document.getElementById('beoMenuContent');
+            const guestCount = parseInt(document.getElementById('beo-guestCount').value) || 50;
+            
+            if (!mealType || !BEO_MENU_DATA[mealType]) {
+                container.innerHTML = '<div style="color: #666; text-align: center; padding: 2rem;">Select a meal type above to build your menu</div>';
+                return;
+            }
+            
+            const menuData = BEO_MENU_DATA[mealType];
+            let html = '';
+            
+            // Render packages as accordions
+            if (menuData.packages) {
+                html += '<div style="margin-bottom: 1rem;"><div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem;">Packages</div>';
+                menuData.packages.forEach(pkg => {
+                    const pkgId = `pkg-${pkg.id}`;
+                    html += `
+                        <div class="beo-package" style="border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <div style="display: flex; align-items: center; padding: 0.75rem; cursor: pointer; background: rgba(0,217,255,0.05);" onclick="toggleBeoPackage('${pkgId}')">
+                                <input type="checkbox" id="chk-${pkgId}" style="margin-right: 0.75rem;" onclick="event.stopPropagation(); toggleBeoPackageItems('${pkgId}')">
+                                <span style="flex: 1; font-weight: 500;">${pkg.name}</span>
+                                <span style="color: #00d9ff; margin-right: 1rem;">$${pkg.price}${pkg.perPerson ? '/person' : ''}</span>
+                                <input type="number" class="form-input beo-menu-qty" style="width: 60px; padding: 0.2rem; font-size: 0.8rem;" value="${guestCount}" data-pkg="${pkg.id}" onclick="event.stopPropagation()">
+                                <span style="margin-left: 0.5rem; color: #666;" id="expand-${pkgId}">▼</span>
+                            </div>
+                            ${pkg.description ? `<div style="padding: 0 0.75rem 0.5rem; font-size: 0.8rem; color: #888;">${pkg.description}</div>` : ''}
+                            <div id="items-${pkgId}" style="display: none; padding: 0.5rem 0.75rem 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                                ${pkg.items ? pkg.items.map((item, i) => `
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; font-size: 0.85rem;">
+                                        <input type="checkbox" class="pkg-item-${pkgId}" checked> ${item.name}
+                                    </label>
+                                `).join('') : '<span style="color: #666; font-size: 0.8rem;">Select items below for this package</span>'}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            // Render item sections (starters, entrees, etc.)
+            const sections = ['starters', 'entrees', 'sides', 'desserts', 'addons', 'canapes', 'beverages', 'tableside'];
+            sections.forEach(section => {
+                if (menuData[section] && menuData[section].length > 0) {
+                    const sectionName = section.charAt(0).toUpperCase() + section.slice(1);
+                    html += `<div style="margin-bottom: 1rem;"><div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem;">${sectionName}</div>`;
+                    html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">';
+                    menuData[section].forEach((item, i) => {
+                        const itemId = `${mealType}-${section}-${i}`;
+                        html += `
+                            <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.02); border-radius: 4px; font-size: 0.85rem;">
+                                <input type="checkbox" id="item-${itemId}" onchange="toggleBeoMenuItem('${itemId}', this.checked)">
+                                <div style="flex: 1;">
+                                    <div>${item.name}${item.tags ? ` <span style="color: #888; font-size: 0.7rem;">${item.tags}</span>` : ''}</div>
+                                    ${item.desc ? `<div style="color: #666; font-size: 0.75rem;">${item.desc}</div>` : ''}
+                                </div>
+                                ${item.price > 0 ? `<span style="color: #00d9ff;">$${item.price}${item.perBottle ? '/btl' : ''}</span>` : ''}
+                            </label>
+                        `;
+                    });
+                    html += '</div></div>';
+                }
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleBeoPackage(pkgId) {
+            const items = document.getElementById(`items-${pkgId}`);
+            const expand = document.getElementById(`expand-${pkgId}`);
+            if (items.style.display === 'none') {
+                items.style.display = 'block';
+                expand.textContent = '▲';
+            } else {
+                items.style.display = 'none';
+                expand.textContent = '▼';
+            }
+        }
+        
+        function toggleBeoPackageItems(pkgId) {
+            const checkbox = document.getElementById(`chk-${pkgId}`);
+            const items = document.querySelectorAll(`.pkg-item-${pkgId}`);
+            items.forEach(item => item.checked = checkbox.checked);
+        }
+        
+        function toggleBeoMenuItem(itemId, checked) {
+            // Track selected items for PDF generation
+            if (checked) {
+                if (!beoSelectedMenuItems.includes(itemId)) beoSelectedMenuItems.push(itemId);
+            } else {
+                beoSelectedMenuItems = beoSelectedMenuItems.filter(id => id !== itemId);
+            }
+        }
+        
+        function resetAvCheckboxes() {
+            ['av-projector', 'av-screen', 'av-speaker', 'av-monitor', 'av-handheld', 'av-lavalier', 'av-podium', 'av-blotter', 'av-tech', 'av-chef', 'av-coat'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.checked = false;
+            });
+            document.getElementById('av-tech-hours').value = 0;
+            updateAvTotal();
+        }
+        
+        function updateAvTotal() {
+            let total = 0;
+            if (document.getElementById('av-projector')?.checked) total += 350;
+            if (document.getElementById('av-screen')?.checked) total += 150;
+            if (document.getElementById('av-speaker')?.checked) total += 150;
+            if (document.getElementById('av-monitor')?.checked) total += 300;
+            if (document.getElementById('av-handheld')?.checked) total += 75;
+            if (document.getElementById('av-lavalier')?.checked) total += 75;
+            if (document.getElementById('av-podium')?.checked) total += 50;
+            if (document.getElementById('av-blotter')?.checked) total += 25;
+            if (document.getElementById('av-tech')?.checked) {
+                const hours = parseInt(document.getElementById('av-tech-hours').value) || 0;
+                total += hours * 150;
+            }
+            if (document.getElementById('av-chef')?.checked) total += 250;
+            if (document.getElementById('av-coat')?.checked) total += 175;
+            
+            document.getElementById('avTotal').textContent = `$${total.toLocaleString()}`;
+        }
+        
+        function generateBeoPdf() {
+            if (!currentBeoLeadId) {
+                alert('Please select a lead first.');
+                return;
+            }
+            
+            const lead = appData.leads.find(l => l.id === currentBeoLeadId);
+            if (!lead) return;
+            
+            // Collect all BEO data
+            const beoData = {
+                postAs: document.getElementById('beo-postAs').value,
+                eventDate: document.getElementById('beo-eventDate').value,
+                account: document.getElementById('beo-account').value,
+                contactName: document.getElementById('beo-contactName').value,
+                contactPhone: document.getElementById('beo-contactPhone').value,
+                contactEmail: document.getElementById('beo-contactEmail').value,
+                onsiteContact: document.getElementById('beo-onsiteContact').value,
+                onsitePhone: document.getElementById('beo-onsitePhone').value,
+                paymentMethod: document.getElementById('beo-paymentMethod').value,
+                fbMinimum: document.getElementById('beo-fbMinimum').value,
+                guestCount: document.getElementById('beo-guestCount').value,
+                timeline: beoTimelineRows,
+                notes: document.getElementById('beo-notes').value,
+                av: {
+                    projector: document.getElementById('av-projector')?.checked,
+                    screen: document.getElementById('av-screen')?.checked,
+                    speaker: document.getElementById('av-speaker')?.checked,
+                    monitor: document.getElementById('av-monitor')?.checked,
+                    handheld: document.getElementById('av-handheld')?.checked,
+                    lavalier: document.getElementById('av-lavalier')?.checked,
+                    podium: document.getElementById('av-podium')?.checked,
+                    blotter: document.getElementById('av-blotter')?.checked,
+                    tech: document.getElementById('av-tech')?.checked,
+                    techHours: document.getElementById('av-tech-hours')?.value,
+                    chef: document.getElementById('av-chef')?.checked,
+                    coat: document.getElementById('av-coat')?.checked
+                }
+            };
+            
+            // Generate HTML for print/PDF
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(generateBeoHtml(beoData));
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+        }
+        
+        function generateBeoHtml(data) {
+            const today = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+            
+            // Build timeline HTML
+            let timelineHtml = data.timeline.map(row => `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${row.startTime} - ${row.endTime}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${row.eventName}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${row.location}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${row.setup}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${row.count}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${row.rental || '$0'}</td>
+                </tr>
+            `).join('');
+            
+            // Build AV HTML
+            let avItems = [];
+            if (data.av.projector) avItems.push('Projector - $350');
+            if (data.av.screen) avItems.push('Screen - $150');
+            if (data.av.speaker) avItems.push('Speaker System - $150');
+            if (data.av.monitor) avItems.push('75" Monitor - $300');
+            if (data.av.handheld) avItems.push('Handheld Microphone - $75');
+            if (data.av.lavalier) avItems.push('Lavalier Microphone - $75');
+            if (data.av.podium) avItems.push('Podium - $50');
+            if (data.av.blotter) avItems.push('Executive Blotter - $25');
+            if (data.av.tech && data.av.techHours > 0) avItems.push(`AV Technician - ${data.av.techHours} hrs @ $150/hr`);
+            if (data.av.chef) avItems.push('Chef Attendant - $250');
+            if (data.av.coat) avItems.push('Coat Check Attendant - $175');
+            
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>BEO - ${data.postAs}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; max-width: 800px; margin: 0 auto; padding: 20px; }
+                        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+                        .header h1 { margin: 0; font-size: 18px; }
+                        .header p { margin: 5px 0; color: #666; }
+                        .section { margin-bottom: 20px; }
+                        .section-title { font-weight: bold; font-size: 14px; background: #f5f5f5; padding: 8px; margin-bottom: 10px; }
+                        .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+                        .info-item { margin-bottom: 8px; }
+                        .info-label { font-weight: bold; color: #666; font-size: 10px; text-transform: uppercase; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                        th { background: #f5f5f5; padding: 8px; border: 1px solid #ddd; text-align: left; font-size: 11px; }
+                        .notes { background: #fff9e6; padding: 15px; border-left: 4px solid #f0c000; }
+                        .signature-section { margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+                        .signature-box { border-top: 1px solid #333; padding-top: 5px; text-align: center; font-size: 10px; }
+                        @media print { body { padding: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>The Compton</h1>
+                        <p>200 E Central Ave., Bentonville, Arkansas 72712 | Phone: (479) 696-4500</p>
+                        <h2 style="margin-top: 15px;">Banquet Event Order</h2>
+                        <p>Date Printed: ${today}</p>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="info-grid">
+                            <div class="info-item"><div class="info-label">Post As</div>${data.postAs}</div>
+                            <div class="info-item"><div class="info-label">Event Date</div>${data.eventDate}</div>
+                            <div class="info-item"><div class="info-label">Account</div>${data.account}</div>
+                            <div class="info-item"><div class="info-label">Contact</div>${data.contactName}</div>
+                            <div class="info-item"><div class="info-label">Phone</div>${data.contactPhone}</div>
+                            <div class="info-item"><div class="info-label">Email</div>${data.contactEmail}</div>
+                            <div class="info-item"><div class="info-label">Onsite Contact</div>${data.onsiteContact || '-'}</div>
+                            <div class="info-item"><div class="info-label">Onsite Phone</div>${data.onsitePhone || '-'}</div>
+                            <div class="info-item"><div class="info-label">Payment Method</div>${data.paymentMethod || '-'}</div>
+                            <div class="info-item"><div class="info-label">F&B Minimum</div>${data.fbMinimum || '-'}</div>
+                            <div class="info-item"><div class="info-label">Guest Count</div>${data.guestCount}</div>
+                            <div class="info-item"><div class="info-label">Catering Manager</div>Arianna Evans<br>479-696-4276<br>arianna.evans@thecompton.com</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Event Schedule</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Event</th>
+                                    <th>Location</th>
+                                    <th>Setup</th>
+                                    <th>Count</th>
+                                    <th>Rental</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${timelineHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Menu</div>
+                        <p style="color: #666; font-style: italic;">Menu selections to be added based on client preferences.</p>
+                    </div>
+                    
+                    ${avItems.length > 0 ? `
+                    <div class="section">
+                        <div class="section-title">Audio Visual & Services</div>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            ${avItems.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.notes ? `
+                    <div class="section">
+                        <div class="section-title">Notes / Special Instructions</div>
+                        <div class="notes">${data.notes.replace(/\n/g, '<br>')}</div>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="signature-section">
+                        <div class="signature-box">Group</div>
+                        <div class="signature-box">Catering Organization</div>
+                        <div class="signature-box">The Compton Approval</div>
+                    </div>
+                </body>
+                </html>
+            `;
+        }
+        
+        // Update BEO lead select when tab is shown
+        document.querySelector('.nav-tab[data-tab="beo"]')?.addEventListener('click', populateBeoLeadSelect);
     </script>
 </body>
 </html>

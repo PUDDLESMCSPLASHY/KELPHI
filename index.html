@@ -665,7 +665,13 @@
                 
                 <div class="tab-content" id="tab-goals"><iframe id="goalsFrame" src="https://puddlesmcsplashy.github.io/GOALS/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;" onload="requestGoalsData()"></iframe></div>
                 <div class="tab-content" id="tab-wrapup">
-                    <div class="section-header">Post Booking Wrap Up</div>
+                    <div class="leads-toolbar" style="margin-bottom: 1rem;">
+                        <div class="section-header" style="margin: 0;">Post Booking Wrap Up</div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn" id="wrapupActiveBtn" onclick="setWrapupView('active')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Active</button>
+                            <button class="btn" id="wrapupArchivedBtn" onclick="setWrapupView('archived')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Archived</button>
+                        </div>
+                    </div>
                     <div id="wrapupList"></div>
                 </div>
             </main>
@@ -2315,7 +2321,7 @@ Kelsey`;
             }
             
             // Update Post Booking Wrap Up
-            renderWrapUp();
+            setWrapupView(wrapupViewMode);
         }
 
         // ============ GOALS DATA ============
@@ -2649,25 +2655,56 @@ Kelsey`;
         }
         
         // ============ POST BOOKING WRAP UP ============
+        let wrapupViewMode = 'active';
+        
+        function setWrapupView(mode) {
+            wrapupViewMode = mode;
+            document.getElementById('wrapupActiveBtn').classList.toggle('active', mode === 'active');
+            document.getElementById('wrapupArchivedBtn').classList.toggle('active', mode === 'archived');
+            document.getElementById('wrapupActiveBtn').style.background = mode === 'active' ? 'rgba(0,217,255,0.15)' : '';
+            document.getElementById('wrapupActiveBtn').style.borderColor = mode === 'active' ? '#00d9ff' : '';
+            document.getElementById('wrapupActiveBtn').style.color = mode === 'active' ? '#00d9ff' : '';
+            document.getElementById('wrapupArchivedBtn').style.background = mode === 'archived' ? 'rgba(0,217,255,0.15)' : '';
+            document.getElementById('wrapupArchivedBtn').style.borderColor = mode === 'archived' ? '#00d9ff' : '';
+            document.getElementById('wrapupArchivedBtn').style.color = mode === 'archived' ? '#00d9ff' : '';
+            renderWrapUp();
+        }
+        
         function renderWrapUp() {
             const wrapupList = document.getElementById('wrapupList');
-            const definiteLeads = appData.leads.filter(l => l.status === 'definite');
+            // Only show leads with status 'completed'
+            const completedLeads = appData.leads.filter(l => l.status === 'completed');
             
-            if (definiteLeads.length === 0) {
-                wrapupList.innerHTML = '<div class="empty-state" style="padding: 3rem;"><h3>No Definite Bookings</h3><p>Leads will appear here when marked Definite</p></div>';
+            // Filter by archived state
+            const filteredLeads = completedLeads.filter(l => {
+                const isArchived = l.wrapupArchived === true;
+                return wrapupViewMode === 'archived' ? isArchived : !isArchived;
+            });
+            
+            if (filteredLeads.length === 0) {
+                const emptyMsg = wrapupViewMode === 'archived' 
+                    ? 'No archived bookings' 
+                    : 'No completed bookings yet. Mark a booking as "Completed" to see it here.';
+                wrapupList.innerHTML = `<div class="empty-state" style="padding: 3rem; text-align: center;"><h3>${wrapupViewMode === 'archived' ? 'No Archived Bookings' : 'No Completed Bookings'}</h3><p style="color: #666;">${emptyMsg}</p></div>`;
                 return;
             }
             
-            wrapupList.innerHTML = definiteLeads.map(lead => {
+            wrapupList.innerHTML = filteredLeads.map(lead => {
                 const wrapupData = lead.wrapup || {};
                 const completedCount = WRAPUP_TASKS.filter(t => wrapupData[t.id]).length;
                 const progressPct = Math.round((completedCount / WRAPUP_TASKS.length) * 100);
+                const isArchived = lead.wrapupArchived === true;
                 
                 return `
-                    <div class="dashboard-card" style="margin-bottom: 1rem;">
+                    <div class="dashboard-card" style="margin-bottom: 1rem; ${isArchived ? 'opacity: 0.7;' : ''}">
                         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                             <span>${lead.bookingName || 'Untitled'}</span>
-                            <span style="font-size: 0.75rem; color: ${progressPct === 100 ? '#00d98f' : '#666'};">${completedCount}/${WRAPUP_TASKS.length} complete</span>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span style="font-size: 0.75rem; color: ${progressPct === 100 ? '#00d98f' : '#666'};">${completedCount}/${WRAPUP_TASKS.length} complete</span>
+                                <button onclick="toggleWrapupArchive('${lead.id}')" class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">
+                                    ${isArchived ? '↩️ Restore' : '📦 Archive'}
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body" style="padding: 1rem;">
                             ${WRAPUP_TASKS.map(task => `
@@ -2682,21 +2719,27 @@ Kelsey`;
             }).join('');
         }
         
+        function toggleWrapupArchive(leadId) {
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            lead.wrapupArchived = !lead.wrapupArchived;
+            if (lead.wrapupArchived) {
+                lead.wrapupArchivedAt = new Date().toISOString();
+            } else {
+                delete lead.wrapupArchivedAt;
+            }
+            
+            saveData();
+            renderWrapUp();
+        }
+        
         function toggleWrapupTask(leadId, taskId) {
             const lead = appData.leads.find(l => l.id === leadId);
             if (!lead) return;
             
             if (!lead.wrapup) lead.wrapup = {};
             lead.wrapup[taskId] = !lead.wrapup[taskId];
-            
-            // Check if all tasks are complete (including 'done')
-            const allComplete = WRAPUP_TASKS.every(t => lead.wrapup[t.id]);
-            
-            if (allComplete) {
-                // Archive and mark as completed
-                lead.status = 'completed';
-                lead.completedAt = new Date().toISOString();
-            }
             
             saveData();
             renderWrapUp();

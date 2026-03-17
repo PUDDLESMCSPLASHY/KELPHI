@@ -4256,7 +4256,13 @@ Sales Manager`;
             document.getElementById('beo-onsitePhone').value = '';
             document.getElementById('beo-sameAsContact').checked = false;
             document.getElementById('beo-paymentMethod').value = '';
-            document.getElementById('beo-fbMinimum').value = lead.fbMinimum ? `$${lead.fbMinimum.toLocaleString()}` : '';
+            
+            // Calculate combined F&B minimum from all events
+            let combinedFbMin = 0;
+            if (lead.events && lead.events.length > 0) {
+                combinedFbMin = lead.events.reduce((sum, evt) => sum + (parseFloat(evt.fbMin) || 0), 0);
+            }
+            document.getElementById('beo-fbMinimum').value = combinedFbMin > 0 ? `$${combinedFbMin.toLocaleString()}` : '';
             
             // Guest count from events
             let guestCount = 50;

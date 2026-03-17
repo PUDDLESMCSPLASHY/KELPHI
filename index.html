@@ -514,7 +514,15 @@
                                     <div class="form-group"><label class="form-label">Contact Name</label><input type="text" class="form-input" id="beo-contactName"></div>
                                     <div class="form-group"><label class="form-label">Contact Phone</label><input type="text" class="form-input" id="beo-contactPhone"></div>
                                     <div class="form-group"><label class="form-label">Contact Email</label><input type="text" class="form-input" id="beo-contactEmail"></div>
-                                    <div class="form-group"><label class="form-label">Onsite Contact</label><input type="text" class="form-input" id="beo-onsiteContact"></div>
+                                    <div class="form-group">
+                                        <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                                            Onsite Contact
+                                            <label style="font-size: 0.7rem; color: #888; display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                                                <input type="checkbox" id="beo-sameAsContact" onchange="copyContactToOnsite()"> Same as contact
+                                            </label>
+                                        </label>
+                                        <input type="text" class="form-input" id="beo-onsiteContact">
+                                    </div>
                                     <div class="form-group"><label class="form-label">Onsite Phone</label><input type="text" class="form-input" id="beo-onsitePhone"></div>
                                     <div class="form-group"><label class="form-label">Payment Method</label>
                                         <select class="form-select" id="beo-paymentMethod">
@@ -4161,15 +4169,36 @@ Sales Manager`;
             }
         }
         
+        // Convert 24hr time (HH:MM) to 12hr format for BEO dropdown
+        function convertTo12Hour(time24) {
+            if (!time24) return '';
+            const [hours, minutes] = time24.split(':').map(Number);
+            if (isNaN(hours) || isNaN(minutes)) return '';
+            const hour12 = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            return `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+        }
+        
+        // Copy contact info to onsite fields
+        function copyContactToOnsite() {
+            const checkbox = document.getElementById('beo-sameAsContact');
+            if (checkbox.checked) {
+                document.getElementById('beo-onsiteContact').value = document.getElementById('beo-contactName').value;
+                document.getElementById('beo-onsitePhone').value = document.getElementById('beo-contactPhone').value;
+            } else {
+                document.getElementById('beo-onsiteContact').value = '';
+                document.getElementById('beo-onsitePhone').value = '';
+            }
+        }
+        
         function populateBeoLeadSelect() {
             const select = document.getElementById('beo-lead-select');
             if (!select) return;
             
-            // Get leads with events (type = 'events' or 'both')
+            // Get leads with events (type = 'events' or 'both') that are Definite or Contract Out
             const eventLeads = appData.leads.filter(l => 
                 (l.type === 'events' || l.type === 'both') && 
-                l.status !== 'lost' && 
-                l.status !== 'cancelled'
+                (l.status === 'definite' || l.status === 'contract-out')
             );
             
             select.innerHTML = '<option value="">Select a lead to create BEO...</option>';
@@ -4220,6 +4249,7 @@ Sales Manager`;
             document.getElementById('beo-contactEmail').value = lead.contactEmail || '';
             document.getElementById('beo-onsiteContact').value = '';
             document.getElementById('beo-onsitePhone').value = '';
+            document.getElementById('beo-sameAsContact').checked = false;
             document.getElementById('beo-paymentMethod').value = '';
             document.getElementById('beo-fbMinimum').value = lead.fbMinimum ? `$${lead.fbMinimum.toLocaleString()}` : '';
             
@@ -4237,8 +4267,8 @@ Sales Manager`;
                 lead.events.forEach((evt, idx) => {
                     beoTimelineRows.push({
                         id: Date.now() + idx,
-                        startTime: evt.startTime || '',
-                        endTime: evt.endTime || '',
+                        startTime: convertTo12Hour(evt.startTime),
+                        endTime: convertTo12Hour(evt.endTime),
                         eventName: evt.name || '',
                         location: evt.room || '',
                         setup: evt.setup || '',

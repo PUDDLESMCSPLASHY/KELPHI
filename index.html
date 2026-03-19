@@ -2858,11 +2858,11 @@ Kelsey`;
             
             if (availView === 'month') {
                 // MONTHLY VIEW: Calendar grid (7 columns x 5 rows)
-                let html = `<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: rgba(255,255,255,0.05);">`;
+                let html = `<div style="display: grid; grid-template-columns: repeat(7, 1fr);">`;
                 
                 // Header row with day names
                 ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
-                    html += `<div style="padding: 0.5rem; text-align: center; font-size: 0.75rem; color: #666; background: #12121c;">${day}</div>`;
+                    html += `<div style="padding: 0.5rem; text-align: center; font-size: 0.75rem; color: #666; background: #12121c; border-bottom: 1px solid rgba(255,255,255,0.1);">${day}</div>`;
                 });
                 
                 // Calendar cells
@@ -2877,7 +2877,7 @@ Kelsey`;
                         return arrival <= d.getTime() && departure > d.getTime();
                     });
                     
-                    html += `<div style="min-height: 80px; padding: 0.25rem; background: ${isToday ? 'rgba(0,217,255,0.08)' : '#16161f'}; cursor: pointer;" onclick="createLeadFromAvail('${dateStr}')">`;
+                    html += `<div style="min-height: 80px; padding: 0.25rem; background: ${isToday ? 'rgba(0,217,255,0.08)' : '#16161f'}; cursor: pointer; border: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${dateStr}')">`;
                     html += `<div style="font-size: 0.75rem; color: ${isToday ? '#00d9ff' : '#888'}; margin-bottom: 0.25rem;">${d.getDate()}</div>`;
                     
                     // Show up to 3 bookings, then "+X more"

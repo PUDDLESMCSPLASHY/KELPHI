@@ -2907,7 +2907,7 @@ Kelsey`;
                 dates.forEach(d => {
                     const isToday = d.toDateString() === new Date().toDateString();
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    html += `<div style="flex: 1; padding: 0.5rem; text-align: center; font-size: 0.75rem; color: ${isToday ? '#00d9ff' : (isWeekend ? '#555' : '#888')}; ${isToday ? 'background: rgba(0,217,255,0.1);' : ''}">${d.toLocaleDateString('en-US', { weekday: 'short' })}<br><span style="font-size: 1rem;">${d.getDate()}</span></div>`;
+                    html += `<div style="flex: 1; padding: 0.5rem; text-align: center; font-size: 0.75rem; color: ${isToday ? '#00d9ff' : (isWeekend ? '#555' : '#888')}; border-left: 1px solid rgba(255,255,255,0.06); ${isToday ? 'background: rgba(0,217,255,0.1);' : ''}">${d.toLocaleDateString('en-US', { weekday: 'short' })}<br><span style="font-size: 1rem;">${d.getDate()}</span></div>`;
                 });
                 html += `</div>`;
                 
@@ -2930,7 +2930,7 @@ Kelsey`;
                             const isEnd = departure.getTime() > dayStart && departure.getTime() <= dayEnd;
                             
                             if (isInRange) {
-                                html += `<div style="flex: 1; padding: 4px 2px; cursor: pointer; display: flex; align-items: center;"
+                                html += `<div style="flex: 1; padding: 4px 2px; cursor: pointer; display: flex; align-items: center; border-left: 1px solid rgba(255,255,255,0.06);"
                                     onclick="openLead('${lead.id}')"
                                     onmouseenter="showAvailPopup(event, '${lead.id}')"
                                     onmouseleave="hideAvailPopup()">
@@ -2941,7 +2941,7 @@ Kelsey`;
                                     </div>
                                 </div>`;
                             } else {
-                                html += `<div style="flex: 1; cursor: pointer;" onclick="createLeadFromAvail('${d.toISOString().split('T')[0]}')"></div>`;
+                                html += `<div style="flex: 1; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${d.toISOString().split('T')[0]}')"></div>`;
                             }
                         });
                         html += `</div>`;
@@ -2952,7 +2952,7 @@ Kelsey`;
                 html += `<div style="display: flex; min-height: 32px; opacity: 0.5;">`;
                 html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.75rem; color: #444; flex-shrink: 0; display: flex; align-items: center;">+ Click to add</div>`;
                 dates.forEach(d => {
-                    html += `<div style="flex: 1; cursor: pointer;" onclick="createLeadFromAvail('${d.toISOString().split('T')[0]}')" title="Create new lead for ${d.toLocaleDateString()}"></div>`;
+                    html += `<div style="flex: 1; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${d.toISOString().split('T')[0]}')" title="Create new lead for ${d.toLocaleDateString()}"></div>`;
                 });
                 html += `</div>`;
                 
@@ -2992,7 +2992,7 @@ Kelsey`;
             dates.forEach(d => {
                 const isToday = d.toDateString() === new Date().toDateString();
                 const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                html += `<div style="flex: 1; padding: 0.5rem; text-align: center; font-size: 0.75rem; color: ${isToday ? '#00d9ff' : (isWeekend ? '#555' : '#888')}; ${isToday ? 'background: rgba(0,217,255,0.1);' : ''}">${d.toLocaleDateString('en-US', { weekday: 'short' })}<br><span style="font-size: 0.9rem;">${d.getDate()}</span></div>`;
+                html += `<div style="flex: 1; padding: 0.5rem; text-align: center; font-size: 0.75rem; color: ${isToday ? '#00d9ff' : (isWeekend ? '#555' : '#888')}; border-left: 1px solid rgba(255,255,255,0.06); ${isToday ? 'background: rgba(0,217,255,0.1);' : ''}">${d.toLocaleDateString('en-US', { weekday: 'short' })}<br><span style="font-size: 0.9rem;">${d.getDate()}</span></div>`;
             });
             html += `</div>`;
             
@@ -3024,7 +3024,7 @@ Kelsey`;
                         const firstEvent = eventsOnDate[0];
                         const colors = AVAIL_STATUS_COLORS[firstEvent.lead.status] || AVAIL_STATUS_COLORS['working'];
                         const hasMultiple = firstEvent.lead.events && firstEvent.lead.events.length > 1;
-                        html += `<div style="flex: 1; padding: 3px;">
+                        html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06);">
                             <div style="height: 24px; background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: 3px; cursor: pointer; position: relative; overflow: hidden;"
                                 onclick="openLead('${firstEvent.lead.id}')"
                                 onmouseenter="showAvailPopup(event, '${firstEvent.lead.id}')"
@@ -3034,7 +3034,7 @@ Kelsey`;
                             </div>
                         </div>`;
                     } else {
-                        html += `<div style="flex: 1; cursor: pointer;" onclick="createLeadFromAvail('${dateStr}', '${room}')"></div>`;
+                        html += `<div style="flex: 1; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${dateStr}', '${room}')"></div>`;
                     }
                 });
                 html += `</div>`;

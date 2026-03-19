@@ -1181,11 +1181,22 @@
         const SETUP_STYLES = ['Classroom', 'Classroom Chevron', 'Conference/Boardroom', 'Crescent Rounds', 'Empty', 'Exhibition', 'Existing Setup', 'Hollow Square', 'Hollow Rectangle', 'Reception', 'Road Show', 'Rounds', 'See Floor Plan', 'Special Setup', 'Theatre', 'U Shape'];
 
         // ============ THEME ============
+        function broadcastTheme(theme) {
+            const message = { type: 'theme-change', theme: theme };
+            ['quoteGeneratorFrame', 'checklistFrame', 'goalsFrame'].forEach(id => {
+                const frame = document.getElementById(id);
+                if (frame && frame.contentWindow) {
+                    frame.contentWindow.postMessage(message, '*');
+                }
+            });
+        }
+        
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
             const isLight = document.body.classList.contains('light-mode');
             document.getElementById('themeLabel').textContent = isLight ? 'Light' : 'Dark';
             localStorage.setItem('kelphi_theme', isLight ? 'light' : 'dark');
+            broadcastTheme(isLight ? 'light' : 'dark');
         }
         
         // Load saved theme preference
@@ -1196,9 +1207,18 @@
                 setTimeout(() => {
                     const label = document.getElementById('themeLabel');
                     if (label) label.textContent = 'Light';
-                }, 0);
+                    broadcastTheme('light');
+                }, 100);
             }
         })();
+        
+        // Broadcast theme when iframes load
+        window.addEventListener('load', () => {
+            const savedTheme = localStorage.getItem('kelphi_theme');
+            if (savedTheme === 'light') {
+                setTimeout(() => broadcastTheme('light'), 500);
+            }
+        });
 
         // ============ DATA ============
         let appData = loadData();

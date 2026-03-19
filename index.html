@@ -1834,9 +1834,22 @@
         }
 
         function closePanel() {
+            // Check if current lead is empty (no booking name) and delete it
+            if (currentLeadId) {
+                const lead = appData.leads.find(l => l.id === currentLeadId);
+                if (lead && !lead.bookingName && !lead.account) {
+                    // This is an empty lead - delete it
+                    const idx = appData.leads.findIndex(l => l.id === currentLeadId);
+                    if (idx !== -1) {
+                        appData.leads.splice(idx, 1);
+                        saveData();
+                    }
+                }
+            }
             leadPanel.classList.remove('open');
             currentLeadId = null;
             renderLeads();
+            renderAvailability();
         }
 
         function clearPanel() {

@@ -2990,15 +2990,21 @@ Kelsey`;
                 
                 dates.forEach(d => {
                     const dateStr = d.toISOString().split('T')[0];
-                    // Find events in this room on this date
+                    const dayTime = d.getTime();
+                    // Find events in this room on this date (within lead's arrival-departure range)
                     const eventsOnDate = [];
                     eventLeads.forEach(lead => {
-                        if (!lead.events) return;
-                        lead.events.forEach(evt => {
-                            if (evt.room === room && lead.arrival === dateStr) {
-                                eventsOnDate.push({ lead, evt });
-                            }
-                        });
+                        if (!lead.events || !lead.arrival) return;
+                        const arrival = new Date(lead.arrival + 'T00:00:00').getTime();
+                        const departure = lead.departure ? new Date(lead.departure + 'T00:00:00').getTime() : arrival + 86400000;
+                        // Check if this date falls within the booking's date range
+                        if (dayTime >= arrival && dayTime < departure) {
+                            lead.events.forEach(evt => {
+                                if (evt.room === room) {
+                                    eventsOnDate.push({ lead, evt });
+                                }
+                            });
+                        }
                     });
                     
                     if (eventsOnDate.length > 0) {

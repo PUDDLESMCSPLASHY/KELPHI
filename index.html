@@ -331,6 +331,7 @@
 
         <nav class="tab-nav">
             <div class="nav-tab active" data-tab="home">Home</div>
+            <div class="nav-tab" data-tab="availability">Availability</div>
             <div class="nav-tab" data-tab="quotes">Quote Generator</div>
             <div class="nav-tab" data-tab="leads">Leads</div>
             <div class="nav-tab" data-tab="contracts">Contracts</div>
@@ -391,6 +392,64 @@
                     </div>
                 </div>
 
+                <!-- Availability Tab -->
+                <div class="tab-content" id="tab-availability">
+                    <!-- Top Controls -->
+                    <div class="leads-toolbar" style="flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button class="btn" id="availViewMonth" onclick="setAvailView('month')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Monthly</button>
+                            <button class="btn" id="availViewWeek" onclick="setAvailView('week')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Weekly</button>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select class="filter-select" id="availStatusFilter" onchange="renderAvailability()" style="width: auto;">
+                                <option value="all">All Statuses</option>
+                                <option value="working">Working</option>
+                                <option value="tentative">Tentative</option>
+                                <option value="contract-out">Contract Out</option>
+                                <option value="definite">Definite</option>
+                            </select>
+                            <select class="filter-select" id="availTypeFilter" onchange="renderAvailability()" style="width: auto;">
+                                <option value="all">Include Guestrooms</option>
+                                <option value="events">Events Only</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button class="btn" onclick="availToday()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Today</button>
+                            <button class="btn" onclick="availNav(-7)" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">◀ Week</button>
+                            <button class="btn" onclick="availNav(-1)" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">◀</button>
+                            <input type="date" class="form-input" id="availDatePicker" onchange="availJumpToDate()" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;">
+                            <button class="btn" onclick="availNav(1)" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">▶</button>
+                            <button class="btn" onclick="availNav(7)" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Week ▶</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Date Range Display -->
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <span style="font-size: 1.1rem; color: #00d9ff;" id="availDateRange"></span>
+                    </div>
+                    
+                    <!-- Calendar Section -->
+                    <div class="dashboard-card" style="margin-bottom: 1.5rem;">
+                        <div class="card-header">Bookings Calendar</div>
+                        <div class="card-body" style="padding: 0; overflow-x: auto;">
+                            <div id="availCalendar" style="min-height: 200px;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Function Rooms Gantt Chart -->
+                    <div class="dashboard-card">
+                        <div class="card-header">Function Rooms</div>
+                        <div class="card-body" style="padding: 0; overflow-x: auto;">
+                            <div id="availGantt" style="min-height: 300px;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hover Popup (hidden by default) -->
+                    <div id="availPopup" style="display: none; position: fixed; background: #1a1a24; border: 1px solid #00d9ff; border-radius: 8px; padding: 1rem; z-index: 1000; min-width: 280px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                        <div id="availPopupContent"></div>
+                    </div>
+                </div>
+                
                 <!-- Quote Generator Tab -->
                 <div class="tab-content" id="tab-quotes"><iframe id="quoteGeneratorFrame" src="https://puddlesmcsplashy.github.io/RATE-CALCULATOR/" style="width: 100%; height: calc(100vh - 180px); border: none; border-radius: 8px;"></iframe></div>
 
@@ -2655,6 +2714,309 @@ Kelsey`;
             }
         }
         
+        // ============ AVAILABILITY TAB ============
+        let availView = 'week';
+        let availStartDate = new Date();
+        availStartDate.setHours(0, 0, 0, 0);
+        // Start on Monday of current week
+        const dayOfWeek = availStartDate.getDay();
+        availStartDate.setDate(availStartDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+        
+        const AVAIL_STATUS_COLORS = {
+            'working': { bg: 'rgba(136,136,136,0.3)', border: '#888888', text: '#888' },
+            'tentative': { bg: 'rgba(255,170,0,0.3)', border: '#ffaa00', text: '#ffaa00' },
+            'contract-out': { bg: 'rgba(138,43,226,0.3)', border: '#b366ff', text: '#b366ff' },
+            'definite': { bg: 'rgba(0,217,143,0.3)', border: '#00d98f', text: '#00d98f' }
+        };
+        
+        function setAvailView(view) {
+            availView = view;
+            document.getElementById('availViewMonth').style.background = view === 'month' ? 'rgba(0,217,255,0.15)' : '';
+            document.getElementById('availViewMonth').style.borderColor = view === 'month' ? '#00d9ff' : '';
+            document.getElementById('availViewMonth').style.color = view === 'month' ? '#00d9ff' : '';
+            document.getElementById('availViewWeek').style.background = view === 'week' ? 'rgba(0,217,255,0.15)' : '';
+            document.getElementById('availViewWeek').style.borderColor = view === 'week' ? '#00d9ff' : '';
+            document.getElementById('availViewWeek').style.color = view === 'week' ? '#00d9ff' : '';
+            renderAvailability();
+        }
+        
+        function availToday() {
+            availStartDate = new Date();
+            availStartDate.setHours(0, 0, 0, 0);
+            const dayOfWeek = availStartDate.getDay();
+            availStartDate.setDate(availStartDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            document.getElementById('availDatePicker').value = availStartDate.toISOString().split('T')[0];
+            renderAvailability();
+        }
+        
+        function availNav(days) {
+            availStartDate.setDate(availStartDate.getDate() + days);
+            document.getElementById('availDatePicker').value = availStartDate.toISOString().split('T')[0];
+            renderAvailability();
+        }
+        
+        function availJumpToDate() {
+            const picker = document.getElementById('availDatePicker');
+            if (picker.value) {
+                availStartDate = new Date(picker.value + 'T00:00:00');
+                // Align to Monday
+                const dayOfWeek = availStartDate.getDay();
+                availStartDate.setDate(availStartDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                renderAvailability();
+            }
+        }
+        
+        function renderAvailability() {
+            const statusFilter = document.getElementById('availStatusFilter')?.value || 'all';
+            const typeFilter = document.getElementById('availTypeFilter')?.value || 'all';
+            
+            // Get active leads (not completed or lost)
+            let leads = appData.leads.filter(l => !['completed', 'lost', 'cancelled'].includes(l.status));
+            
+            // Apply status filter
+            if (statusFilter !== 'all') {
+                leads = leads.filter(l => l.status === statusFilter);
+            }
+            
+            // Apply type filter (events only or include guestrooms)
+            if (typeFilter === 'events') {
+                leads = leads.filter(l => l.type === 'events' || l.type === 'both');
+            }
+            
+            // Calculate date range
+            const numDays = availView === 'month' ? 28 : 7;
+            const dates = [];
+            for (let i = 0; i < numDays; i++) {
+                const d = new Date(availStartDate);
+                d.setDate(d.getDate() + i);
+                dates.push(d);
+            }
+            
+            // Update date range display
+            const startStr = availStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const endDate = new Date(availStartDate);
+            endDate.setDate(endDate.getDate() + numDays - 1);
+            const endStr = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            document.getElementById('availDateRange').textContent = `${startStr} — ${endStr}`;
+            
+            renderAvailCalendar(leads, dates);
+            renderAvailGantt(leads, dates);
+        }
+        
+        function renderAvailCalendar(leads, dates) {
+            const container = document.getElementById('availCalendar');
+            const cellWidth = availView === 'month' ? 35 : 100;
+            
+            // Build header row with dates
+            let html = `<div style="display: flex; border-bottom: 1px solid rgba(255,255,255,0.1);">`;
+            html += `<div style="width: 150px; padding: 0.5rem; font-size: 0.7rem; color: #666; flex-shrink: 0;">BOOKING</div>`;
+            dates.forEach(d => {
+                const isToday = d.toDateString() === new Date().toDateString();
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                html += `<div style="width: ${cellWidth}px; padding: 0.5rem; text-align: center; font-size: 0.7rem; color: ${isToday ? '#00d9ff' : (isWeekend ? '#666' : '#888')}; flex-shrink: 0; ${isToday ? 'background: rgba(0,217,255,0.1);' : ''}">${d.toLocaleDateString('en-US', { weekday: 'short' })}<br>${d.getDate()}</div>`;
+            });
+            html += `</div>`;
+            
+            // Filter leads with dates in range
+            const startTime = dates[0].getTime();
+            const endTime = dates[dates.length - 1].getTime() + 86400000;
+            
+            const relevantLeads = leads.filter(l => {
+                if (!l.arrival) return false;
+                const arrival = new Date(l.arrival + 'T00:00:00').getTime();
+                const departure = l.departure ? new Date(l.departure + 'T00:00:00').getTime() : arrival + 86400000;
+                return arrival < endTime && departure > startTime;
+            });
+            
+            if (relevantLeads.length === 0) {
+                html += `<div style="padding: 2rem; text-align: center; color: #666;">No bookings in this date range</div>`;
+            } else {
+                relevantLeads.forEach(lead => {
+                    const colors = AVAIL_STATUS_COLORS[lead.status] || AVAIL_STATUS_COLORS['working'];
+                    const arrival = new Date(lead.arrival + 'T00:00:00');
+                    const departure = lead.departure ? new Date(lead.departure + 'T00:00:00') : new Date(arrival.getTime() + 86400000);
+                    
+                    html += `<div style="display: flex; position: relative; min-height: 36px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
+                    html += `<div style="width: 150px; padding: 0.5rem; font-size: 0.75rem; color: #e0e0e0; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${lead.bookingName || 'Untitled'}">${lead.bookingName || 'Untitled'}</div>`;
+                    
+                    // Calculate bar position
+                    dates.forEach((d, idx) => {
+                        const dayStart = d.getTime();
+                        const dayEnd = dayStart + 86400000;
+                        const isInRange = arrival.getTime() < dayEnd && departure.getTime() > dayStart;
+                        const isStart = arrival.getTime() >= dayStart && arrival.getTime() < dayEnd;
+                        const isEnd = departure.getTime() > dayStart && departure.getTime() <= dayEnd;
+                        
+                        if (isInRange) {
+                            html += `<div 
+                                style="width: ${cellWidth}px; padding: 2px; flex-shrink: 0; cursor: pointer;"
+                                onclick="openLead('${lead.id}')"
+                                onmouseenter="showAvailPopup(event, '${lead.id}')"
+                                onmouseleave="hideAvailPopup()">
+                                <div style="height: 28px; background: ${colors.bg}; border: 1px solid ${colors.border}; 
+                                    ${isStart ? 'border-radius: 4px 0 0 4px; margin-left: 2px;' : 'border-left: none;'}
+                                    ${isEnd ? 'border-radius: 0 4px 4px 0; margin-right: 2px;' : 'border-right: none;'}
+                                    ${isStart && isEnd ? 'border-radius: 4px; margin: 0 2px;' : ''}">
+                                </div>
+                            </div>`;
+                        } else {
+                            html += `<div style="width: ${cellWidth}px; flex-shrink: 0; cursor: pointer;" onclick="createLeadFromAvail('${d.toISOString().split('T')[0]}')"></div>`;
+                        }
+                    });
+                    html += `</div>`;
+                });
+            }
+            
+            // Empty row for creating new leads
+            html += `<div style="display: flex; min-height: 30px; opacity: 0.5;">`;
+            html += `<div style="width: 150px; padding: 0.5rem; font-size: 0.7rem; color: #444; flex-shrink: 0;">+ Click to add</div>`;
+            dates.forEach(d => {
+                html += `<div style="width: ${cellWidth}px; flex-shrink: 0; cursor: pointer;" onclick="createLeadFromAvail('${d.toISOString().split('T')[0]}')" title="Create new lead for ${d.toLocaleDateString()}"></div>`;
+            });
+            html += `</div>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function renderAvailGantt(leads, dates) {
+            const container = document.getElementById('availGantt');
+            const cellWidth = availView === 'month' ? 35 : 100;
+            
+            // Only show leads with events
+            const eventLeads = leads.filter(l => l.type === 'events' || l.type === 'both');
+            
+            // Build header row with dates
+            let html = `<div style="display: flex; border-bottom: 1px solid rgba(255,255,255,0.1);">`;
+            html += `<div style="width: 150px; padding: 0.5rem; font-size: 0.7rem; color: #666; flex-shrink: 0;">FUNCTION ROOM</div>`;
+            dates.forEach(d => {
+                const isToday = d.toDateString() === new Date().toDateString();
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                html += `<div style="width: ${cellWidth}px; padding: 0.5rem; text-align: center; font-size: 0.7rem; color: ${isToday ? '#00d9ff' : (isWeekend ? '#666' : '#888')}; flex-shrink: 0; ${isToday ? 'background: rgba(0,217,255,0.1);' : ''}">${d.toLocaleDateString('en-US', { weekday: 'short' })}<br>${d.getDate()}</div>`;
+            });
+            html += `</div>`;
+            
+            // Build row for each function room
+            FUNCTION_ROOMS.forEach(room => {
+                html += `<div style="display: flex; min-height: 32px; border-bottom: 1px solid rgba(255,255,255,0.03);">`;
+                html += `<div style="width: 150px; padding: 0.5rem; font-size: 0.75rem; color: #888; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${room}">${room}</div>`;
+                
+                dates.forEach(d => {
+                    const dateStr = d.toISOString().split('T')[0];
+                    // Find events in this room on this date
+                    const eventsOnDate = [];
+                    eventLeads.forEach(lead => {
+                        if (!lead.events) return;
+                        lead.events.forEach(evt => {
+                            if (evt.room === room) {
+                                // Check if event is on this date (using arrival date as event date for now)
+                                if (lead.arrival === dateStr) {
+                                    eventsOnDate.push({ lead, evt });
+                                }
+                            }
+                        });
+                    });
+                    
+                    if (eventsOnDate.length > 0) {
+                        const firstEvent = eventsOnDate[0];
+                        const colors = AVAIL_STATUS_COLORS[firstEvent.lead.status] || AVAIL_STATUS_COLORS['working'];
+                        const hasMultiple = firstEvent.lead.events && firstEvent.lead.events.length > 1;
+                        html += `<div style="width: ${cellWidth}px; padding: 2px; flex-shrink: 0;">
+                            <div style="height: 24px; background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: 3px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: ${colors.text}; overflow: hidden;"
+                                onclick="openLead('${firstEvent.lead.id}')"
+                                onmouseenter="showAvailPopup(event, '${firstEvent.lead.id}')"
+                                onmouseleave="hideAvailPopup()"
+                                title="${firstEvent.lead.bookingName || 'Untitled'}">
+                                ${hasMultiple ? '<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ' + colors.border + ';"></div>' : ''}
+                                ${eventsOnDate.length > 1 ? eventsOnDate.length : ''}
+                            </div>
+                        </div>`;
+                    } else {
+                        html += `<div style="width: ${cellWidth}px; flex-shrink: 0; cursor: pointer;" onclick="createLeadFromAvail('${dateStr}', '${room}')"></div>`;
+                    }
+                });
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function showAvailPopup(event, leadId) {
+            const lead = appData.leads.find(l => l.id === leadId);
+            if (!lead) return;
+            
+            const popup = document.getElementById('availPopup');
+            const content = document.getElementById('availPopupContent');
+            
+            // Calculate days since creation
+            const daysSinceCreated = lead.createdAt ? Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A';
+            
+            // Calculate revenues
+            const roomRevenue = calcRoomRevenue(lead);
+            const adr = lead.rate || 0;
+            const roomRental = (lead.events || []).reduce((sum, e) => sum + (parseFloat(e.rental) || 0), 0);
+            const fbMin = (lead.events || []).reduce((sum, e) => sum + (parseFloat(e.fbMin) || 0), 0);
+            const eventRevenue = roomRental + fbMin;
+            const totalRevenue = roomRevenue + eventRevenue;
+            
+            const colors = AVAIL_STATUS_COLORS[lead.status] || AVAIL_STATUS_COLORS['working'];
+            
+            content.innerHTML = `
+                <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; color: #fff;">${lead.bookingName || 'Untitled'}</div>
+                <div style="display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: ${colors.bg}; color: ${colors.text}; margin-bottom: 0.75rem;">${formatStatus(lead.status)}</div>
+                <div style="font-size: 0.75rem; color: #888; margin-bottom: 0.75rem;">${daysSinceCreated} days since created</div>
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.75rem; font-size: 0.8rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;"><span style="color: #888;">Guestroom Revenue:</span><span style="color: #00d9ff;">${formatCurrency(roomRevenue)}</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;"><span style="color: #888;">ADR:</span><span>${formatCurrency(adr)}</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;"><span style="color: #888;">Room Rental:</span><span>${formatCurrency(roomRental)}</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;"><span style="color: #888;">F&B Minimum:</span><span>${formatCurrency(fbMin)}</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;"><span style="color: #888;">Event Revenue:</span><span style="color: #ffaa00;">${formatCurrency(eventRevenue)}</span></div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.3rem; margin-top: 0.3rem;"><span style="color: #fff; font-weight: 500;">Total Revenue:</span><span style="color: #00d98f; font-weight: 500;">${formatCurrency(totalRevenue)}</span></div>
+                </div>
+            `;
+            
+            // Position popup near mouse
+            popup.style.display = 'block';
+            popup.style.left = Math.min(event.clientX + 10, window.innerWidth - 300) + 'px';
+            popup.style.top = Math.min(event.clientY + 10, window.innerHeight - 300) + 'px';
+        }
+        
+        function hideAvailPopup() {
+            document.getElementById('availPopup').style.display = 'none';
+        }
+        
+        function createLeadFromAvail(dateStr, room) {
+            // Create a new lead and pre-fill arrival date and optionally room
+            const newLead = {
+                id: Date.now().toString(),
+                bookingName: '',
+                account: '',
+                status: 'working',
+                type: room ? 'events' : 'rooms',
+                arrival: dateStr,
+                departure: '',
+                createdAt: new Date().toISOString(),
+                events: room ? [{ room: room, name: '', setup: '', startTime: '', endTime: '', guests: '', rental: '', fbMin: '' }] : []
+            };
+            
+            appData.leads.push(newLead);
+            saveData();
+            
+            // Switch to Leads tab and open the new lead
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('.nav-tab[data-tab="leads"]').classList.add('active');
+            document.getElementById('tab-leads').classList.add('active');
+            
+            renderLeads();
+            setTimeout(() => openLead(newLead.id), 100);
+        }
+        
+        // Initialize availability view when tab is shown
+        document.querySelector('.nav-tab[data-tab="availability"]')?.addEventListener('click', () => {
+            setAvailView(availView);
+            document.getElementById('availDatePicker').value = availStartDate.toISOString().split('T')[0];
+        });
+
         // ============ POST BOOKING WRAP UP ============
         let wrapupViewMode = 'active';
         

@@ -397,6 +397,7 @@
             <div class="nav-tab" data-tab="handover">Handover</div>
             <div class="nav-tab" data-tab="beo">BEO</div>
             <div class="nav-tab" data-tab="goals">Goals</div>
+            <div class="nav-tab" data-tab="csm">CSM Timeline</div>
             <div class="nav-tab" data-tab="wrapup">Post Booking</div>
         </nav>
 
@@ -796,6 +797,7 @@
                 </div>
                 
                 <div class="tab-content" id="tab-goals"><iframe id="goalsFrame" src="https://puddlesmcsplashy.github.io/GOALS/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;" onload="requestGoalsData()"></iframe></div>
+                <div class="tab-content" id="tab-csm"><iframe id="csmFrame" src="https://puddlesmcsplashy.github.io/CSM-TIMELINE/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-wrapup">
                     <div class="leads-toolbar" style="margin-bottom: 1rem;">
                         <div class="section-header" style="margin: 0;">Post Booking Wrap Up</div>
@@ -1183,7 +1185,7 @@
         // ============ THEME ============
         function broadcastTheme(theme) {
             const message = { type: 'theme-change', theme: theme };
-            ['quoteGeneratorFrame', 'checklistFrame', 'goalsFrame'].forEach(id => {
+            ['quoteGeneratorFrame', 'checklistFrame', 'goalsFrame', 'csmFrame'].forEach(id => {
                 const frame = document.getElementById(id);
                 if (frame && frame.contentWindow) {
                     frame.contentWindow.postMessage(message, '*');

@@ -1212,6 +1212,16 @@
                                     <option value="government">Government</option>
                                 </select>
                             </div>
+                            <div class="form-group" style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #888; cursor: pointer;">
+                                    <input type="checkbox" id="lead-firstTimeBooking" style="width: 16px; height: 16px; accent-color: #00d9ff;">
+                                    First Time Booking
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #888; cursor: pointer;">
+                                    <input type="checkbox" id="lead-milestoneEvent" style="width: 16px; height: 16px; accent-color: #00d9ff;">
+                                    Milestone Event
+                                </label>
+                            </div>
                         </div>
 
                         <!-- Guestroom Info Section -->
@@ -1543,8 +1553,18 @@
             { id: 'turnover-complete', label: 'Check turnover complete box' },
             { id: 'review-invoice', label: 'Review final invoice' },
             { id: 'add-summary', label: 'Add summary notes to booking and account in Delphi' },
+            { id: 'ensure-thankyou', label: "Ensure 'Thank You' Letter is Sent", conditional: 'thankyou' },
             { id: 'done', label: 'Done' }
         ];
+        
+        // Check if a wrapup task should be shown for this lead
+        function shouldShowWrapupTask(task, lead) {
+            if (!task.conditional) return true;
+            if (task.conditional === 'thankyou') {
+                return lead.firstTimeBooking || lead.milestoneEvent;
+            }
+            return true;
+        }
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -2469,6 +2489,8 @@
 
             document.getElementById('lead-waiveRental').checked = lead.waiveRental || false;
             document.getElementById('lead-fbCombined').checked = lead.fbCombined || false;
+            document.getElementById('lead-firstTimeBooking').checked = lead.firstTimeBooking || false;
+            document.getElementById('lead-milestoneEvent').checked = lead.milestoneEvent || false;
             document.getElementById('lead-sameAsContact').checked = false;
             document.getElementById('lead-commissionable').checked = lead.commissionable || false;
             toggleCommissionField();
@@ -2589,6 +2611,8 @@
                 type: type,
                 status: document.getElementById('lead-status').value,
                 segment: document.getElementById('lead-segment').value,
+                firstTimeBooking: document.getElementById('lead-firstTimeBooking').checked,
+                milestoneEvent: document.getElementById('lead-milestoneEvent').checked,
                 roomBlock: currentRoomBlock,
                 events: currentEvents,
                 signerName: document.getElementById('lead-signerName').value,
@@ -3870,8 +3894,9 @@ Kelsey`;
             
             wrapupList.innerHTML = filteredLeads.map(lead => {
                 const wrapupData = lead.wrapup || {};
-                const completedCount = WRAPUP_TASKS.filter(t => wrapupData[t.id]).length;
-                const progressPct = Math.round((completedCount / WRAPUP_TASKS.length) * 100);
+                const applicableTasks = WRAPUP_TASKS.filter(t => shouldShowWrapupTask(t, lead));
+                const completedCount = applicableTasks.filter(t => wrapupData[t.id]).length;
+                const progressPct = Math.round((completedCount / applicableTasks.length) * 100);
                 const isArchived = lead.wrapupArchived === true;
                 
                 return `
@@ -3879,14 +3904,14 @@ Kelsey`;
                         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                             <span>${lead.bookingName || 'Untitled'}</span>
                             <div style="display: flex; align-items: center; gap: 1rem;">
-                                <span style="font-size: 0.75rem; color: ${progressPct === 100 ? '#00d98f' : '#666'};">${completedCount}/${WRAPUP_TASKS.length} complete</span>
+                                <span style="font-size: 0.75rem; color: ${progressPct === 100 ? '#00d98f' : '#666'};">${completedCount}/${applicableTasks.length} complete</span>
                                 <button onclick="toggleWrapupArchive('${lead.id}')" class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">
                                     ${isArchived ? '↩️ Restore' : '📦 Archive'}
                                 </button>
                             </div>
                         </div>
                         <div class="card-body" style="padding: 1rem;">
-                            ${WRAPUP_TASKS.map(task => `
+                            ${applicableTasks.map(task => `
                                 <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; cursor: pointer; ${wrapupData[task.id] ? 'color: #00d98f;' : ''}">
                                     <input type="checkbox" ${wrapupData[task.id] ? 'checked' : ''} onchange="toggleWrapupTask('${lead.id}', '${task.id}')" style="accent-color: #00d9ff;">
                                     <span style="${wrapupData[task.id] ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${task.label}</span>

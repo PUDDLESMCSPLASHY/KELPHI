@@ -1771,12 +1771,12 @@
                 // Room rental and F&B from events
                 if (l.events) {
                     l.events.forEach(evt => {
-                        if (evt.rentalFee && parseFloat(evt.rentalFee) > 0) {
-                            totalRental += parseFloat(evt.rentalFee);
+                        if (evt.rental && parseFloat(evt.rental) > 0) {
+                            totalRental += parseFloat(evt.rental);
                             rentalCount++;
                         }
-                        if (evt.fbMinimum && parseFloat(evt.fbMinimum) > 0) {
-                            totalFnb += parseFloat(evt.fbMinimum);
+                        if (evt.fbMin && parseFloat(evt.fbMin) > 0) {
+                            totalFnb += parseFloat(evt.fbMin);
                             fnbCount++;
                         }
                     });
@@ -1822,7 +1822,7 @@
                 }
                 if (l.events) {
                     l.events.forEach(evt => {
-                        eventsRev += (parseFloat(evt.rentalFee) || 0) + (parseFloat(evt.fbMinimum) || 0);
+                        eventsRev += (parseFloat(evt.rental) || 0) + (parseFloat(evt.fbMin) || 0);
                     });
                 }
                 // Fallback: if no breakdown but has revenue, estimate by type

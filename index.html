@@ -259,6 +259,46 @@
         body.light-mode .revenue-bar-track { background: #e1e4e8; }
         body.light-mode .revenue-bar-value { color: #2d3436; }
         
+        /* Averages Grid */
+        .averages-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; }
+        .avg-item { background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 6px; text-align: center; }
+        .avg-label { font-size: 0.7rem; color: #888; margin-bottom: 0.25rem; text-transform: uppercase; }
+        .avg-value { font-size: 1.1rem; font-weight: 600; color: #e0e0e0; }
+        .avg-value.cyan { color: #00d9ff; }
+        body.light-mode .avg-item { background: #f8f9fa; }
+        body.light-mode .avg-value { color: #2d3436; }
+        
+        /* Pipeline items clickable */
+        .pipeline-item { cursor: pointer; transition: all 0.2s; }
+        .pipeline-item:hover { background: rgba(0,217,255,0.1); transform: translateY(-2px); }
+        
+        /* Pipeline Popup */
+        .pipeline-popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .pipeline-popup-overlay.visible { display: flex; }
+        .pipeline-popup { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 90%; max-width: 400px; max-height: 80vh; overflow: hidden; }
+        .pipeline-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .pipeline-popup-title { font-size: 1.1rem; font-weight: 600; color: #e0e0e0; }
+        .pipeline-popup-close { background: none; border: none; font-size: 1.5rem; color: #888; cursor: pointer; line-height: 1; }
+        .pipeline-popup-close:hover { color: #ff4757; }
+        .pipeline-popup-body { padding: 1.25rem; }
+        .pipeline-popup-metrics { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+        .popup-metric { display: flex; justify-content: space-between; padding: 0.5rem 0; }
+        .popup-metric.total { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.75rem; margin-top: 0.25rem; }
+        .popup-metric-label { color: #888; font-size: 0.85rem; }
+        .popup-metric-value { color: #e0e0e0; font-weight: 500; }
+        .popup-metric.total .popup-metric-value { color: #00d9ff; font-size: 1.1rem; }
+        .pipeline-popup-list-header { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
+        .pipeline-popup-list { max-height: 200px; overflow-y: auto; }
+        .pipeline-popup-list-item { padding: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 4px; margin-bottom: 0.25rem; font-size: 0.85rem; color: #e0e0e0; cursor: pointer; }
+        .pipeline-popup-list-item:hover { background: rgba(0,217,255,0.1); }
+        
+        body.light-mode .pipeline-popup { background: #fff; border-color: #e1e4e8; }
+        body.light-mode .pipeline-popup-header { border-bottom-color: #e1e4e8; }
+        body.light-mode .pipeline-popup-title { color: #2d3436; }
+        body.light-mode .popup-metric-value { color: #2d3436; }
+        body.light-mode .popup-metric.total { border-top-color: #e1e4e8; }
+        body.light-mode .pipeline-popup-list-item { background: #f8f9fa; color: #2d3436; }
+        
         /* Days Out Indicators */
         .days-out { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
         .days-out.green { background: rgba(0,217,143,0.15); color: #00d98f; }
@@ -918,17 +958,17 @@
                                 <div class="metric-sub">leads → definite</div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-label">Avg Time to Close</div>
+                                <div class="metric-label">Median Time to Close</div>
                                 <div class="metric-value orange" id="metric-avgTimeToClose">— days</div>
                                 <div class="metric-sub">created → definite</div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-label">Avg Time to Sign</div>
+                                <div class="metric-label">Median Time to Sign</div>
                                 <div class="metric-value purple" id="metric-avgTimeToSign">— days</div>
                                 <div class="metric-sub">contract out → definite</div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-label">Avg Lead Time</div>
+                                <div class="metric-label">Median Lead Time</div>
                                 <div class="metric-value" id="metric-avgLeadTime">— days</div>
                                 <div class="metric-sub">inquiry → arrival</div>
                             </div>
@@ -938,27 +978,27 @@
                         <div class="reporting-section">
                             <div class="section-header">Pipeline Breakdown</div>
                             <div class="pipeline-grid" id="pipelineBreakdown">
-                                <div class="pipeline-item">
+                                <div class="pipeline-item" onclick="showPipelineDetail('working')">
                                     <div class="pipeline-status working">Working</div>
                                     <div class="pipeline-count" id="pipeline-working">0</div>
                                 </div>
-                                <div class="pipeline-item">
+                                <div class="pipeline-item" onclick="showPipelineDetail('dying')">
                                     <div class="pipeline-status dying">Dying</div>
                                     <div class="pipeline-count" id="pipeline-dying">0</div>
                                 </div>
-                                <div class="pipeline-item">
+                                <div class="pipeline-item" onclick="showPipelineDetail('tentative')">
                                     <div class="pipeline-status tentative">Tentative</div>
                                     <div class="pipeline-count" id="pipeline-tentative">0</div>
                                 </div>
-                                <div class="pipeline-item">
+                                <div class="pipeline-item" onclick="showPipelineDetail('contract-out')">
                                     <div class="pipeline-status contract-out">Contract Out</div>
                                     <div class="pipeline-count" id="pipeline-contract-out">0</div>
                                 </div>
-                                <div class="pipeline-item">
+                                <div class="pipeline-item" onclick="showPipelineDetail('definite')">
                                     <div class="pipeline-status definite">Definite</div>
                                     <div class="pipeline-count" id="pipeline-definite">0</div>
                                 </div>
-                                <div class="pipeline-item">
+                                <div class="pipeline-item" onclick="showPipelineDetail('lost')">
                                     <div class="pipeline-status lost">Lost</div>
                                     <div class="pipeline-count" id="pipeline-lost">0</div>
                                 </div>
@@ -969,6 +1009,67 @@
                         <div class="reporting-section">
                             <div class="section-header">Revenue by Status</div>
                             <div class="revenue-bars" id="revenueBars"></div>
+                            <div class="total-pipeline" id="totalPipeline" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.85rem; color: #888;">Total Pipeline Revenue</span>
+                                <span style="font-size: 1.2rem; font-weight: 600; color: #00d9ff;" id="totalPipelineValue">$0</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Averages Section -->
+                        <div class="reporting-section">
+                            <div class="section-header">Averages & Benchmarks</div>
+                            <div class="averages-grid">
+                                <div class="avg-item">
+                                    <div class="avg-label">Avg ADR</div>
+                                    <div class="avg-value" id="avg-adr">$0</div>
+                                </div>
+                                <div class="avg-item">
+                                    <div class="avg-label">Avg Room Rental</div>
+                                    <div class="avg-value" id="avg-rental">$0</div>
+                                </div>
+                                <div class="avg-item">
+                                    <div class="avg-label">Avg F&B Minimum</div>
+                                    <div class="avg-value" id="avg-fnb">$0</div>
+                                </div>
+                            </div>
+                            <div class="section-subheader" style="margin-top: 1rem; margin-bottom: 0.75rem; font-size: 0.8rem; color: #888;">Average Revenue per Booking</div>
+                            <div class="averages-grid">
+                                <div class="avg-item">
+                                    <div class="avg-label">Rooms Only</div>
+                                    <div class="avg-value" id="avg-rev-rooms">$0</div>
+                                </div>
+                                <div class="avg-item">
+                                    <div class="avg-label">Events Only</div>
+                                    <div class="avg-value" id="avg-rev-events">$0</div>
+                                </div>
+                                <div class="avg-item">
+                                    <div class="avg-label">Rooms + Events</div>
+                                    <div class="avg-value" id="avg-rev-both">$0</div>
+                                </div>
+                                <div class="avg-item">
+                                    <div class="avg-label">All Bookings</div>
+                                    <div class="avg-value cyan" id="avg-rev-all">$0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pipeline Detail Popup -->
+                    <div class="pipeline-popup-overlay" id="pipelinePopup" onclick="closePipelinePopup(event)">
+                        <div class="pipeline-popup" onclick="event.stopPropagation()">
+                            <div class="pipeline-popup-header">
+                                <span class="pipeline-popup-title" id="pipelinePopupTitle">Working</span>
+                                <button class="pipeline-popup-close" onclick="closePipelinePopup()">&times;</button>
+                            </div>
+                            <div class="pipeline-popup-body">
+                                <div class="pipeline-popup-metrics">
+                                    <div class="popup-metric"><span class="popup-metric-label">Guestrooms Revenue</span><span class="popup-metric-value" id="popup-guestrooms">$0</span></div>
+                                    <div class="popup-metric"><span class="popup-metric-label">Event Revenue</span><span class="popup-metric-value" id="popup-events">$0</span></div>
+                                    <div class="popup-metric total"><span class="popup-metric-label">Total Revenue</span><span class="popup-metric-value" id="popup-total">$0</span></div>
+                                </div>
+                                <div class="pipeline-popup-list-header">Bookings (<span id="popup-count">0</span>)</div>
+                                <div class="pipeline-popup-list" id="pipelinePopupList"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1556,49 +1657,57 @@
             const totalRevenue = definiteLeads.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
             const conversionRate = totalLeads > 0 ? (definiteLeads.length / totalLeads * 100) : 0;
             
-            // Avg Time to Close (created → definite)
-            let avgTimeToClose = null;
+            // Helper: calculate median
+            function median(arr) {
+                if (arr.length === 0) return null;
+                const sorted = [...arr].sort((a, b) => a - b);
+                const mid = Math.floor(sorted.length / 2);
+                return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+            }
+            
+            // Median Time to Close (created → definite)
+            let medianTimeToClose = null;
             const closedLeads = definiteLeads.filter(l => l.createdAt && l.definiteDate);
             if (closedLeads.length > 0) {
-                const totalDays = closedLeads.reduce((sum, l) => {
+                const daysArr = closedLeads.map(l => {
                     const created = new Date(l.createdAt);
                     const closed = new Date(l.definiteDate);
-                    return sum + Math.floor((closed - created) / (1000 * 60 * 60 * 24));
-                }, 0);
-                avgTimeToClose = Math.round(totalDays / closedLeads.length);
+                    return Math.floor((closed - created) / (1000 * 60 * 60 * 24));
+                });
+                medianTimeToClose = median(daysArr);
             }
             
-            // Avg Time to Sign (contract-out → definite)
-            let avgTimeToSign = null;
+            // Median Time to Sign (contract-out → definite)
+            let medianTimeToSign = null;
             const signedLeads = definiteLeads.filter(l => l.contractOutDate && l.definiteDate);
             if (signedLeads.length > 0) {
-                const totalDays = signedLeads.reduce((sum, l) => {
+                const daysArr = signedLeads.map(l => {
                     const sent = new Date(l.contractOutDate);
                     const signed = new Date(l.definiteDate);
-                    return sum + Math.floor((signed - sent) / (1000 * 60 * 60 * 24));
-                }, 0);
-                avgTimeToSign = Math.round(totalDays / signedLeads.length);
+                    return Math.floor((signed - sent) / (1000 * 60 * 60 * 24));
+                });
+                medianTimeToSign = median(daysArr);
             }
             
-            // Avg Lead Time (created → arrival)
-            let avgLeadTime = null;
+            // Median Lead Time (created → arrival)
+            let medianLeadTime = null;
             const leadsWithArrival = definiteLeads.filter(l => l.createdAt && l.arrival);
             if (leadsWithArrival.length > 0) {
-                const totalDays = leadsWithArrival.reduce((sum, l) => {
+                const daysArr = leadsWithArrival.map(l => {
                     const created = new Date(l.createdAt);
                     const arrival = new Date(l.arrival + 'T12:00:00');
-                    return sum + Math.floor((arrival - created) / (1000 * 60 * 60 * 24));
-                }, 0);
-                avgLeadTime = Math.round(totalDays / leadsWithArrival.length);
+                    return Math.floor((arrival - created) / (1000 * 60 * 60 * 24));
+                });
+                medianLeadTime = median(daysArr);
             }
             
             // Update metric displays
             document.getElementById('metric-totalLeads').textContent = totalLeads;
             document.getElementById('metric-totalRevenue').textContent = '$' + totalRevenue.toLocaleString();
             document.getElementById('metric-conversionRate').textContent = conversionRate.toFixed(1) + '%';
-            document.getElementById('metric-avgTimeToClose').textContent = avgTimeToClose !== null ? avgTimeToClose + ' days' : '— days';
-            document.getElementById('metric-avgTimeToSign').textContent = avgTimeToSign !== null ? avgTimeToSign + ' days' : '— days';
-            document.getElementById('metric-avgLeadTime').textContent = avgLeadTime !== null ? avgLeadTime + ' days' : '— days';
+            document.getElementById('metric-avgTimeToClose').textContent = medianTimeToClose !== null ? medianTimeToClose + ' days' : '— days';
+            document.getElementById('metric-avgTimeToSign').textContent = medianTimeToSign !== null ? medianTimeToSign + ' days' : '— days';
+            document.getElementById('metric-avgLeadTime').textContent = medianLeadTime !== null ? medianLeadTime + ' days' : '— days';
             
             // Pipeline breakdown
             const statusCounts = {};
@@ -1608,12 +1717,17 @@
                 if (el) el.textContent = statusCounts[s];
             });
             
+            // Store for popup access
+            reportingLeadsInPeriod = leadsInPeriod;
+            
             // Revenue by status bars
             const revenueByStatus = {};
             let maxRevenue = 0;
+            let totalPipelineRevenue = 0;
             ['working', 'tentative', 'contract-out', 'definite'].forEach(s => {
                 revenueByStatus[s] = leadsInPeriod.filter(l => l.status === s).reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
                 if (revenueByStatus[s] > maxRevenue) maxRevenue = revenueByStatus[s];
+                totalPipelineRevenue += revenueByStatus[s];
             });
             
             const revenueBarsEl = document.getElementById('revenueBars');
@@ -1630,6 +1744,123 @@
                     </div>
                 `;
             }).join('');
+            
+            // Total pipeline revenue
+            document.getElementById('totalPipelineValue').textContent = '$' + totalPipelineRevenue.toLocaleString();
+            
+            // Calculate averages
+            calculateAverages(leadsInPeriod);
+        }
+        
+        function calculateAverages(leads) {
+            // Avg ADR - from room blocks
+            let totalADR = 0, adrCount = 0;
+            let totalRental = 0, rentalCount = 0;
+            let totalFnb = 0, fnbCount = 0;
+            
+            leads.forEach(l => {
+                // ADR from room block rates
+                if (l.roomBlock) {
+                    l.roomBlock.forEach(row => {
+                        if (row.rate && parseFloat(row.rate) > 0) {
+                            totalADR += parseFloat(row.rate);
+                            adrCount++;
+                        }
+                    });
+                }
+                // Room rental and F&B from events
+                if (l.events) {
+                    l.events.forEach(evt => {
+                        if (evt.rentalFee && parseFloat(evt.rentalFee) > 0) {
+                            totalRental += parseFloat(evt.rentalFee);
+                            rentalCount++;
+                        }
+                        if (evt.fbMinimum && parseFloat(evt.fbMinimum) > 0) {
+                            totalFnb += parseFloat(evt.fbMinimum);
+                            fnbCount++;
+                        }
+                    });
+                }
+            });
+            
+            document.getElementById('avg-adr').textContent = adrCount > 0 ? '$' + Math.round(totalADR / adrCount).toLocaleString() : '$0';
+            document.getElementById('avg-rental').textContent = rentalCount > 0 ? '$' + Math.round(totalRental / rentalCount).toLocaleString() : '$0';
+            document.getElementById('avg-fnb').textContent = fnbCount > 0 ? '$' + Math.round(totalFnb / fnbCount).toLocaleString() : '$0';
+            
+            // Avg revenue per booking by type
+            const roomsOnly = leads.filter(l => l.type === 'rooms' && l.revenue);
+            const eventsOnly = leads.filter(l => l.type === 'events' && l.revenue);
+            const both = leads.filter(l => l.type === 'both' && l.revenue);
+            const all = leads.filter(l => l.revenue);
+            
+            const avgRev = arr => arr.length > 0 ? Math.round(arr.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0) / arr.length) : 0;
+            
+            document.getElementById('avg-rev-rooms').textContent = '$' + avgRev(roomsOnly).toLocaleString();
+            document.getElementById('avg-rev-events').textContent = '$' + avgRev(eventsOnly).toLocaleString();
+            document.getElementById('avg-rev-both').textContent = '$' + avgRev(both).toLocaleString();
+            document.getElementById('avg-rev-all').textContent = '$' + avgRev(all).toLocaleString();
+        }
+        
+        // Store leads in period for popup access
+        let reportingLeadsInPeriod = [];
+        
+        function showPipelineDetail(status) {
+            const statusLabels = { 'working': 'Working', 'dying': 'Dying', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'lost': 'Lost' };
+            const leads = reportingLeadsInPeriod.filter(l => l.status === status);
+            
+            // Calculate revenues
+            let guestroomsRev = 0, eventsRev = 0;
+            leads.forEach(l => {
+                // Try to get breakdown from room block and events
+                if (l.roomBlock) {
+                    l.roomBlock.forEach(row => {
+                        if (row.rate && row.quantities) {
+                            const nights = row.quantities.reduce((sum, q) => sum + (parseInt(q) || 0), 0);
+                            guestroomsRev += nights * (parseFloat(row.rate) || 0);
+                        }
+                    });
+                }
+                if (l.events) {
+                    l.events.forEach(evt => {
+                        eventsRev += (parseFloat(evt.rentalFee) || 0) + (parseFloat(evt.fbMinimum) || 0);
+                    });
+                }
+                // Fallback: if no breakdown but has revenue, estimate by type
+                if (guestroomsRev === 0 && eventsRev === 0 && l.revenue) {
+                    if (l.type === 'rooms') guestroomsRev = parseFloat(l.revenue) || 0;
+                    else if (l.type === 'events') eventsRev = parseFloat(l.revenue) || 0;
+                    else {
+                        // Split 50/50 for 'both' type as estimate
+                        guestroomsRev = (parseFloat(l.revenue) || 0) / 2;
+                        eventsRev = (parseFloat(l.revenue) || 0) / 2;
+                    }
+                }
+            });
+            const totalRev = leads.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
+            
+            // Update popup
+            document.getElementById('pipelinePopupTitle').textContent = statusLabels[status] || status;
+            document.getElementById('pipelinePopupTitle').className = `pipeline-popup-title ${status}`;
+            document.getElementById('popup-guestrooms').textContent = '$' + Math.round(guestroomsRev).toLocaleString();
+            document.getElementById('popup-events').textContent = '$' + Math.round(eventsRev).toLocaleString();
+            document.getElementById('popup-total').textContent = '$' + Math.round(totalRev).toLocaleString();
+            document.getElementById('popup-count').textContent = leads.length;
+            
+            // Populate list
+            const listEl = document.getElementById('pipelinePopupList');
+            if (leads.length === 0) {
+                listEl.innerHTML = '<div style="color: #888; font-size: 0.85rem; padding: 0.5rem;">No bookings in this status</div>';
+            } else {
+                listEl.innerHTML = leads.map(l => `<div class="pipeline-popup-list-item" onclick="openLead('${l.id}'); closePipelinePopup();">${l.bookingName || l.account || 'Untitled'}</div>`).join('');
+            }
+            
+            document.getElementById('pipelinePopup').classList.add('visible');
+        }
+        
+        function closePipelinePopup(event) {
+            if (!event || event.target === document.getElementById('pipelinePopup')) {
+                document.getElementById('pipelinePopup').classList.remove('visible');
+            }
         }
         
         // Initialize reporting when tab is shown

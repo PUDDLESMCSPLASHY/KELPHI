@@ -198,6 +198,67 @@
         .status-badge.status-lost { background: rgba(255,71,87,0.1); color: #ff4757; }
         .status-badge.status-turndown { background: rgba(255,71,87,0.1); color: #ff4757; }
         
+        /* Reporting Tab */
+        .reporting-container { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+        .reporting-toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .period-buttons { display: flex; gap: 0.5rem; }
+        .period-btn { padding: 0.5rem 1rem; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #888; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+        .period-btn:hover { border-color: #00d9ff; color: #ccc; }
+        .period-btn.active { background: rgba(0,217,255,0.15); border-color: #00d9ff; color: #00d9ff; }
+        .custom-date-picker { display: flex; align-items: center; gap: 0.5rem; }
+        .custom-date-picker input { width: 140px; padding: 0.4rem 0.6rem; font-size: 0.85rem; }
+        .period-label { margin-left: auto; font-size: 1.1rem; font-weight: 500; color: #e0e0e0; }
+        
+        .reporting-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .metric-card { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.25rem; text-align: center; }
+        .metric-label { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .metric-value { font-size: 1.8rem; font-weight: 600; color: #e0e0e0; }
+        .metric-value.cyan { color: #00d9ff; }
+        .metric-value.green { color: #00d98f; }
+        .metric-value.orange { color: #ffaa00; }
+        .metric-value.purple { color: #b366ff; }
+        .metric-sub { font-size: 0.7rem; color: #666; margin-top: 0.25rem; }
+        
+        .reporting-section { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+        .reporting-section .section-header { font-size: 0.9rem; font-weight: 500; color: #e0e0e0; margin-bottom: 1rem; }
+        
+        .pipeline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; }
+        .pipeline-item { text-align: center; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 6px; }
+        .pipeline-status { font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .pipeline-status.working { color: #888; }
+        .pipeline-status.dying { color: #fff; }
+        .pipeline-status.tentative { color: #ffaa00; }
+        .pipeline-status.contract-out { color: #b366ff; }
+        .pipeline-status.definite { color: #00d98f; }
+        .pipeline-status.lost { color: #ff4757; }
+        .pipeline-count { font-size: 1.5rem; font-weight: 600; color: #e0e0e0; }
+        
+        .revenue-bars { display: flex; flex-direction: column; gap: 0.75rem; }
+        .revenue-bar-item { display: flex; align-items: center; gap: 1rem; }
+        .revenue-bar-label { width: 100px; font-size: 0.8rem; color: #888; }
+        .revenue-bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+        .revenue-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .revenue-bar-fill.working { background: #888; }
+        .revenue-bar-fill.tentative { background: #ffaa00; }
+        .revenue-bar-fill.contract-out { background: #b366ff; }
+        .revenue-bar-fill.definite { background: #00d98f; }
+        .revenue-bar-value { width: 100px; font-size: 0.85rem; color: #e0e0e0; text-align: right; }
+        
+        /* Light mode for Reporting */
+        body.light-mode .reporting-container { }
+        body.light-mode .period-btn { border-color: #e1e4e8; color: #636e72; }
+        body.light-mode .period-btn:hover { border-color: #0984e3; color: #2d3436; }
+        body.light-mode .period-btn.active { background: rgba(9,132,227,0.1); border-color: #0984e3; color: #0984e3; }
+        body.light-mode .period-label { color: #2d3436; }
+        body.light-mode .metric-card { background: #fff; border-color: #e1e4e8; }
+        body.light-mode .metric-value { color: #2d3436; }
+        body.light-mode .reporting-section { background: #fff; border-color: #e1e4e8; }
+        body.light-mode .reporting-section .section-header { color: #2d3436; }
+        body.light-mode .pipeline-item { background: #f8f9fa; }
+        body.light-mode .pipeline-count { color: #2d3436; }
+        body.light-mode .revenue-bar-track { background: #e1e4e8; }
+        body.light-mode .revenue-bar-value { color: #2d3436; }
+        
         /* Days Out Indicators */
         .days-out { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
         .days-out.green { background: rgba(0,217,143,0.15); color: #00d98f; }
@@ -409,6 +470,7 @@
             <div class="nav-tab" data-tab="handover">Handover</div>
             <div class="nav-tab" data-tab="beo">BEO</div>
             <div class="nav-tab" data-tab="goals">Goals</div>
+            <div class="nav-tab" data-tab="reporting">Reporting</div>
             <div class="nav-tab" data-tab="csm">CSM Timeline</div>
             <div class="nav-tab" data-tab="wrapup">Post Booking</div>
         </nav>
@@ -817,6 +879,100 @@
                 </div>
                 
                 <div class="tab-content" id="tab-goals"><iframe id="goalsFrame" src="https://puddlesmcsplashy.github.io/GOALS/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;" onload="requestGoalsData()"></iframe></div>
+                
+                <div class="tab-content" id="tab-reporting">
+                    <div class="reporting-container">
+                        <!-- Time Period Selector -->
+                        <div class="reporting-toolbar">
+                            <div class="period-buttons">
+                                <button class="period-btn active" data-period="thisMonth">This Month</button>
+                                <button class="period-btn" data-period="lastMonth">Last Month</button>
+                                <button class="period-btn" data-period="thisQuarter">This Quarter</button>
+                                <button class="period-btn" data-period="ytd">YTD</button>
+                                <button class="period-btn" data-period="custom">Custom</button>
+                            </div>
+                            <div class="custom-date-picker" id="customDatePicker" style="display: none;">
+                                <input type="date" id="reportStartDate" class="form-input">
+                                <span style="color: #666;">to</span>
+                                <input type="date" id="reportEndDate" class="form-input">
+                                <button class="btn btn-primary" onclick="applyCustomDateRange()" style="padding: 0.4rem 0.8rem;">Apply</button>
+                            </div>
+                            <div class="period-label" id="periodLabel">March 2026</div>
+                        </div>
+                        
+                        <!-- Key Metrics -->
+                        <div class="reporting-metrics">
+                            <div class="metric-card">
+                                <div class="metric-label">Total Leads</div>
+                                <div class="metric-value" id="metric-totalLeads">0</div>
+                                <div class="metric-sub">in period</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Total Revenue</div>
+                                <div class="metric-value cyan" id="metric-totalRevenue">$0</div>
+                                <div class="metric-sub">definite bookings</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Conversion Rate</div>
+                                <div class="metric-value green" id="metric-conversionRate">0%</div>
+                                <div class="metric-sub">leads → definite</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Avg Time to Close</div>
+                                <div class="metric-value orange" id="metric-avgTimeToClose">— days</div>
+                                <div class="metric-sub">created → definite</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Avg Time to Sign</div>
+                                <div class="metric-value purple" id="metric-avgTimeToSign">— days</div>
+                                <div class="metric-sub">contract out → definite</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Avg Lead Time</div>
+                                <div class="metric-value" id="metric-avgLeadTime">— days</div>
+                                <div class="metric-sub">inquiry → arrival</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pipeline Breakdown -->
+                        <div class="reporting-section">
+                            <div class="section-header">Pipeline Breakdown</div>
+                            <div class="pipeline-grid" id="pipelineBreakdown">
+                                <div class="pipeline-item">
+                                    <div class="pipeline-status working">Working</div>
+                                    <div class="pipeline-count" id="pipeline-working">0</div>
+                                </div>
+                                <div class="pipeline-item">
+                                    <div class="pipeline-status dying">Dying</div>
+                                    <div class="pipeline-count" id="pipeline-dying">0</div>
+                                </div>
+                                <div class="pipeline-item">
+                                    <div class="pipeline-status tentative">Tentative</div>
+                                    <div class="pipeline-count" id="pipeline-tentative">0</div>
+                                </div>
+                                <div class="pipeline-item">
+                                    <div class="pipeline-status contract-out">Contract Out</div>
+                                    <div class="pipeline-count" id="pipeline-contract-out">0</div>
+                                </div>
+                                <div class="pipeline-item">
+                                    <div class="pipeline-status definite">Definite</div>
+                                    <div class="pipeline-count" id="pipeline-definite">0</div>
+                                </div>
+                                <div class="pipeline-item">
+                                    <div class="pipeline-status lost">Lost</div>
+                                    <div class="pipeline-count" id="pipeline-lost">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Revenue by Status -->
+                        <div class="reporting-section">
+                            <div class="section-header">Revenue by Status</div>
+                            <div class="revenue-bars" id="revenueBars"></div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="tab-content" id="tab-csm"><iframe id="csmFrame" src="https://puddlesmcsplashy.github.io/CSM-TIMELINE/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-wrapup">
                     <div class="leads-toolbar" style="margin-bottom: 1rem;">
@@ -1305,6 +1461,182 @@
             syncToCloud();
         }
         
+        // ============ REPORTING ============
+        let currentReportPeriod = 'thisMonth';
+        let reportStartDate = null;
+        let reportEndDate = null;
+        
+        function initReporting() {
+            // Set up period button listeners
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentReportPeriod = this.dataset.period;
+                    
+                    const customPicker = document.getElementById('customDatePicker');
+                    if (currentReportPeriod === 'custom') {
+                        customPicker.style.display = 'flex';
+                    } else {
+                        customPicker.style.display = 'none';
+                        updateReporting();
+                    }
+                });
+            });
+            
+            updateReporting();
+        }
+        
+        function getReportDateRange() {
+            const now = new Date();
+            let start, end;
+            
+            switch (currentReportPeriod) {
+                case 'thisMonth':
+                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    break;
+                case 'lastMonth':
+                    start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    end = new Date(now.getFullYear(), now.getMonth(), 0);
+                    break;
+                case 'thisQuarter':
+                    const quarter = Math.floor(now.getMonth() / 3);
+                    start = new Date(now.getFullYear(), quarter * 3, 1);
+                    end = new Date(now.getFullYear(), quarter * 3 + 3, 0);
+                    break;
+                case 'ytd':
+                    start = new Date(now.getFullYear(), 0, 1);
+                    end = now;
+                    break;
+                case 'custom':
+                    start = reportStartDate ? new Date(reportStartDate + 'T00:00:00') : new Date(now.getFullYear(), 0, 1);
+                    end = reportEndDate ? new Date(reportEndDate + 'T23:59:59') : now;
+                    break;
+                default:
+                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    end = now;
+            }
+            
+            return { start, end };
+        }
+        
+        function applyCustomDateRange() {
+            reportStartDate = document.getElementById('reportStartDate').value;
+            reportEndDate = document.getElementById('reportEndDate').value;
+            updateReporting();
+        }
+        
+        function updateReporting() {
+            const { start, end } = getReportDateRange();
+            
+            // Update period label
+            const periodLabel = document.getElementById('periodLabel');
+            if (currentReportPeriod === 'custom' && reportStartDate && reportEndDate) {
+                periodLabel.textContent = `${new Date(reportStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(reportEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            } else if (currentReportPeriod === 'ytd') {
+                periodLabel.textContent = `YTD ${new Date().getFullYear()}`;
+            } else if (currentReportPeriod === 'thisQuarter') {
+                const q = Math.floor(new Date().getMonth() / 3) + 1;
+                periodLabel.textContent = `Q${q} ${new Date().getFullYear()}`;
+            } else {
+                periodLabel.textContent = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+            
+            // Filter leads by created date within period
+            const leadsInPeriod = appData.leads.filter(l => {
+                if (l.archived) return false;
+                const created = new Date(l.createdAt || 0);
+                return created >= start && created <= end;
+            });
+            
+            // Calculate metrics
+            const totalLeads = leadsInPeriod.length;
+            const definiteLeads = leadsInPeriod.filter(l => l.status === 'definite' || l.status === 'completed');
+            const totalRevenue = definiteLeads.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
+            const conversionRate = totalLeads > 0 ? (definiteLeads.length / totalLeads * 100) : 0;
+            
+            // Avg Time to Close (created → definite)
+            let avgTimeToClose = null;
+            const closedLeads = definiteLeads.filter(l => l.createdAt && l.definiteDate);
+            if (closedLeads.length > 0) {
+                const totalDays = closedLeads.reduce((sum, l) => {
+                    const created = new Date(l.createdAt);
+                    const closed = new Date(l.definiteDate);
+                    return sum + Math.floor((closed - created) / (1000 * 60 * 60 * 24));
+                }, 0);
+                avgTimeToClose = Math.round(totalDays / closedLeads.length);
+            }
+            
+            // Avg Time to Sign (contract-out → definite)
+            let avgTimeToSign = null;
+            const signedLeads = definiteLeads.filter(l => l.contractOutDate && l.definiteDate);
+            if (signedLeads.length > 0) {
+                const totalDays = signedLeads.reduce((sum, l) => {
+                    const sent = new Date(l.contractOutDate);
+                    const signed = new Date(l.definiteDate);
+                    return sum + Math.floor((signed - sent) / (1000 * 60 * 60 * 24));
+                }, 0);
+                avgTimeToSign = Math.round(totalDays / signedLeads.length);
+            }
+            
+            // Avg Lead Time (created → arrival)
+            let avgLeadTime = null;
+            const leadsWithArrival = definiteLeads.filter(l => l.createdAt && l.arrival);
+            if (leadsWithArrival.length > 0) {
+                const totalDays = leadsWithArrival.reduce((sum, l) => {
+                    const created = new Date(l.createdAt);
+                    const arrival = new Date(l.arrival + 'T12:00:00');
+                    return sum + Math.floor((arrival - created) / (1000 * 60 * 60 * 24));
+                }, 0);
+                avgLeadTime = Math.round(totalDays / leadsWithArrival.length);
+            }
+            
+            // Update metric displays
+            document.getElementById('metric-totalLeads').textContent = totalLeads;
+            document.getElementById('metric-totalRevenue').textContent = '$' + totalRevenue.toLocaleString();
+            document.getElementById('metric-conversionRate').textContent = conversionRate.toFixed(1) + '%';
+            document.getElementById('metric-avgTimeToClose').textContent = avgTimeToClose !== null ? avgTimeToClose + ' days' : '— days';
+            document.getElementById('metric-avgTimeToSign').textContent = avgTimeToSign !== null ? avgTimeToSign + ' days' : '— days';
+            document.getElementById('metric-avgLeadTime').textContent = avgLeadTime !== null ? avgLeadTime + ' days' : '— days';
+            
+            // Pipeline breakdown
+            const statusCounts = {};
+            ['working', 'dying', 'tentative', 'contract-out', 'definite', 'lost'].forEach(s => {
+                statusCounts[s] = leadsInPeriod.filter(l => l.status === s).length;
+                const el = document.getElementById(`pipeline-${s}`);
+                if (el) el.textContent = statusCounts[s];
+            });
+            
+            // Revenue by status bars
+            const revenueByStatus = {};
+            let maxRevenue = 0;
+            ['working', 'tentative', 'contract-out', 'definite'].forEach(s => {
+                revenueByStatus[s] = leadsInPeriod.filter(l => l.status === s).reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
+                if (revenueByStatus[s] > maxRevenue) maxRevenue = revenueByStatus[s];
+            });
+            
+            const revenueBarsEl = document.getElementById('revenueBars');
+            revenueBarsEl.innerHTML = ['working', 'tentative', 'contract-out', 'definite'].map(s => {
+                const pct = maxRevenue > 0 ? (revenueByStatus[s] / maxRevenue * 100) : 0;
+                const label = { working: 'Working', tentative: 'Tentative', 'contract-out': 'Contract Out', definite: 'Definite' }[s];
+                return `
+                    <div class="revenue-bar-item">
+                        <div class="revenue-bar-label">${label}</div>
+                        <div class="revenue-bar-track">
+                            <div class="revenue-bar-fill ${s}" style="width: ${pct}%;"></div>
+                        </div>
+                        <div class="revenue-bar-value">$${revenueByStatus[s].toLocaleString()}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Initialize reporting when tab is shown
+        document.querySelector('.nav-tab[data-tab="reporting"]')?.addEventListener('click', () => {
+            setTimeout(updateReporting, 100);
+        });
+
         // Initial cloud sync on load
         async function initialCloudSync() {
             const cloudData = await loadFromCloud();
@@ -1401,6 +1733,7 @@
             setupListeners();
             renderStickyNotes();
             requestGoalsData();
+            initReporting();
             // Cloud sync
             initialCloudSync();
         }

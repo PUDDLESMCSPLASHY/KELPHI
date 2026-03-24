@@ -1748,8 +1748,15 @@
             // Total pipeline revenue
             document.getElementById('totalPipelineValue').textContent = '$' + totalPipelineRevenue.toLocaleString();
             
-            // Calculate averages
-            calculateAverages(leadsInPeriod);
+            // Calculate averages - only from Definite bookings that became definite in this period
+            const definiteInPeriod = appData.leads.filter(l => {
+                if (l.archived) return false;
+                if (l.status !== 'definite' && l.status !== 'completed') return false;
+                if (!l.definiteDate) return false;
+                const definiteDate = new Date(l.definiteDate);
+                return definiteDate >= start && definiteDate <= end;
+            });
+            calculateAverages(definiteInPeriod);
         }
         
         function calculateAverages(leads) {

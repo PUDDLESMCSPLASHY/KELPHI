@@ -1708,6 +1708,39 @@
         // ============= Historical Data Import =============
         const HISTORICAL_STORAGE_KEY = 'kelphi_historicalData';
         let pendingImportData = null;
+        let pendingFuzzyMatches = [];
+        
+        // Normalize string for matching (remove special chars, extra spaces)
+        function normalizeForMatch(str) {
+            return (str || '')
+                .toLowerCase()
+                .replace(/[''`]/g, '')  // Remove apostrophes
+                .replace(/[^\w\s]/g, '') // Remove special chars
+                .replace(/\s+/g, ' ')    // Normalize spaces
+                .trim();
+        }
+        
+        // Simple string similarity (0-1)
+        function stringSimilarity(a, b) {
+            if (!a || !b) return 0;
+            if (a === b) return 1;
+            
+            const longer = a.length > b.length ? a : b;
+            const shorter = a.length > b.length ? b : a;
+            
+            if (longer.length === 0) return 1;
+            
+            // Check if one contains the other
+            if (longer.includes(shorter)) return shorter.length / longer.length;
+            
+            // Simple word overlap
+            const wordsA = a.split(' ').filter(w => w.length > 2);
+            const wordsB = b.split(' ').filter(w => w.length > 2);
+            const common = wordsA.filter(w => wordsB.includes(w)).length;
+            const total = Math.max(wordsA.length, wordsB.length);
+            
+            return total > 0 ? common / total : 0;
+        }
         
         function loadHistoricalData() {
             const saved = localStorage.getItem(HISTORICAL_STORAGE_KEY);
@@ -1770,12 +1803,41 @@
                     }
                     
                     // Filter out duplicates (already in Kelphi)
-                    const existingNames = appData.leads.map(l => (l.bookingName || '').toLowerCase().trim());
-                    const duplicates = bookings.filter(b => existingNames.includes((b.bookingName || '').toLowerCase().trim()));
-                    const uniqueBookings = bookings.filter(b => !existingNames.includes((b.bookingName || '').toLowerCase().trim()));
+                    const existingLeads = appData.leads.map(l => ({
+                        name: (l.bookingName || '').toLowerCase().trim(),
+                        normalized: normalizeForMatch(l.bookingName || ''),
+                        original: l.bookingName
+                    }));
+                    
+                    const exactDuplicates = [];
+                    const fuzzyMatches = [];
+                    const uniqueBookings = [];
+                    
+                    bookings.forEach(b => {
+                        const bName = (b.bookingName || '').toLowerCase().trim();
+                        const bNormalized = normalizeForMatch(b.bookingName || '');
+                        
+                        // Check exact match
+                        if (existingLeads.some(e => e.name === bName)) {
+                            exactDuplicates.push(b);
+                        }
+                        // Check fuzzy match (normalized or high similarity)
+                        else {
+                            const fuzzyMatch = existingLeads.find(e => 
+                                e.normalized === bNormalized || 
+                                stringSimilarity(e.normalized, bNormalized) > 0.8
+                            );
+                            if (fuzzyMatch) {
+                                fuzzyMatches.push({ imported: b, existing: fuzzyMatch.original });
+                            } else {
+                                uniqueBookings.push(b);
+                            }
+                        }
+                    });
                     
                     pendingImportData = uniqueBookings;
-                    showImportPreview(uniqueBookings, duplicates);
+                    pendingFuzzyMatches = fuzzyMatches;
+                    showImportPreview(uniqueBookings, exactDuplicates, fuzzyMatches);
                 } catch (err) {
                     console.error('Import error:', err);
                     showImportError('Failed to parse file: ' + err.message);
@@ -1847,18 +1909,40 @@
             document.getElementById('confirmImportBtn').disabled = true;
         }
         
-        function showImportPreview(bookings, duplicates = []) {
+        function showImportPreview(bookings, duplicates = [], fuzzyMatches = []) {
             const totalRevenue = bookings.reduce((sum, b) => sum + (b.roomRevenue || 0) + (b.eventRevenue || 0), 0);
             
             let countText = `${bookings.length} bookings to import`;
             if (duplicates.length > 0) {
-                countText += ` (${duplicates.length} skipped — already in Kelphi)`;
+                countText += ` (${duplicates.length} exact duplicates skipped)`;
             }
             document.getElementById('importPreviewCount').textContent = countText;
             document.getElementById('importPreviewRevenue').textContent = `$${totalRevenue.toLocaleString()} total revenue`;
             
             const listEl = document.getElementById('importPreviewList');
-            let html = bookings.slice(0, 10).map(b => `
+            let html = '';
+            
+            // Fuzzy matches first - need user decision
+            if (fuzzyMatches.length > 0) {
+                html += `<div style="margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 0.8rem; color: #ffaa00; margin-bottom: 0.5rem;">🤔 Possible duplicates — are these the same?</div>
+                    ${fuzzyMatches.map((m, idx) => `
+                        <div style="background: rgba(255,170,0,0.1); border-radius: 6px; padding: 0.5rem; margin-bottom: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                <input type="checkbox" id="fuzzy-${idx}" checked onchange="toggleFuzzyMatch(${idx})" style="accent-color: #00d9ff;">
+                                <label for="fuzzy-${idx}" style="font-size: 0.8rem; color: #e0e0e0; cursor: pointer;">Skip (same booking)</label>
+                            </div>
+                            <div style="font-size: 0.75rem; color: #888; padding-left: 1.5rem;">
+                                Delphi: <span style="color: #e0e0e0;">${m.imported.bookingName}</span><br>
+                                Kelphi: <span style="color: #00d9ff;">${m.existing}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
+            
+            // Unique bookings to import
+            html += bookings.slice(0, 10).map(b => `
                 <div class="import-preview-item">
                     <span class="import-preview-name">${b.bookingName}</span>
                     <span class="import-preview-rev">$${((b.roomRevenue || 0) + (b.eventRevenue || 0)).toLocaleString()}</span>
@@ -1869,11 +1953,12 @@
                 html += `<div style="text-align: center; color: #666; padding: 0.5rem;">...and ${bookings.length - 10} more</div>`;
             }
             
+            // Exact duplicates
             if (duplicates.length > 0) {
                 html += `<div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size: 0.75rem; color: #ffaa00; margin-bottom: 0.5rem;">⚠️ Skipping (already in Kelphi):</div>
-                    ${duplicates.slice(0, 5).map(d => `<div style="font-size: 0.75rem; color: #666; padding: 0.25rem 0;">${d.bookingName}</div>`).join('')}
-                    ${duplicates.length > 5 ? `<div style="font-size: 0.75rem; color: #666;">...and ${duplicates.length - 5} more</div>` : ''}
+                    <div style="font-size: 0.75rem; color: #666; margin-bottom: 0.5rem;">✓ Skipping exact matches:</div>
+                    ${duplicates.slice(0, 3).map(d => `<div style="font-size: 0.75rem; color: #555; padding: 0.15rem 0;">${d.bookingName}</div>`).join('')}
+                    ${duplicates.length > 3 ? `<div style="font-size: 0.75rem; color: #555;">...and ${duplicates.length - 3} more</div>` : ''}
                 </div>`;
             }
             
@@ -1881,17 +1966,41 @@
             
             document.getElementById('importPreview').style.display = 'block';
             document.getElementById('importError').style.display = 'none';
-            document.getElementById('confirmImportBtn').disabled = bookings.length === 0;
+            document.getElementById('confirmImportBtn').disabled = bookings.length === 0 && fuzzyMatches.filter((m, i) => !document.getElementById('fuzzy-' + i)?.checked).length === 0;
+        }
+        
+        function toggleFuzzyMatch(idx) {
+            const checkbox = document.getElementById('fuzzy-' + idx);
+            if (!checkbox) return;
+            
+            // If unchecked, add to pending import (user says it's NOT a duplicate)
+            // If checked, keep it out (user says it IS a duplicate)
+            // This is handled in confirmImport
         }
         
         function confirmImport() {
-            if (!pendingImportData || pendingImportData.length === 0) return;
+            // Start with unique bookings
+            let toImport = [...(pendingImportData || [])];
             
-            saveHistoricalData(pendingImportData);
+            // Add fuzzy matches where user unchecked "Skip"
+            pendingFuzzyMatches.forEach((m, idx) => {
+                const checkbox = document.getElementById('fuzzy-' + idx);
+                if (checkbox && !checkbox.checked) {
+                    // User says NOT a duplicate - import it
+                    toImport.push(m.imported);
+                }
+            });
+            
+            if (toImport.length === 0) {
+                alert('No bookings to import.');
+                return;
+            }
+            
+            saveHistoricalData(toImport);
             closeImportModal();
             updateReporting();
             
-            alert(`Successfully imported ${pendingImportData.length} historical bookings!`);
+            alert(`Successfully imported ${toImport.length} historical bookings!`);
         }
         
         // Setup drag and drop for import

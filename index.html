@@ -954,6 +954,9 @@
                                 <button class="btn" onclick="showImportModal()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
                                     📥 Import Delphi Data
                                 </button>
+                                <button class="btn" onclick="showManageHistoricalModal()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" id="manageHistoricalBtn">
+                                    📋 Manage
+                                </button>
                                 <span id="historicalDataStatus" class="historical-status"></span>
                             </div>
                             <div class="custom-date-picker" id="customDatePicker" style="display: none;">
@@ -1173,6 +1176,30 @@
                     <div class="modal-footer">
                         <button class="btn btn-ghost" onclick="closeImportModal()">Cancel</button>
                         <button class="btn btn-primary" id="confirmImportBtn" onclick="confirmImport()" disabled>Import Data</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Historical Data Modal -->
+            <div class="modal-overlay" id="manageHistoricalModal" style="display: none;">
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3>📋 Manage Historical Data</h3>
+                        <button class="modal-close" onclick="closeManageHistoricalModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="historicalSummary" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(0,217,255,0.1); border-radius: 6px; margin-bottom: 1rem;">
+                            <span id="historicalCount">0 bookings</span>
+                            <span id="historicalTotalRev" style="color: #00d9ff;">$0 total</span>
+                        </div>
+                        <div id="historicalList" style="max-height: 350px; overflow-y: auto;"></div>
+                        <div id="historicalEmpty" style="display: none; text-align: center; padding: 2rem; color: #666;">
+                            No historical data imported yet.
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="justify-content: space-between;">
+                        <button class="btn" onclick="clearAllHistoricalData()" style="color: #ef4444;">🗑️ Clear All</button>
+                        <button class="btn btn-ghost" onclick="closeManageHistoricalModal()">Close</button>
                     </div>
                 </div>
             </div>
@@ -1755,16 +1782,73 @@
         function updateHistoricalStatus() {
             const data = loadHistoricalData();
             const statusEl = document.getElementById('historicalDataStatus');
+            const manageBtn = document.getElementById('manageHistoricalBtn');
+            
             if (statusEl) {
                 if (data.length > 0) {
                     const totalRev = data.reduce((sum, b) => sum + (b.roomRevenue || 0) + (b.eventRevenue || 0), 0);
-                    statusEl.textContent = `✓ ${data.length} historical bookings ($${(totalRev/1000).toFixed(0)}k)`;
+                    statusEl.textContent = `✓ ${data.length} historical ($${(totalRev/1000).toFixed(0)}k)`;
                     statusEl.className = 'historical-status';
+                    if (manageBtn) manageBtn.style.display = '';
                 } else {
                     statusEl.textContent = '';
                     statusEl.className = 'historical-status empty';
+                    if (manageBtn) manageBtn.style.display = 'none';
                 }
             }
+        }
+        
+        function showManageHistoricalModal() {
+            const data = loadHistoricalData();
+            const modal = document.getElementById('manageHistoricalModal');
+            
+            if (data.length === 0) {
+                document.getElementById('historicalEmpty').style.display = 'block';
+                document.getElementById('historicalList').style.display = 'none';
+                document.getElementById('historicalSummary').style.display = 'none';
+            } else {
+                document.getElementById('historicalEmpty').style.display = 'none';
+                document.getElementById('historicalList').style.display = 'block';
+                document.getElementById('historicalSummary').style.display = 'flex';
+                
+                const totalRev = data.reduce((sum, b) => sum + (b.roomRevenue || 0) + (b.eventRevenue || 0), 0);
+                document.getElementById('historicalCount').textContent = `${data.length} bookings`;
+                document.getElementById('historicalTotalRev').textContent = `$${totalRev.toLocaleString()} total`;
+                
+                document.getElementById('historicalList').innerHTML = data.map(b => `
+                    <div class="import-preview-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div class="import-preview-name">${b.bookingName}</div>
+                            <div style="font-size: 0.7rem; color: #666;">${b.definiteDate ? new Date(b.definiteDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No date'}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="import-preview-rev">$${((b.roomRevenue || 0) + (b.eventRevenue || 0)).toLocaleString()}</span>
+                            <button onclick="removeHistoricalBooking('${b.id}')" class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; color: #ef4444;">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeManageHistoricalModal() {
+            document.getElementById('manageHistoricalModal').style.display = 'none';
+        }
+        
+        function removeHistoricalBooking(id) {
+            let data = loadHistoricalData();
+            data = data.filter(b => b.id !== id);
+            saveHistoricalData(data);
+            showManageHistoricalModal(); // Refresh the list
+            updateReporting();
+        }
+        
+        function clearAllHistoricalData() {
+            if (!confirm('Are you sure you want to clear ALL historical data? This cannot be undone.')) return;
+            saveHistoricalData([]);
+            closeManageHistoricalModal();
+            updateReporting();
         }
         
         function showImportModal() {

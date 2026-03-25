@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="templates.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -208,6 +209,23 @@
         .custom-date-picker { display: flex; align-items: center; gap: 0.5rem; }
         .custom-date-picker input { width: 140px; padding: 0.4rem 0.6rem; font-size: 0.85rem; }
         .period-label { margin-left: auto; font-size: 1.1rem; font-weight: 500; color: #e0e0e0; }
+        
+        .import-section { display: flex; align-items: center; gap: 0.75rem; }
+        .historical-status { font-size: 0.75rem; color: #00d98f; }
+        .historical-status.empty { color: #666; }
+        
+        .import-dropzone { border: 2px dashed rgba(255,255,255,0.15); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .import-dropzone:hover { border-color: #00d9ff; background: rgba(0,217,255,0.05); }
+        .import-dropzone.dragover { border-color: #00d9ff; background: rgba(0,217,255,0.1); }
+        .dropzone-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+        .dropzone-text { font-size: 0.9rem; color: #e0e0e0; margin-bottom: 0.25rem; }
+        .dropzone-hint { font-size: 0.75rem; color: #666; }
+        
+        .import-preview-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(0,217,255,0.1); border-radius: 6px; font-size: 0.85rem; }
+        .import-preview-item { padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; display: flex; justify-content: space-between; }
+        .import-preview-item:last-child { border-bottom: none; }
+        .import-preview-name { color: #e0e0e0; }
+        .import-preview-rev { color: #00d9ff; }
         
         .reporting-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
         .metric-card { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.25rem; text-align: center; }
@@ -929,7 +947,14 @@
                                 <button class="period-btn" data-period="lastMonth">Last Month</button>
                                 <button class="period-btn" data-period="thisQuarter">This Quarter</button>
                                 <button class="period-btn" data-period="ytd">YTD</button>
+                                <button class="period-btn" data-period="allTime">All Time</button>
                                 <button class="period-btn" data-period="custom">Custom</button>
+                            </div>
+                            <div class="import-section">
+                                <button class="btn" onclick="showImportModal()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                    📥 Import Delphi Data
+                                </button>
+                                <span id="historicalDataStatus" class="historical-status"></span>
                             </div>
                             <div class="custom-date-picker" id="customDatePicker" style="display: none;">
                                 <input type="date" id="reportStartDate" class="form-input">
@@ -1114,6 +1139,40 @@
                     <div class="modal-body" id="notesTrashList" style="max-height: 400px; overflow-y: auto;"></div>
                     <div class="modal-footer">
                         <button class="btn btn-ghost" onclick="closeNotesTrash()">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Delphi Data Modal -->
+            <div class="modal-overlay" id="importModal" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h3>📥 Import Delphi Historical Data</h3>
+                        <button class="modal-close" onclick="closeImportModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="color: #888; margin-bottom: 1rem; font-size: 0.9rem;">
+                            Import your production report from Delphi to include historical bookings in your Reporting metrics.
+                            This data is stored separately and won't appear in your Leads tab.
+                        </p>
+                        <div class="import-dropzone" id="importDropzone" onclick="document.getElementById('importFileInput').click()">
+                            <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display: none;" onchange="handleImportFile(event)">
+                            <div class="dropzone-icon">📁</div>
+                            <div class="dropzone-text">Click to select or drag & drop Excel file</div>
+                            <div class="dropzone-hint">.xlsx, .xls, or .csv</div>
+                        </div>
+                        <div id="importPreview" style="display: none; margin-top: 1rem;">
+                            <div class="import-preview-header">
+                                <span id="importPreviewCount">0 bookings found</span>
+                                <span id="importPreviewRevenue" style="color: #00d9ff;">$0 total revenue</span>
+                            </div>
+                            <div id="importPreviewList" style="max-height: 200px; overflow-y: auto; margin-top: 0.5rem;"></div>
+                        </div>
+                        <div id="importError" style="display: none; color: #ef4444; margin-top: 1rem; padding: 0.75rem; background: rgba(239,68,68,0.1); border-radius: 8px;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-ghost" onclick="closeImportModal()">Cancel</button>
+                        <button class="btn btn-primary" id="confirmImportBtn" onclick="confirmImport()" disabled>Import Data</button>
                     </div>
                 </div>
             </div>
@@ -1634,6 +1693,10 @@
                     start = reportStartDate ? new Date(reportStartDate + 'T00:00:00') : new Date(now.getFullYear(), 0, 1);
                     end = reportEndDate ? new Date(reportEndDate + 'T23:59:59') : now;
                     break;
+                case 'allTime':
+                    start = new Date(2020, 0, 1); // Far back date to include everything
+                    end = now;
+                    break;
                 default:
                     start = new Date(now.getFullYear(), now.getMonth(), 1);
                     end = now;
@@ -1641,6 +1704,196 @@
             
             return { start, end };
         }
+        
+        // ============= Historical Data Import =============
+        const HISTORICAL_STORAGE_KEY = 'kelphi_historicalData';
+        let pendingImportData = null;
+        
+        function loadHistoricalData() {
+            const saved = localStorage.getItem(HISTORICAL_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+        
+        function saveHistoricalData(data) {
+            localStorage.setItem(HISTORICAL_STORAGE_KEY, JSON.stringify(data));
+            updateHistoricalStatus();
+        }
+        
+        function updateHistoricalStatus() {
+            const data = loadHistoricalData();
+            const statusEl = document.getElementById('historicalDataStatus');
+            if (statusEl) {
+                if (data.length > 0) {
+                    const totalRev = data.reduce((sum, b) => sum + (b.roomRevenue || 0) + (b.eventRevenue || 0), 0);
+                    statusEl.textContent = `✓ ${data.length} historical bookings ($${(totalRev/1000).toFixed(0)}k)`;
+                    statusEl.className = 'historical-status';
+                } else {
+                    statusEl.textContent = '';
+                    statusEl.className = 'historical-status empty';
+                }
+            }
+        }
+        
+        function showImportModal() {
+            document.getElementById('importModal').style.display = 'flex';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importError').style.display = 'none';
+            document.getElementById('confirmImportBtn').disabled = true;
+            pendingImportData = null;
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            document.getElementById('importFileInput').value = '';
+            pendingImportData = null;
+        }
+        
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                    
+                    // Parse the Delphi export format
+                    const bookings = parseDelphiExport(json);
+                    
+                    if (bookings.length === 0) {
+                        showImportError('No valid bookings found in file. Make sure this is a Delphi production report.');
+                        return;
+                    }
+                    
+                    pendingImportData = bookings;
+                    showImportPreview(bookings);
+                } catch (err) {
+                    console.error('Import error:', err);
+                    showImportError('Failed to parse file: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function parseDelphiExport(json) {
+            const bookings = [];
+            
+            for (const row of json) {
+                // Look for booking name in __EMPTY_5 (Delphi format)
+                const bookingName = row['__EMPTY_5'] || row['Booking: Booking Post As'] || row['Booking Name'] || '';
+                const account = row['__EMPTY_6'] || row['Account'] || '';
+                const arrivalRaw = row['__EMPTY_7'] || row['Arrival'] || '';
+                const departureRaw = row['__EMPTY_8'] || row['Departure'] || '';
+                const createdRaw = row['__EMPTY_13'] || row['Booking: Created Date'] || row['Created Date'] || '';
+                const tentativeRaw = row['__EMPTY_14'] || row['Date Tentative'] || '';
+                const definiteRaw = row['__EMPTY_15'] || row['Date Definite'] || '';
+                const roomRevenue = parseFloat(row['__EMPTY_11'] || row['At Definite Forecasted Guestroom Revenue'] || row['Guestroom Revenue'] || 0) || 0;
+                const eventRevenue = parseFloat(row['__EMPTY_12'] || row['At Definite Forecasted Event Rev Total'] || row['Event Revenue'] || 0) || 0;
+                
+                // Skip rows that don't look like bookings
+                if (!bookingName || bookingName.includes('Subtotal') || bookingName.includes('Total') || bookingName.includes('Confidential') || bookingName.includes('Copyright') || bookingName.includes('Filtered By') || bookingName.includes('Show:') || bookingName.includes('As of')) continue;
+                if (bookingName === 'Booking: Owner Name  ↑') continue; // Header row
+                
+                // Parse dates (M/D/YYYY format)
+                const parseDate = (d) => {
+                    if (!d) return null;
+                    if (typeof d === 'number') {
+                        // Excel date serial number
+                        const date = new Date((d - 25569) * 86400 * 1000);
+                        return date.toISOString().split('T')[0];
+                    }
+                    const parts = d.split('/');
+                    if (parts.length === 3) {
+                        const [m, day, y] = parts;
+                        return `${y}-${m.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                    }
+                    return null;
+                };
+                
+                bookings.push({
+                    id: 'hist_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    bookingName,
+                    account,
+                    arrival: parseDate(arrivalRaw),
+                    departure: parseDate(departureRaw),
+                    createdDate: parseDate(createdRaw),
+                    tentativeDate: parseDate(tentativeRaw),
+                    definiteDate: parseDate(definiteRaw),
+                    roomRevenue,
+                    eventRevenue,
+                    status: 'definite', // All imported are Definite
+                    isHistorical: true
+                });
+            }
+            
+            return bookings;
+        }
+        
+        function showImportError(message) {
+            const errorEl = document.getElementById('importError');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('confirmImportBtn').disabled = true;
+        }
+        
+        function showImportPreview(bookings) {
+            const totalRevenue = bookings.reduce((sum, b) => sum + (b.roomRevenue || 0) + (b.eventRevenue || 0), 0);
+            
+            document.getElementById('importPreviewCount').textContent = `${bookings.length} bookings found`;
+            document.getElementById('importPreviewRevenue').textContent = `$${totalRevenue.toLocaleString()} total revenue`;
+            
+            const listEl = document.getElementById('importPreviewList');
+            listEl.innerHTML = bookings.slice(0, 10).map(b => `
+                <div class="import-preview-item">
+                    <span class="import-preview-name">${b.bookingName}</span>
+                    <span class="import-preview-rev">$${((b.roomRevenue || 0) + (b.eventRevenue || 0)).toLocaleString()}</span>
+                </div>
+            `).join('') + (bookings.length > 10 ? `<div style="text-align: center; color: #666; padding: 0.5rem;">...and ${bookings.length - 10} more</div>` : '');
+            
+            document.getElementById('importPreview').style.display = 'block';
+            document.getElementById('importError').style.display = 'none';
+            document.getElementById('confirmImportBtn').disabled = false;
+        }
+        
+        function confirmImport() {
+            if (!pendingImportData || pendingImportData.length === 0) return;
+            
+            saveHistoricalData(pendingImportData);
+            closeImportModal();
+            updateReporting();
+            
+            alert(`Successfully imported ${pendingImportData.length} historical bookings!`);
+        }
+        
+        // Setup drag and drop for import
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropzone = document.getElementById('importDropzone');
+            if (dropzone) {
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('dragover');
+                });
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('dragover');
+                });
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file) {
+                        document.getElementById('importFileInput').files = e.dataTransfer.files;
+                        handleImportFile({ target: { files: [file] } });
+                    }
+                });
+            }
+            updateHistoricalStatus();
+        });
+        // ============= End Historical Data Import =============
         
         function applyCustomDateRange() {
             reportStartDate = document.getElementById('reportStartDate').value;
@@ -1660,8 +1913,16 @@
             } else if (currentReportPeriod === 'thisQuarter') {
                 const q = Math.floor(new Date().getMonth() / 3) + 1;
                 periodLabel.textContent = `Q${q} ${new Date().getFullYear()}`;
+            } else if (currentReportPeriod === 'allTime') {
+                periodLabel.textContent = 'All Time';
             } else {
                 periodLabel.textContent = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+            
+            // Show historical data indicator if we have some
+            const histCount = historicalInPeriod.length;
+            if (histCount > 0) {
+                periodLabel.textContent += ` (incl. ${histCount} historical)`;
             }
             
             // Filter leads by created date within period
@@ -1671,10 +1932,22 @@
                 return created >= start && created <= end;
             });
             
+            // Load and filter historical data by definiteDate within period
+            const historicalData = loadHistoricalData();
+            const historicalInPeriod = historicalData.filter(h => {
+                if (!h.definiteDate) return false;
+                const definiteDate = new Date(h.definiteDate + 'T12:00:00');
+                return definiteDate >= start && definiteDate <= end;
+            });
+            
             // Calculate metrics
             const totalLeads = leadsInPeriod.length;
             const definiteLeads = leadsInPeriod.filter(l => l.status === 'definite' || l.status === 'completed');
-            const totalRevenue = definiteLeads.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
+            
+            // Combine current definite revenue with historical
+            const currentDefiniteRevenue = definiteLeads.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
+            const historicalRevenue = historicalInPeriod.reduce((sum, h) => sum + (h.roomRevenue || 0) + (h.eventRevenue || 0), 0);
+            const totalRevenue = currentDefiniteRevenue + historicalRevenue;
             const conversionRate = totalLeads > 0 ? (definiteLeads.length / totalLeads * 100) : 0;
             
             // Helper: calculate median
@@ -1776,11 +2049,11 @@
                 const definiteDate = new Date(l.definiteDate);
                 return definiteDate >= start && definiteDate <= end;
             });
-            calculateAverages(definiteInPeriod);
+            calculateAverages(definiteInPeriod, historicalInPeriod);
         }
         
-        function calculateAverages(leads) {
-            // Avg ADR - from room blocks
+        function calculateAverages(leads, historicalLeads = []) {
+            // Avg ADR - from room blocks (current leads only - no detail in historical)
             let totalADR = 0, adrCount = 0;
             let totalRental = 0, rentalCount = 0;
             let totalFnb = 0, fnbCount = 0;
@@ -1814,18 +2087,34 @@
             document.getElementById('avg-rental').textContent = rentalCount > 0 ? '$' + Math.round(totalRental / rentalCount).toLocaleString() : '$0';
             document.getElementById('avg-fnb').textContent = fnbCount > 0 ? '$' + Math.round(totalFnb / fnbCount).toLocaleString() : '$0';
             
-            // Avg revenue per booking by type
+            // Avg revenue per booking by type (including historical)
+            // For current leads
             const roomsOnly = leads.filter(l => l.type === 'rooms' && l.revenue);
             const eventsOnly = leads.filter(l => l.type === 'events' && l.revenue);
             const both = leads.filter(l => l.type === 'both' && l.revenue);
-            const all = leads.filter(l => l.revenue);
+            const allCurrent = leads.filter(l => l.revenue);
             
-            const avgRev = arr => arr.length > 0 ? Math.round(arr.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0) / arr.length) : 0;
+            // Convert historical to similar format for averaging
+            // Historical don't have type, so we categorize by which revenue they have
+            const histRoomsOnly = historicalLeads.filter(h => h.roomRevenue > 0 && !h.eventRevenue);
+            const histEventsOnly = historicalLeads.filter(h => h.eventRevenue > 0 && !h.roomRevenue);
+            const histBoth = historicalLeads.filter(h => h.roomRevenue > 0 && h.eventRevenue > 0);
             
-            document.getElementById('avg-rev-rooms').textContent = '$' + avgRev(roomsOnly).toLocaleString();
-            document.getElementById('avg-rev-events').textContent = '$' + avgRev(eventsOnly).toLocaleString();
-            document.getElementById('avg-rev-both').textContent = '$' + avgRev(both).toLocaleString();
-            document.getElementById('avg-rev-all').textContent = '$' + avgRev(all).toLocaleString();
+            const avgRevCombined = (currentArr, histArr) => {
+                const currentSum = currentArr.reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
+                const histSum = histArr.reduce((sum, h) => sum + (h.roomRevenue || 0) + (h.eventRevenue || 0), 0);
+                const total = currentArr.length + histArr.length;
+                return total > 0 ? Math.round((currentSum + histSum) / total) : 0;
+            };
+            
+            // All bookings average
+            const allHistorical = historicalLeads;
+            const allRevAvg = avgRevCombined(allCurrent, allHistorical);
+            
+            document.getElementById('avg-rev-rooms').textContent = '$' + avgRevCombined(roomsOnly, histRoomsOnly).toLocaleString();
+            document.getElementById('avg-rev-events').textContent = '$' + avgRevCombined(eventsOnly, histEventsOnly).toLocaleString();
+            document.getElementById('avg-rev-both').textContent = '$' + avgRevCombined(both, histBoth).toLocaleString();
+            document.getElementById('avg-rev-all').textContent = '$' + allRevAvg.toLocaleString();
         }
         
         // Store leads in period for popup access

@@ -1795,8 +1795,9 @@
                 const eventRevenue = parseFloat(row['__EMPTY_12'] || row['At Definite Forecasted Event Rev Total'] || row['Event Revenue'] || 0) || 0;
                 
                 // Skip rows that don't look like bookings
-                if (!bookingName || bookingName.includes('Subtotal') || bookingName.includes('Total') || bookingName.includes('Confidential') || bookingName.includes('Copyright') || bookingName.includes('Filtered By') || bookingName.includes('Show:') || bookingName.includes('As of')) continue;
-                if (bookingName === 'Booking: Owner Name  ↑') continue; // Header row
+                const bookingNameStr = String(bookingName || '');
+                if (!bookingNameStr || bookingNameStr.includes('Subtotal') || bookingNameStr.includes('Total') || bookingNameStr.includes('Confidential') || bookingNameStr.includes('Copyright') || bookingNameStr.includes('Filtered By') || bookingNameStr.includes('Show:') || bookingNameStr.includes('As of')) continue;
+                if (bookingNameStr === 'Booking: Owner Name  ↑' || bookingNameStr.includes('Owner Name')) continue; // Header row
                 
                 // Parse dates (M/D/YYYY format)
                 const parseDate = (d) => {

@@ -1769,8 +1769,13 @@
                         return;
                     }
                     
-                    pendingImportData = bookings;
-                    showImportPreview(bookings);
+                    // Filter out duplicates (already in Kelphi)
+                    const existingNames = appData.leads.map(l => (l.bookingName || '').toLowerCase().trim());
+                    const duplicates = bookings.filter(b => existingNames.includes((b.bookingName || '').toLowerCase().trim()));
+                    const uniqueBookings = bookings.filter(b => !existingNames.includes((b.bookingName || '').toLowerCase().trim()));
+                    
+                    pendingImportData = uniqueBookings;
+                    showImportPreview(uniqueBookings, duplicates);
                 } catch (err) {
                     console.error('Import error:', err);
                     showImportError('Failed to parse file: ' + err.message);
@@ -1842,23 +1847,41 @@
             document.getElementById('confirmImportBtn').disabled = true;
         }
         
-        function showImportPreview(bookings) {
+        function showImportPreview(bookings, duplicates = []) {
             const totalRevenue = bookings.reduce((sum, b) => sum + (b.roomRevenue || 0) + (b.eventRevenue || 0), 0);
             
-            document.getElementById('importPreviewCount').textContent = `${bookings.length} bookings found`;
+            let countText = `${bookings.length} bookings to import`;
+            if (duplicates.length > 0) {
+                countText += ` (${duplicates.length} skipped — already in Kelphi)`;
+            }
+            document.getElementById('importPreviewCount').textContent = countText;
             document.getElementById('importPreviewRevenue').textContent = `$${totalRevenue.toLocaleString()} total revenue`;
             
             const listEl = document.getElementById('importPreviewList');
-            listEl.innerHTML = bookings.slice(0, 10).map(b => `
+            let html = bookings.slice(0, 10).map(b => `
                 <div class="import-preview-item">
                     <span class="import-preview-name">${b.bookingName}</span>
                     <span class="import-preview-rev">$${((b.roomRevenue || 0) + (b.eventRevenue || 0)).toLocaleString()}</span>
                 </div>
-            `).join('') + (bookings.length > 10 ? `<div style="text-align: center; color: #666; padding: 0.5rem;">...and ${bookings.length - 10} more</div>` : '');
+            `).join('');
+            
+            if (bookings.length > 10) {
+                html += `<div style="text-align: center; color: #666; padding: 0.5rem;">...and ${bookings.length - 10} more</div>`;
+            }
+            
+            if (duplicates.length > 0) {
+                html += `<div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 0.75rem; color: #ffaa00; margin-bottom: 0.5rem;">⚠️ Skipping (already in Kelphi):</div>
+                    ${duplicates.slice(0, 5).map(d => `<div style="font-size: 0.75rem; color: #666; padding: 0.25rem 0;">${d.bookingName}</div>`).join('')}
+                    ${duplicates.length > 5 ? `<div style="font-size: 0.75rem; color: #666;">...and ${duplicates.length - 5} more</div>` : ''}
+                </div>`;
+            }
+            
+            listEl.innerHTML = html;
             
             document.getElementById('importPreview').style.display = 'block';
             document.getElementById('importError').style.display = 'none';
-            document.getElementById('confirmImportBtn').disabled = false;
+            document.getElementById('confirmImportBtn').disabled = bookings.length === 0;
         }
         
         function confirmImport() {

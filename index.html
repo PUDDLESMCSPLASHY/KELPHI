@@ -1872,11 +1872,14 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
+                    console.log('Starting Excel parse...');
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
+                    console.log('Sheet name:', sheetName);
                     const sheet = workbook.Sheets[sheetName];
                     const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                    console.log('Parsed rows:', json.length);
                     
                     // Parse the Delphi export format
                     const bookings = parseDelphiExport(json);
@@ -1887,10 +1890,11 @@
                     }
                     
                     // Filter out duplicates (already in Kelphi)
-                    const existingLeads = appData.leads.map(l => ({
-                        name: (l.bookingName || '').toLowerCase().trim(),
-                        normalized: normalizeForMatch(l.bookingName || ''),
-                        original: l.bookingName
+                    console.log('Checking for duplicates against', appData.leads.length, 'existing leads');
+                    const existingLeads = (appData.leads || []).map(l => ({
+                        name: String(l.bookingName || '').toLowerCase().trim(),
+                        normalized: normalizeForMatch(String(l.bookingName || '')),
+                        original: l.bookingName || ''
                     }));
                     
                     const exactDuplicates = [];
@@ -1898,8 +1902,8 @@
                     const uniqueBookings = [];
                     
                     bookings.forEach(b => {
-                        const bName = (b.bookingName || '').toLowerCase().trim();
-                        const bNormalized = normalizeForMatch(b.bookingName || '');
+                        const bName = String(b.bookingName || '').toLowerCase().trim();
+                        const bNormalized = normalizeForMatch(String(b.bookingName || ''));
                         
                         // Check exact match
                         if (existingLeads.some(e => e.name === bName)) {
@@ -1912,13 +1916,14 @@
                                 stringSimilarity(e.normalized, bNormalized) > 0.8
                             );
                             if (fuzzyMatch) {
-                                fuzzyMatches.push({ imported: b, existing: fuzzyMatch.original });
+                                fuzzyMatches.push({ imported: b, existing: fuzzyMatch.original || '' });
                             } else {
                                 uniqueBookings.push(b);
                             }
                         }
                     });
                     
+                    console.log('Unique:', uniqueBookings.length, 'Exact dupes:', exactDuplicates.length, 'Fuzzy:', fuzzyMatches.length);
                     pendingImportData = uniqueBookings;
                     pendingFuzzyMatches = fuzzyMatches;
                     showImportPreview(uniqueBookings, exactDuplicates, fuzzyMatches);

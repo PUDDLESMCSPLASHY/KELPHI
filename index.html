@@ -3336,83 +3336,146 @@
             }
         }
         
-        // Quote Email Generator
+        // Quote Email Generator (matches Rate Calculator structure)
         function regenerateQuote() {
             if (!currentLeadId) return;
             const lead = appData.leads.find(l => l.id === currentLeadId);
             if (!lead) return;
             
-            const firstName = lead.contactFirstName || '[First Name]';
-            const groupName = lead.bookingName || lead.account || '[Group Name]';
-            const arrival = lead.arrival ? new Date(lead.arrival + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '[Arrival Date]';
-            const departure = lead.departure ? new Date(lead.departure + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '[Departure Date]';
+            const firstName = lead.contactFirstName || '{{First name}}';
+            const groupName = lead.bookingName || lead.account || '{{Group name}}';
             
-            // Calculate room info
-            let roomSummary = '';
-            if (lead.roomBlock && lead.roomBlock.length > 0) {
-                const roomLines = lead.roomBlock.map(row => {
-                    const totalRooms = (row.quantities || []).reduce((sum, q) => sum + (parseInt(q) || 0), 0);
-                    const rate = row.rate ? `$${parseFloat(row.rate).toFixed(2)}` : 'TBD';
-                    return `• ${row.type || 'Room'}: ${totalRooms} room nights at ${rate}/night`;
+            // Determine quote type
+            const hasRooms = lead.roomBlock && lead.roomBlock.length > 0 && lead.roomBlock.some(r => (r.quantities || []).some(q => parseInt(q) > 0));
+            const hasEvents = lead.events && lead.events.length > 0;
+            const quoteType = (hasRooms && hasEvents) ? 'both' : (hasRooms ? 'rooms' : 'events');
+            
+            // Get season from arrival date
+            function getSeason(dateStr) {
+                if (!dateStr) return 'season';
+                const month = new Date(dateStr + 'T12:00:00').getMonth();
+                if (month >= 2 && month <= 4) return 'Spring';
+                if (month >= 5 && month <= 7) return 'Summer';
+                if (month >= 8 && month <= 10) return 'Fall';
+                return 'Winter';
+            }
+            const season = getSeason(lead.arrival);
+            
+            // Format helpers
+            const formatDateLong = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '{{Date}}';
+            const formatDayName = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }) : '{{Day}}';
+            const formatCurrency = (n) => '$' + (parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            // Calculate room block info
+            let roomBlockPara = '';
+            let totalRoomNights = 0;
+            let peakRooms = 0;
+            let avgRate = 0;
+            
+            if (hasRooms) {
+                let totalRate = 0;
+                let rateCount = 0;
+                lead.roomBlock.forEach(row => {
+                    const rooms = (row.quantities || []).reduce((sum, q) => sum + (parseInt(q) || 0), 0);
+                    totalRoomNights += rooms;
+                    peakRooms = Math.max(peakRooms, Math.max(...(row.quantities || []).map(q => parseInt(q) || 0)));
+                    if (row.rate) {
+                        totalRate += parseFloat(row.rate) * rooms;
+                        rateCount += rooms;
+                    }
                 });
-                roomSummary = roomLines.join('\n');
-            } else {
-                roomSummary = '• [Room details to be added]';
+                avgRate = rateCount > 0 ? totalRate / rateCount : 0;
+                
+                const numNights = lead.arrival && lead.departure ? Math.ceil((new Date(lead.departure) - new Date(lead.arrival)) / (1000 * 60 * 60 * 24)) : '{{Number of nights}}';
+                const subtotal = totalRoomNights * avgRate;
+                const total = subtotal * 1.1475; // Tax estimate
+                
+                roomBlockPara = `As I understand it, you're interested in a group room block of ${peakRooms} room${peakRooms !== 1 ? 's' : ''} over the span of ${numNights} night${numNights !== 1 ? 's' : ''}, with a check-in date of ${formatDateLong(lead.arrival)} and a check-out on ${formatDateLong(lead.departure)}. For this request, I can approve a nightly rate of ${formatCurrency(avgRate)} for one of our single occupancy rooms before tax. That would be a subtotal of ${formatCurrency(subtotal)}, and approximately ${formatCurrency(total)} after all applicable taxes and fees.`;
             }
             
             // Calculate event info
-            let eventSummary = '';
-            if (lead.events && lead.events.length > 0) {
-                const eventLines = lead.events.map(evt => {
-                    const evtDate = evt.date ? new Date(evt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
-                    const timeRange = evt.startTime && evt.endTime ? ` (${evt.startTime} - ${evt.endTime})` : '';
-                    const room = evt.room ? ` in ${evt.room}` : '';
-                    const fbMin = evt.fbMin ? ` — F&B Min: $${parseFloat(evt.fbMin).toLocaleString()}` : '';
-                    const rental = evt.rental ? ` — Rental: $${parseFloat(evt.rental).toLocaleString()}` : '';
-                    return `• ${evtDate}: ${evt.name || 'Event'}${room}${timeRange}${fbMin}${rental}`;
+            let eventParagraphs = '';
+            let eventTotal = 0;
+            const hasDiscount = hasEvents && lead.events.length >= 3;
+            
+            if (hasEvents) {
+                const sortedEvents = [...lead.events].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+                
+                const eventLines = sortedEvents.map((evt, idx) => {
+                    const rental = parseFloat(evt.rental) || 0;
+                    const fbMin = parseFloat(evt.fbMin) || 0;
+                    const subtotal = rental + fbMin;
+                    const total = (rental * 1.0875) + (fbMin * 1.32); // Tax estimates
+                    eventTotal += total;
+                    
+                    const headcount = evt.headcount || evt.attendance || '{{Headcount}}';
+                    const timeframe = (evt.startTime && evt.endTime) ? `${evt.startTime} - ${evt.endTime}` : '{{Event timeframe}}';
+                    const room = evt.room || '{{Event space}}';
+                    const isPlural = room.includes(',') || room.includes(' and ');
+                    
+                    const prefix = idx === 0 ? 'For' : 'On';
+                    return `${prefix} ${formatDayName(evt.date)}, ${formatDateLong(evt.date)} from approximately ${timeframe}, I would recommend ${room} for an estimated ${headcount} guests. The room rental${isPlural ? 's combined' : ''} would be ${formatCurrency(rental)} with an ${isPlural ? 'overall ' : ''}F&B minimum of ${formatCurrency(fbMin)}, totaling ${formatCurrency(subtotal)} before taxes and fees.`;
                 });
-                eventSummary = eventLines.join('\n');
+                
+                eventParagraphs = eventLines.join('\n\n');
+                
+                if (hasDiscount) {
+                    eventTotal = eventTotal * 0.75; // 25% discount
+                }
             }
             
-            // Build quote email
-            let quote = `Hi ${firstName},
-
-Thank you for your interest in The Compton for ${groupName}! I'm excited to share our proposal for your upcoming event.
-
-**Event Dates:** ${arrival} – ${departure}
-
-`;
+            // Build email based on quote type
+            let quote = '';
+            const eventName = lead.events && lead.events.length > 0 ? (lead.events[0].name || groupName) : groupName;
             
-            if (roomSummary) {
-                quote += `**Guest Room Block:**
-${roomSummary}
+            if (quoteType === 'rooms') {
+                quote = `Hey there, ${firstName},
 
-`;
+I received your request about hosting the ${groupName} here at The Compton, and I'm happy to explore what this could potentially look like. I'd love to understand more about your vision, so if any of the information I've provided sounds incorrect, please just let me know.
+
+${roomBlockPara}
+
+I would love to know your initial thoughts, as well as answer any questions you have. If there are any details I've left out or stated incorrectly, please just let me know. If this seems like we're on the right track, I'd be happy to send over pictures of the space as well as our full Banquets and Catering menu. I look forward to hopefully hosting ${groupName} at The Compton this ${season}!
+
+Your friend at The Compton,
+
+Kelsey`;
+            } else if (quoteType === 'events') {
+                quote = `Hey there, ${firstName},
+
+I received your request about hosting the ${groupName} here at The Compton, and I'm happy to explore what this could potentially look like. I'd love to understand more about your vision, so if any of the information I've provided sounds incorrect, please just let me know.
+
+${lead.events.length === 1 ? eventParagraphs : `For the ${eventName}, here's what I'm recommending:
+
+${eventParagraphs}`}
+
+All costs are subject to applicable taxes and service fees.${hasDiscount ? ' Because this is a 3+ day event, you qualify for our 25% multi-day discount!' : ''} The total cost for your event would be approximately ${formatCurrency(eventTotal)} after taxes${hasDiscount ? ', fees, and the multi-day discount' : ' and fees'}. I just want to be transparent and make sure you know what to expect in-full for your event with us.
+
+I would love to know your initial thoughts, as well as answer any questions you have. If there are any details I've left out or stated incorrectly, please just let me know. If this seems like we're on the right track, I'd be happy to send over pictures of the space as well as our full Banquets and Catering menu. I look forward to hopefully hosting ${groupName} at The Compton this ${season}!
+
+Your friend at The Compton,
+
+Kelsey`;
+            } else {
+                // Both
+                quote = `Hey there, ${firstName},
+
+I received your request about hosting the ${groupName} here at The Compton, and I'm happy to explore what this could potentially look like. I'd love to understand more about your vision, so if any of the information I've provided sounds incorrect, please just let me know.
+
+${roomBlockPara}
+
+As for ${eventName}, here's what I'm recommending:
+
+${eventParagraphs}
+
+All costs are subject to applicable taxes and service fees.${hasDiscount ? ' Because this is a 3+ day event, you qualify for our 25% multi-day discount!' : ''} The total cost for your event would be approximately ${formatCurrency(eventTotal)} after taxes${hasDiscount ? ', fees, and the multi-day discount' : ' and fees'}. I just want to be transparent and make sure you know what to expect in-full for your event with us.
+
+I would love to know your initial thoughts, as well as answer any questions you have. If there are any details I've left out or stated incorrectly, please just let me know. If this seems like we're on the right track, I'd be happy to send over pictures of the space as well as our full Banquets and Catering menu. I look forward to hopefully hosting ${groupName} at The Compton this ${season}!
+
+Your friend at The Compton,
+
+Kelsey`;
             }
-            
-            if (eventSummary) {
-                quote += `**Event Space:**
-${eventSummary}
-
-`;
-            }
-            
-            // Add concessions if any
-            if (lead.concessions) {
-                quote += `**Included Concessions:**
-${lead.concessions}
-
-`;
-            }
-            
-            quote += `Please review the details above and let me know if you have any questions or would like to discuss further. I'm happy to schedule a call or site visit at your convenience.
-
-Looking forward to hearing from you!
-
-Warmly,
-Kelsey McIntyre
-Sales Manager | The Compton
-kelsey.mcintyre@thecompton.com`;
             
             document.getElementById('lead-quoteEmail').value = quote;
             

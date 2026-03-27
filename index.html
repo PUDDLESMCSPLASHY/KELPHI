@@ -122,6 +122,7 @@
         body.light-mode #panelChecklist { background: #f8f9fa !important; border-color: #10b981 !important; }
         body.light-mode #panelContract { background: #f8f9fa !important; border-color: #0984e3 !important; }
         body.light-mode .room-block-summary, body.light-mode .events-summary { background: #f8f9fa; border: 1px solid #e1e4e8; }
+        body.light-mode #pickupSummaryContainer { background: linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(16,185,129,0.08) 100%) !important; border-color: rgba(34,197,94,0.4) !important; }
         body.light-mode .summary-label { color: #636e72; }
         body.light-mode .room-type-select { background: #fff; border-color: #e1e4e8; color: #2d3436; }
         body.light-mode .panel-actions .btn { background: #f8f9fa; border-color: #e1e4e8; color: #2d3436; }
@@ -1404,6 +1405,17 @@
                                     <div class="summary-item"><div class="summary-label">Peak Rooms</div><div class="summary-value" id="peakRooms">0</div></div>
                                     <div class="summary-item"><div class="summary-label">Anticipated Revenue</div><div class="summary-value" id="roomRevenue">$0</div></div>
                                     <div class="summary-item"><div class="summary-label">Forecasted (80%)</div><div class="summary-value" id="forecastedRevenue">$0</div></div>
+                                </div>
+                                
+                                <!-- Pickup Summary (from Delphi) -->
+                                <div class="room-block-summary" id="pickupSummaryContainer" style="display: none; margin-top: 1rem; background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(16,185,129,0.05) 100%); border: 1px solid rgba(34,197,94,0.3);">
+                                    <div style="grid-column: 1 / -1; text-align: center; margin-bottom: 0.5rem;">
+                                        <span style="font-size: 0.7rem; text-transform: uppercase; color: #22c55e; letter-spacing: 0.5px;">📊 Actual Pickup (from Delphi)</span>
+                                    </div>
+                                    <div class="summary-item"><div class="summary-label">Pickup Rooms</div><div class="summary-value" id="pickupRoomNights" style="color: #4ade80;">0</div></div>
+                                    <div class="summary-item"><div class="summary-label">Pickup %</div><div class="summary-value" id="pickupPercentage" style="color: #4ade80;">0%</div></div>
+                                    <div class="summary-item"><div class="summary-label">Pickup Revenue</div><div class="summary-value" id="pickupRevenue" style="color: #4ade80;">$0</div></div>
+                                    <div class="summary-item"><div class="summary-label">vs Forecast</div><div class="summary-value" id="pickupVsForecast" style="color: #4ade80;">—</div></div>
                                 </div>
                             </div>
                         </div>
@@ -2829,6 +2841,55 @@
             if (document.getElementById('lead-billingType').value === 'credit-card') {
                 calculateCreditCardDeposit();
             }
+            
+            // Update pickup display if we have pickup data
+            updatePickupDisplay();
+        }
+        
+        function updatePickupDisplay() {
+            const container = document.getElementById('pickupSummaryContainer');
+            if (!currentLeadId) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead || !lead.roomPickup || lead.roomPickup.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            // Calculate pickup totals
+            let totalPickup = 0;
+            let totalPickupRevenue = 0;
+            lead.roomPickup.forEach(row => {
+                const qty = parseInt(row.pickup) || 0;
+                const rate = parseFloat(row.rate) || 0;
+                totalPickup += qty;
+                totalPickupRevenue += qty * rate;
+            });
+            
+            // Get agreed totals for comparison
+            let totalAgreed = 0;
+            currentRoomBlock.forEach(row => {
+                (row.quantities || []).forEach(qty => {
+                    totalAgreed += parseInt(qty) || 0;
+                });
+            });
+            
+            const pickupPct = totalAgreed > 0 ? Math.round((totalPickup / totalAgreed) * 100) : 0;
+            const forecastedRooms = Math.floor(totalAgreed * 0.8);
+            const vsForcast = totalPickup - forecastedRooms;
+            const vsForecastText = vsForcast > 0 ? `+${vsForcast} ahead` : (vsForcast < 0 ? `${vsForcast} behind` : 'On track');
+            const vsForecastColor = vsForcast >= 0 ? '#4ade80' : '#f87171';
+            
+            document.getElementById('pickupRoomNights').textContent = totalPickup;
+            document.getElementById('pickupPercentage').textContent = pickupPct + '%';
+            document.getElementById('pickupRevenue').textContent = formatCurrency(totalPickupRevenue);
+            document.getElementById('pickupVsForecast').textContent = vsForecastText;
+            document.getElementById('pickupVsForecast').style.color = vsForecastColor;
+            
+            container.style.display = 'grid';
         }
 
         // ============ EVENTS ============

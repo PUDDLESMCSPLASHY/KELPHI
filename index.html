@@ -2141,12 +2141,6 @@
                 periodLabel.textContent = start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             }
             
-            // Show historical data indicator if we have some
-            const histCount = historicalInPeriod.length;
-            if (histCount > 0) {
-                periodLabel.textContent += ` (incl. ${histCount} historical)`;
-            }
-            
             // Filter leads by created date within period
             const leadsInPeriod = appData.leads.filter(l => {
                 if (l.archived) return false;
@@ -2161,6 +2155,12 @@
                 const definiteDate = new Date(h.definiteDate + 'T12:00:00');
                 return definiteDate >= start && definiteDate <= end;
             });
+            
+            // Show historical data indicator if we have some
+            const histCount = historicalInPeriod.length;
+            if (histCount > 0) {
+                periodLabel.textContent += ` (incl. ${histCount} historical)`;
+            }
             
             // Calculate metrics
             const totalLeads = leadsInPeriod.length;

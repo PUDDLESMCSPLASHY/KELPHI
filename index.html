@@ -1290,25 +1290,82 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Market Segment</label>
-                                <select class="form-select" id="lead-segment">
-                                    <option value="">Select...</option>
-                                    <option value="Chain Wide Corporate Accounts">Chain Wide Corporate Accounts</option>
-                                    <option value="Company Meeting Non Transient">Company Meeting Non Transient</option>
-                                    <option value="Complimentary">Complimentary</option>
-                                    <option value="Government">Government</option>
-                                    <option value="Group Tours Wholesale">Group Tours Wholesale</option>
-                                    <option value="Group, Convention & Association">Group, Convention & Association</option>
-                                    <option value="House Use">House Use</option>
-                                    <option value="Individual Travel Agency Wholesale">Individual Travel Agency Wholesale</option>
-                                    <option value="Locally Negotiated Corp Rates">Locally Negotiated Corp Rates</option>
-                                    <option value="Other Discounts">Other Discounts</option>
-                                    <option value="Permanent">Permanent</option>
-                                    <option value="Reg/Brand Spec Promos/Offers">Reg/Brand Spec Promos/Offers</option>
-                                    <option value="SMERF">SMERF</option>
-                                    <option value="Travel Agency Consortia">Travel Agency Consortia</option>
-                                </select>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Market Segment</label>
+                                    <select class="form-select" id="lead-segment">
+                                        <option value="">Select...</option>
+                                        <option value="Chain Wide Corporate Accounts">Chain Wide Corporate Accounts</option>
+                                        <option value="Company Meeting Non Transient">Company Meeting Non Transient</option>
+                                        <option value="Complimentary">Complimentary</option>
+                                        <option value="Government">Government</option>
+                                        <option value="Group Tours Wholesale">Group Tours Wholesale</option>
+                                        <option value="Group, Convention & Association">Group, Convention & Association</option>
+                                        <option value="House Use">House Use</option>
+                                        <option value="Individual Travel Agency Wholesale">Individual Travel Agency Wholesale</option>
+                                        <option value="Locally Negotiated Corp Rates">Locally Negotiated Corp Rates</option>
+                                        <option value="Other Discounts">Other Discounts</option>
+                                        <option value="Permanent">Permanent</option>
+                                        <option value="Reg/Brand Spec Promos/Offers">Reg/Brand Spec Promos/Offers</option>
+                                        <option value="SMERF">SMERF</option>
+                                        <option value="Travel Agency Consortia">Travel Agency Consortia</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Booking Type</label>
+                                    <select class="form-select" id="lead-bookingType">
+                                        <option value="">Select...</option>
+                                        <optgroup label="CMTG">
+                                            <option value="CMTG - Catering Company Mtg Non Trans">CMTG - Catering Company Mtg Non Trans</option>
+                                            <option value="CMTG - Catering Incentive">CMTG - Catering Incentive</option>
+                                            <option value="CMTG - Company Mtg Non Trans">CMTG - Company Mtg Non Trans</option>
+                                            <option value="CMTG - Incentive">CMTG - Incentive</option>
+                                        </optgroup>
+                                        <optgroup label="GRP">
+                                            <option value="GRP - Diplomatic">GRP - Diplomatic</option>
+                                            <option value="GRP - Group Tour">GRP - Group Tour</option>
+                                            <option value="GRP/CONV/ASSOC - International">GRP/CONV/ASSOC - International</option>
+                                            <option value="GRP/CONV/ASSOC - Local/Regional">GRP/CONV/ASSOC - Local/Regional</option>
+                                            <option value="GRP/CONV/ASSOC - National">GRP/CONV/ASSOC - National</option>
+                                        </optgroup>
+                                        <optgroup label="PERM">
+                                            <option value="PERM - Airline Crew">PERM - Airline Crew</option>
+                                        </optgroup>
+                                        <optgroup label="SMRF">
+                                            <option value="SMRF - Catering Association">SMRF - Catering Association</option>
+                                            <option value="SMRF - Catering Education">SMRF - Catering Education</option>
+                                            <option value="SMRF - Catering Entertainment">SMRF - Catering Entertainment</option>
+                                            <option value="SMRF - Catering Fraternity/Social Assoc">SMRF - Catering Fraternity/Social Assoc</option>
+                                            <option value="SMRF - Catering Government/Military">SMRF - Catering Government/Military</option>
+                                            <option value="SMRF - Catering Religious">SMRF - Catering Religious</option>
+                                            <option value="SMRF - Catering Social">SMRF - Catering Social</option>
+                                            <option value="SMRF - Catering Sports">SMRF - Catering Sports</option>
+                                            <option value="SMRF - Catering Tour">SMRF - Catering Tour</option>
+                                            <option value="SMRF - Catering Wedding">SMRF - Catering Wedding</option>
+                                            <option value="SMRF - Education">SMRF - Education</option>
+                                            <option value="SMRF - Entertainment">SMRF - Entertainment</option>
+                                            <option value="SMRF - Fraternity/Social Association">SMRF - Fraternity/Social Association</option>
+                                            <option value="SMRF - Government/Military">SMRF - Government/Military</option>
+                                            <option value="SMRF - Religious">SMRF - Religious</option>
+                                            <option value="SMRF - Social">SMRF - Social</option>
+                                            <option value="SMRF - Sports">SMRF - Sports</option>
+                                            <option value="SMRF - Wedding">SMRF - Wedding</option>
+                                        </optgroup>
+                                        <optgroup label="TRANS">
+                                            <option value="TRANS - Chainwide Corporate Accounts">TRANS - Chainwide Corporate Accounts</option>
+                                            <option value="TRANS - Diplomatic">TRANS - Diplomatic</option>
+                                            <option value="TRANS - Government">TRANS - Government</option>
+                                            <option value="TRANS - Ind Travel Agency/Wholesale">TRANS - Ind Travel Agency/Wholesale</option>
+                                            <option value="TRANS - Locally Negotiated Corp Rates">TRANS - Locally Negotiated Corp Rates</option>
+                                            <option value="TRANS - Other Discounts">TRANS - Other Discounts</option>
+                                            <option value="TRANS - Reg/Brand Spec Promos/Offers">TRANS - Reg/Brand Spec Promos/Offers</option>
+                                            <option value="TRANS - Travel Agency Consortia">TRANS - Travel Agency Consortia</option>
+                                        </optgroup>
+                                        <optgroup label="Other">
+                                            <option value="Non Revenue">Non Revenue</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group"><label class="form-label">PMS Account Number</label><input type="text" class="form-input" id="lead-pmsAccountNumber" placeholder="From StayNTouch"></div>
@@ -2985,7 +3042,7 @@
             document.getElementById('panelSubtitle').textContent = lead.account || '';
 
             // Simple fields
-            ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'contactTitle', 'arrival', 'departure', 'type', 'status', 'segment',
+            ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'contactTitle', 'arrival', 'departure', 'type', 'status', 'segment', 'bookingType',
              'pmsAccountNumber', 'bookedDate', 'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
              'billingType', 'paymentMethod', 'concessions', 'notes', 'handoverNotes', 'ccDeposit'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
@@ -3138,6 +3195,7 @@
                 type: type,
                 status: document.getElementById('lead-status').value,
                 segment: document.getElementById('lead-segment').value,
+                bookingType: document.getElementById('lead-bookingType').value,
                 firstTimeBooking: document.getElementById('lead-firstTimeBooking').checked,
                 milestoneEvent: document.getElementById('lead-milestoneEvent').checked,
                 contactTitle: document.getElementById('lead-contactTitle').value,

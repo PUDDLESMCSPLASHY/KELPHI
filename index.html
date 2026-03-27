@@ -1263,6 +1263,7 @@
                                 <div class="form-group"><label class="form-label">Contact Phone</label><input type="text" class="form-input" id="lead-contactPhone"></div>
                                 <div class="form-group"><label class="form-label">Contact Email</label><input type="email" class="form-input" id="lead-contactEmail"></div>
                             </div>
+                            <div class="form-group"><label class="form-label">Contact Title</label><input type="text" class="form-input" id="lead-contactTitle" placeholder="e.g. Executive Assistant, Event Planner"></div>
                             <div class="form-row">
                                 <div class="form-group"><label class="form-label">Arrival Date</label><input type="date" class="form-input" id="lead-arrival"></div>
                                 <div class="form-group"><label class="form-label">Departure Date</label><input type="date" class="form-input" id="lead-departure"></div>
@@ -1297,6 +1298,10 @@
                                     <option value="smerf">SMERF</option>
                                     <option value="government">Government</option>
                                 </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">PMS Account Number</label><input type="text" class="form-input" id="lead-pmsAccountNumber" placeholder="From StayNTouch"></div>
+                                <div class="form-group"><label class="form-label">Booked Date</label><input type="date" class="form-input" id="lead-bookedDate" title="Date booking was created in Delphi"></div>
                             </div>
                             <div class="form-group" style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
                                 <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #888; cursor: pointer;">
@@ -2969,8 +2974,8 @@
             document.getElementById('panelSubtitle').textContent = lead.account || '';
 
             // Simple fields
-            ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'arrival', 'departure', 'type', 'status', 'segment',
-             'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
+            ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'contactTitle', 'arrival', 'departure', 'type', 'status', 'segment',
+             'pmsAccountNumber', 'bookedDate', 'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
              'billingType', 'paymentMethod', 'concessions', 'notes', 'handoverNotes', 'ccDeposit'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
                 if (el) el.value = lead[f] || '';
@@ -3124,6 +3129,9 @@
                 segment: document.getElementById('lead-segment').value,
                 firstTimeBooking: document.getElementById('lead-firstTimeBooking').checked,
                 milestoneEvent: document.getElementById('lead-milestoneEvent').checked,
+                contactTitle: document.getElementById('lead-contactTitle').value,
+                pmsAccountNumber: document.getElementById('lead-pmsAccountNumber').value,
+                bookedDate: document.getElementById('lead-bookedDate').value,
                 roomBlock: currentRoomBlock,
                 events: currentEvents,
                 signerName: document.getElementById('lead-signerName').value,

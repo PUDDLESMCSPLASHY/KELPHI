@@ -3111,6 +3111,26 @@
 
         // Import from Delphi
         const DELPHI_API = 'https://prev-wesley-states-earliest.trycloudflare.com';
+        let pendingImports = [];
+        
+        function fuzzyMatch(a, b) {
+            if (!a || !b) return 0;
+            const normalize = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+            const wordsA = new Set(normalize(a).split(/\s+/).filter(w => w.length > 2));
+            const wordsB = new Set(normalize(b).split(/\s+/).filter(w => w.length > 2));
+            if (wordsA.size === 0 || wordsB.size === 0) return 0;
+            let matches = 0;
+            wordsA.forEach(w => { if (wordsB.has(w)) matches++; });
+            return matches / Math.max(wordsA.size, wordsB.size);
+        }
+        
+        function findSimilarLead(name) {
+            for (const lead of appData.leads) {
+                const score = fuzzyMatch(name, lead.bookingName);
+                if (score >= 0.6) return { name: lead.bookingName, score };
+            }
+            return null;
+        }
         
         async function importFromDelphi() {
             const btn = event.target;
@@ -3119,46 +3139,160 @@
             btn.textContent = '⏳ Checking...';
             
             try {
-                // First check what's available
                 const checkRes = await fetch(`${DELPHI_API}/api/sync/new-leads`);
                 const checkData = await checkRes.json();
                 
-                if (!checkData.ok) {
-                    throw new Error(checkData.error || 'Failed to check for new leads');
-                }
+                if (!checkData.ok) throw new Error(checkData.error || 'Failed to check');
                 
-                const newCount = checkData.new_bookings?.length || 0;
-                
-                if (newCount === 0) {
+                const newBookings = checkData.new_bookings || [];
+                if (newBookings.length === 0) {
                     alert('✓ No new leads to import! All your Delphi bookings are already in Kelphi.');
                     return;
                 }
                 
-                // Confirm import
-                const proceed = confirm(`Found ${newCount} new leads in Delphi.\n\nImport them to Kelphi?`);
-                if (!proceed) return;
+                // Check for fuzzy matches and prepare data
+                pendingImports = newBookings.map(b => ({
+                    ...b,
+                    selected: true,
+                    similar: findSimilarLead(b.name)
+                }));
                 
-                btn.textContent = `⏳ Importing ${newCount}...`;
-                
-                // Do the import
-                const importRes = await fetch(`${DELPHI_API}/api/sync/auto-import`, { method: 'POST' });
-                const importData = await importRes.json();
-                
-                if (!importData.ok) {
-                    throw new Error(importData.error || 'Import failed');
-                }
-                
-                alert(`✓ Imported ${importData.imported} leads from Delphi!`);
-                
-                // Reload data
-                await loadFromCloud();
-                renderLeads();
+                showImportModal();
                 
             } catch (e) {
                 alert('Error: ' + e.message);
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
+            }
+        }
+        
+        function showImportModal() {
+            const similarCount = pendingImports.filter(b => b.similar).length;
+            
+            let html = `
+                <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem;" id="importModal" onclick="if(event.target.id==='importModal')closeImportModal()">
+                    <div style="background: #1a1a24; border-radius: 12px; max-width: 900px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1);" onclick="event.stopPropagation()">
+                        <div style="padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <h2 style="margin: 0 0 0.5rem 0; color: #fff;">⬇️ Import from Delphi</h2>
+                            <p style="margin: 0; color: #888; font-size: 0.9rem;">
+                                Found <strong style="color: #00d9ff;">${pendingImports.length}</strong> new leads.
+                                ${similarCount > 0 ? `<span style="color: #f59e0b;"> ⚠️ ${similarCount} may already exist (similar names)</span>` : ''}
+                            </p>
+                        </div>
+                        <div style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button class="btn btn-ghost" onclick="toggleAllImports(true)">☑️ Select All</button>
+                            <button class="btn btn-ghost" onclick="toggleAllImports(false)">☐ Select None</button>
+                            <button class="btn btn-ghost" onclick="toggleAllImports(true, true)">Select New Only (no warnings)</button>
+                            <span style="margin-left: auto; color: #888; font-size: 0.9rem;" id="importSelectedCount">${pendingImports.length} selected</span>
+                        </div>
+                        <div style="flex: 1; overflow-y: auto; padding: 0.5rem;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="color: #888; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                        <th style="padding: 0.75rem 0.5rem; width: 40px;"></th>
+                                        <th style="padding: 0.75rem 0.5rem;">Booking Name</th>
+                                        <th style="padding: 0.75rem 0.5rem;">Account</th>
+                                        <th style="padding: 0.75rem 0.5rem;">Arrival</th>
+                                        <th style="padding: 0.75rem 0.5rem;">Status</th>
+                                        <th style="padding: 0.75rem 0.5rem;">Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="importTableBody">
+                                    ${renderImportRows()}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 1rem; justify-content: flex-end;">
+                            <button class="btn btn-ghost" onclick="closeImportModal()">Cancel</button>
+                            <button class="btn btn-primary" onclick="executeImport()" id="executeImportBtn">Import Selected</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+        
+        function renderImportRows() {
+            return pendingImports.map((b, i) => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${b.similar ? 'background: rgba(245,158,11,0.1);' : ''}">
+                    <td style="padding: 0.75rem 0.5rem;">
+                        <input type="checkbox" ${b.selected ? 'checked' : ''} onchange="toggleImport(${i})" style="width: 18px; height: 18px; cursor: pointer;">
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem; color: #fff;">
+                        ${b.name}
+                        ${b.similar ? `<div style="font-size: 0.75rem; color: #f59e0b; margin-top: 2px;">⚠️ Similar to: "${b.similar.name}"</div>` : ''}
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem; color: #ccc;">${b.account || '-'}</td>
+                    <td style="padding: 0.75rem 0.5rem; color: #ccc;">${b.arrival || '-'}</td>
+                    <td style="padding: 0.75rem 0.5rem;">
+                        <span style="padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; background: ${b.status === 'Definite' ? '#065f46' : b.status === 'Tentative' ? '#92400e' : '#374151'}; color: #fff;">
+                            ${b.status}
+                        </span>
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem; color: #10b981;">${b.revenue ? '$' + Number(b.revenue).toLocaleString() : '-'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function toggleImport(index) {
+            pendingImports[index].selected = !pendingImports[index].selected;
+            updateImportCount();
+        }
+        
+        function toggleAllImports(state, excludeWarnings = false) {
+            pendingImports.forEach(b => {
+                if (excludeWarnings && b.similar) {
+                    b.selected = false;
+                } else {
+                    b.selected = state;
+                }
+            });
+            document.getElementById('importTableBody').innerHTML = renderImportRows();
+            updateImportCount();
+        }
+        
+        function updateImportCount() {
+            const count = pendingImports.filter(b => b.selected).length;
+            document.getElementById('importSelectedCount').textContent = `${count} selected`;
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal')?.remove();
+            pendingImports = [];
+        }
+        
+        async function executeImport() {
+            const selected = pendingImports.filter(b => b.selected);
+            if (selected.length === 0) {
+                alert('No leads selected!');
+                return;
+            }
+            
+            const btn = document.getElementById('executeImportBtn');
+            btn.disabled = true;
+            btn.textContent = `⏳ Importing ${selected.length}...`;
+            
+            try {
+                const res = await fetch(`${DELPHI_API}/api/sync/import-selected`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selected.map(b => b.id) })
+                });
+                const data = await res.json();
+                
+                if (!data.ok) throw new Error(data.error || 'Import failed');
+                
+                alert(`✓ Imported ${data.imported} leads from Delphi!`);
+                closeImportModal();
+                await loadFromCloud();
+                renderLeads();
+                
+            } catch (e) {
+                alert('Error: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = 'Import Selected';
             }
         }
         

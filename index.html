@@ -690,7 +690,10 @@
                             </select>
                             <button class="btn btn-ghost" onclick="openViewModal()">Change View</button>
                         </div>
-                        <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary" onclick="importFromDelphi()" title="Import new leads from Delphi">⬇️ Import from Delphi</button>
+                            <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
+                        </div>
                     </div>
                     <table class="leads-table">
                         <thead><tr><th>Booking Name</th><th>Account</th><th>Status</th><th>Arrival</th><th>Type</th><th>Revenue</th></tr></thead>
@@ -3106,6 +3109,59 @@
             leadPanel.classList.add('open');
         }
 
+        // Import from Delphi
+        const DELPHI_API = 'https://prev-wesley-states-earliest.trycloudflare.com';
+        
+        async function importFromDelphi() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Checking...';
+            
+            try {
+                // First check what's available
+                const checkRes = await fetch(`${DELPHI_API}/api/sync/new-leads`);
+                const checkData = await checkRes.json();
+                
+                if (!checkData.ok) {
+                    throw new Error(checkData.error || 'Failed to check for new leads');
+                }
+                
+                const newCount = checkData.new_bookings?.length || 0;
+                
+                if (newCount === 0) {
+                    alert('✓ No new leads to import! All your Delphi bookings are already in Kelphi.');
+                    return;
+                }
+                
+                // Confirm import
+                const proceed = confirm(`Found ${newCount} new leads in Delphi.\n\nImport them to Kelphi?`);
+                if (!proceed) return;
+                
+                btn.textContent = `⏳ Importing ${newCount}...`;
+                
+                // Do the import
+                const importRes = await fetch(`${DELPHI_API}/api/sync/auto-import`, { method: 'POST' });
+                const importData = await importRes.json();
+                
+                if (!importData.ok) {
+                    throw new Error(importData.error || 'Import failed');
+                }
+                
+                alert(`✓ Imported ${importData.imported} leads from Delphi!`);
+                
+                // Reload data
+                await loadFromCloud();
+                renderLeads();
+                
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+        
         function openLead(id) {
             const lead = appData.leads.find(l => l.id === id);
             if (!lead) return;

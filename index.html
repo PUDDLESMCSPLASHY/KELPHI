@@ -3248,6 +3248,7 @@
 
         function saveLead() {
             const type = document.getElementById('lead-type').value;
+            const existingLead = currentLeadId ? appData.leads.find(l => l.id === currentLeadId) : null;
             
             // Calculate revenue
             let revenue = 0;
@@ -3279,6 +3280,7 @@
                 bookedDate: document.getElementById('lead-bookedDate').value,
                 quoteEmail: document.getElementById('lead-quoteEmail').value,
                 roomBlock: currentRoomBlock,
+                roomPickup: existingLead ? existingLead.roomPickup : undefined,
                 events: currentEvents,
                 signerName: document.getElementById('lead-signerName').value,
                 signerEmail: document.getElementById('lead-signerEmail').value,

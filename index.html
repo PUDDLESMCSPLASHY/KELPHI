@@ -1500,6 +1500,21 @@
                         
                         <!-- Templates Section -->
                         <div class="panel-section" id="section-templates">
+                            <!-- Quote Email Generator -->
+                            <div style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; border: 1px solid #334155;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <div>
+                                        <div style="font-size: 14px; font-weight: 600; color: #00d9ff;">💰 Quote Email</div>
+                                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Auto-generated from booking details</div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button onclick="regenerateQuote()" class="btn" style="font-size: 12px; padding: 6px 12px; background: #334155; border: 1px solid #475569; color: #e2e8f0;">🔄 Regenerate</button>
+                                        <button onclick="copyQuoteEmail()" class="btn" style="font-size: 12px; padding: 6px 12px; background: #00d9ff; border: none; color: #0f172a; font-weight: 600;">📋 Copy</button>
+                                    </div>
+                                </div>
+                                <textarea id="lead-quoteEmail" style="width: 100%; min-height: 220px; font-family: inherit; font-size: 13px; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; resize: vertical; line-height: 1.5;" placeholder="Click 'Regenerate' to create a quote email from this booking's details..."></textarea>
+                            </div>
+                            
                             <div style="margin-bottom: 20px;">
                                 <div style="font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px;">📧 Email Templates</div>
                                 <div style="font-size: 12px; color: #64748b;">Click to generate a personalized template, then copy to clipboard.</div>
@@ -3044,7 +3059,7 @@
             // Simple fields
             ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'contactTitle', 'arrival', 'departure', 'type', 'status', 'segment', 'bookingType',
              'pmsAccountNumber', 'bookedDate', 'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
-             'billingType', 'paymentMethod', 'concessions', 'notes', 'handoverNotes', 'ccDeposit'].forEach(f => {
+             'billingType', 'paymentMethod', 'concessions', 'notes', 'handoverNotes', 'ccDeposit', 'quoteEmail'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
                 if (el) el.value = lead[f] || '';
             });
@@ -3201,6 +3216,7 @@
                 contactTitle: document.getElementById('lead-contactTitle').value,
                 pmsAccountNumber: document.getElementById('lead-pmsAccountNumber').value,
                 bookedDate: document.getElementById('lead-bookedDate').value,
+                quoteEmail: document.getElementById('lead-quoteEmail').value,
                 roomBlock: currentRoomBlock,
                 events: currentEvents,
                 signerName: document.getElementById('lead-signerName').value,
@@ -3318,6 +3334,103 @@
                     btn.textContent = '📋 Add Checklist';
                 }
             }
+        }
+        
+        // Quote Email Generator
+        function regenerateQuote() {
+            if (!currentLeadId) return;
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead) return;
+            
+            const firstName = lead.contactFirstName || '[First Name]';
+            const groupName = lead.bookingName || lead.account || '[Group Name]';
+            const arrival = lead.arrival ? new Date(lead.arrival + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '[Arrival Date]';
+            const departure = lead.departure ? new Date(lead.departure + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '[Departure Date]';
+            
+            // Calculate room info
+            let roomSummary = '';
+            if (lead.roomBlock && lead.roomBlock.length > 0) {
+                const roomLines = lead.roomBlock.map(row => {
+                    const totalRooms = (row.quantities || []).reduce((sum, q) => sum + (parseInt(q) || 0), 0);
+                    const rate = row.rate ? `$${parseFloat(row.rate).toFixed(2)}` : 'TBD';
+                    return `• ${row.type || 'Room'}: ${totalRooms} room nights at ${rate}/night`;
+                });
+                roomSummary = roomLines.join('\n');
+            } else {
+                roomSummary = '• [Room details to be added]';
+            }
+            
+            // Calculate event info
+            let eventSummary = '';
+            if (lead.events && lead.events.length > 0) {
+                const eventLines = lead.events.map(evt => {
+                    const evtDate = evt.date ? new Date(evt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+                    const timeRange = evt.startTime && evt.endTime ? ` (${evt.startTime} - ${evt.endTime})` : '';
+                    const room = evt.room ? ` in ${evt.room}` : '';
+                    const fbMin = evt.fbMin ? ` — F&B Min: $${parseFloat(evt.fbMin).toLocaleString()}` : '';
+                    const rental = evt.rental ? ` — Rental: $${parseFloat(evt.rental).toLocaleString()}` : '';
+                    return `• ${evtDate}: ${evt.name || 'Event'}${room}${timeRange}${fbMin}${rental}`;
+                });
+                eventSummary = eventLines.join('\n');
+            }
+            
+            // Build quote email
+            let quote = `Hi ${firstName},
+
+Thank you for your interest in The Compton for ${groupName}! I'm excited to share our proposal for your upcoming event.
+
+**Event Dates:** ${arrival} – ${departure}
+
+`;
+            
+            if (roomSummary) {
+                quote += `**Guest Room Block:**
+${roomSummary}
+
+`;
+            }
+            
+            if (eventSummary) {
+                quote += `**Event Space:**
+${eventSummary}
+
+`;
+            }
+            
+            // Add concessions if any
+            if (lead.concessions) {
+                quote += `**Included Concessions:**
+${lead.concessions}
+
+`;
+            }
+            
+            quote += `Please review the details above and let me know if you have any questions or would like to discuss further. I'm happy to schedule a call or site visit at your convenience.
+
+Looking forward to hearing from you!
+
+Warmly,
+Kelsey McIntyre
+Sales Manager | The Compton
+kelsey.mcintyre@thecompton.com`;
+            
+            document.getElementById('lead-quoteEmail').value = quote;
+            
+            // Save to lead
+            lead.quoteEmail = quote;
+            saveToCloud();
+        }
+        
+        function copyQuoteEmail() {
+            const textarea = document.getElementById('lead-quoteEmail');
+            textarea.select();
+            document.execCommand('copy');
+            
+            // Visual feedback
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => btn.textContent = originalText, 1500);
         }
         
         // Email Templates

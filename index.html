@@ -6512,10 +6512,10 @@ Sales Manager`;
             const select = document.getElementById('beo-lead-select');
             if (!select) return;
             
-            // Get leads with events (type = 'events' or 'both') that are Definite or Contract Out
+            // Get leads with events (type = 'events' or 'both') that are Tentative, Contract Out, or Definite
             const eventLeads = appData.leads.filter(l => 
                 (l.type === 'events' || l.type === 'both') && 
-                (l.status === 'definite' || l.status === 'contract-out')
+                (l.status === 'tentative' || l.status === 'contract-out' || l.status === 'definite')
             );
             
             select.innerHTML = '<option value="">Select a lead to create BEO...</option>';

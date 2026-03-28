@@ -2511,7 +2511,17 @@
 
         // Initial cloud sync on load
         async function initialCloudSync() {
-            const cloudData = await loadFromCloud();
+            // Add timeout to prevent hangs
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Cloud sync timeout')), 10000)
+            );
+            let cloudData;
+            try {
+                cloudData = await Promise.race([loadFromCloud(), timeoutPromise]);
+            } catch (e) {
+                console.warn('Cloud sync issue:', e.message);
+                return; // Continue without cloud data
+            }
             if (cloudData) {
                 const localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
                 // If cloud has data and local is empty, use cloud
@@ -2595,19 +2605,24 @@
 
         // ============ INIT ============
         function initApp() {
-            document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-            updateSavedViewsDropdown();
-            updateTableColumns();
-            loadFilterState();
-            renderLeads();
-            updateDashboard();
-            renderContracts();
-            setupListeners();
-            renderStickyNotes();
-            requestGoalsData();
-            initReporting();
-            // Cloud sync
-            initialCloudSync();
+            try {
+                document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                updateSavedViewsDropdown();
+                updateTableColumns();
+                loadFilterState();
+                renderLeads();
+                updateDashboard();
+                renderContracts();
+                setupListeners();
+                renderStickyNotes();
+                requestGoalsData();
+                initReporting();
+                // Cloud sync (async, won't block)
+                initialCloudSync().catch(e => console.warn('Cloud sync error:', e));
+            } catch (e) {
+                console.error('Init error:', e);
+                // Still allow interaction even if init partially fails
+            }
         }
 
         function setupListeners() {

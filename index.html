@@ -858,12 +858,12 @@
                                 </select>
                             </div>
                             <div class="card-body" style="padding: 1rem;">
+                                <div id="beoMenuSelected" style="position: sticky; top: 0; z-index: 10; background: var(--bg-card); margin-bottom: 1rem; border-bottom: 1px solid rgba(0,217,255,0.2); padding-bottom: 0.75rem; display: none;">
+                                    <div style="font-size: 0.75rem; color: #00d9ff; margin-bottom: 0.5rem; font-weight: 600;">🛒 Selected Items</div>
+                                    <div id="beoMenuSelectedList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                                </div>
                                 <div id="beoMenuContent">
                                     <div style="color: #666; text-align: center; padding: 2rem;">Select a meal type above to build your menu</div>
-                                </div>
-                                <div id="beoMenuSelected" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; display: none;">
-                                    <div style="font-size: 0.8rem; color: #888; margin-bottom: 0.5rem;">Selected Items</div>
-                                    <div id="beoMenuSelectedList"></div>
                                 </div>
                             </div>
                         </div>
@@ -6863,6 +6863,33 @@ Sales Manager`;
             } else {
                 beoSelectedMenuItems = beoSelectedMenuItems.filter(m => m.id !== itemId);
             }
+            // Update shopping cart display
+            updateBeoSelectedDisplay();
+        }
+        
+        function updateBeoSelectedDisplay() {
+            const container = document.getElementById('beoMenuSelected');
+            const list = document.getElementById('beoMenuSelectedList');
+            if (beoSelectedMenuItems.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+            list.innerHTML = beoSelectedMenuItems.map(item => 
+                `<span style="background: rgba(0,217,255,0.15); color: #00d9ff; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                    ${item.name}
+                    <span onclick="removeBeoItem('${item.id}')" style="cursor: pointer; opacity: 0.7; margin-left: 0.25rem;">✕</span>
+                </span>`
+            ).join('');
+        }
+        
+        function removeBeoItem(itemId) {
+            const checkbox = document.getElementById(`item-${itemId}`);
+            if (checkbox) {
+                checkbox.checked = false;
+                const item = beoSelectedMenuItems.find(m => m.id === itemId);
+                toggleBeoMenuItem(itemId, false, item?.name || '');
+            }
         }
         
         function resetAvCheckboxes() {
@@ -6886,6 +6913,9 @@ Sales Manager`;
             });
             // Clear tracked menu items
             beoSelectedMenuItems = [];
+            // Hide shopping cart
+            document.getElementById('beoMenuSelected').style.display = 'none';
+            document.getElementById('beoMenuSelectedList').innerHTML = '';
             // Clear AV
             resetAvCheckboxes();
             // Clear notes

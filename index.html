@@ -1619,6 +1619,7 @@
         // ============ CONFIG ============
         const CORRECT_PASSWORD = '4273';
         const STORAGE_KEY = 'kelphi_data';
+        let wrapupViewMode = 'active'; // Declared early to avoid temporal dead zone
         
         // ============ SUPABASE ============
         const SUPABASE_URL = 'https://jwxdolqobyspalaymkyq.supabase.co';
@@ -4900,7 +4901,7 @@ Kelsey`;
         });
 
         // ============ POST BOOKING WRAP UP ============
-        let wrapupViewMode = 'active';
+        // wrapupViewMode moved to top of script to avoid temporal dead zone
         
         function setWrapupView(mode) {
             wrapupViewMode = mode;

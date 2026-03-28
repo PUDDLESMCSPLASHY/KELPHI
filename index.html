@@ -2584,24 +2584,34 @@
         }
 
         // ============ AUTH ============
-        if (sessionStorage.getItem('kelphi_unlocked') === 'true') {
-            lockScreen.classList.add('hidden');
-            app.classList.add('visible');
-            initApp();
-        }
-        passwordInput.addEventListener('input', function() {
-            if (this.value.length === 4) {
-                if (this.value === CORRECT_PASSWORD) {
-                    sessionStorage.setItem('kelphi_unlocked', 'true');
-                    lockScreen.classList.add('hidden');
-                    app.classList.add('visible');
-                    initApp();
-                } else {
-                    this.classList.add('error');
-                    setTimeout(() => { this.classList.remove('error'); this.value = ''; }, 500);
-                }
+        // Wrap initialization in DOMContentLoaded to ensure all elements exist
+        function startApp() {
+            if (sessionStorage.getItem('kelphi_unlocked') === 'true') {
+                lockScreen.classList.add('hidden');
+                app.classList.add('visible');
+                initApp();
             }
-        });
+            passwordInput.addEventListener('input', function() {
+                if (this.value.length === 4) {
+                    if (this.value === CORRECT_PASSWORD) {
+                        sessionStorage.setItem('kelphi_unlocked', 'true');
+                        lockScreen.classList.add('hidden');
+                        app.classList.add('visible');
+                        initApp();
+                    } else {
+                        this.classList.add('error');
+                        setTimeout(() => { this.classList.remove('error'); this.value = ''; }, 500);
+                    }
+                }
+            });
+        }
+        
+        // Ensure DOM is ready before initializing
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startApp);
+        } else {
+            startApp();
+        }
 
         // ============ INIT ============
         function initApp() {

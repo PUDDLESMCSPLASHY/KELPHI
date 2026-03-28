@@ -928,7 +928,8 @@
                         </div>
                         
                         <!-- Bottom Generate Button -->
-                        <div style="display: flex; justify-content: flex-end; padding: 1rem 0;">
+                        <div style="display: flex; justify-content: flex-end; gap: 1rem; padding: 1rem 0;">
+                            <button class="btn" onclick="clearBeoSelections()" style="padding: 0.75rem 1.5rem; font-size: 1rem; color: #888;">🧹 Clear Menu & AV</button>
                             <button class="btn btn-primary" onclick="generateBeoPdf()" style="padding: 0.75rem 2rem; font-size: 1rem;">📄 Generate BEO PDF</button>
                         </div>
                     </div>
@@ -6871,6 +6872,24 @@ Sales Manager`;
             });
             document.getElementById('av-tech-hours').value = 0;
             updateAvTotal();
+        }
+        
+        function clearBeoSelections() {
+            // Clear menu item checkboxes
+            document.querySelectorAll('#beoMenuContent input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            // Clear quantity fields
+            document.querySelectorAll('#beoMenuContent input[type="number"]').forEach(input => {
+                input.style.display = 'none';
+                input.value = '';
+            });
+            // Clear tracked menu items
+            beoSelectedMenuItems = [];
+            // Clear AV
+            resetAvCheckboxes();
+            // Clear notes
+            document.getElementById('beo-notes').value = '';
         }
         
         function updateAvTotal() {

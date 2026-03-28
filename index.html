@@ -668,11 +668,11 @@
                                 <option value="active">Active Leads</option>
                                 <option value="all">All Leads</option>
                                 <option value="working">Working</option>
-                                <option value="dying">Dying</option>
                                 <option value="tentative">Tentative</option>
                                 <option value="contract-out">Contract Out</option>
                                 <option value="definite">Definite</option>
                                 <option value="completed">Completed</option>
+                                <option value="dying">Dying</option>
                                 <option value="lost">Lost / Turndown</option>
                                 <option value="archived">Archived</option>
                             </select>
@@ -1285,11 +1285,11 @@
                                     <label class="form-label">Status</label>
                                     <select class="form-select" id="lead-status">
                                         <option value="working">Working</option>
-                                        <option value="dying">Dying</option>
                                         <option value="tentative">Tentative</option>
                                         <option value="contract-out">Contract Out</option>
                                         <option value="definite">Definite</option>
                                         <option value="completed">Completed</option>
+                                        <option value="dying">Dying</option>
                                         <option value="lost">Lost / Turndown</option>
                                     </select>
                                 </div>
@@ -1724,7 +1724,8 @@
             { key: 'billingType', label: 'Billing Type', default: false },
             { key: 'createdAt', label: 'Created', default: true },
             { key: 'updatedAt', label: 'Last Updated', default: false },
-            { key: 'cutoff', label: 'Cut-off Date', default: false }
+            { key: 'cutoff', label: 'Cut-off Date', default: false },
+            { key: 'definiteDate', label: 'Date Definite', default: false }
         ];
         let currentViewColumns = ALL_COLUMNS.filter(c => c.default).map(c => c.key);
         let leadsSortColumn = null;
@@ -5181,6 +5182,8 @@ Kelsey`;
                 case 'departure':
                 case 'cutoff':
                     return lead[key] ? new Date(lead[key] + 'T12:00:00').toLocaleDateString() : '';
+                case 'definiteDate':
+                    return lead[key] ? new Date(lead[key]).toLocaleDateString() : '';
                 case 'createdAt':
                     return lead[key] ? new Date(lead[key]).toLocaleDateString() : '';
                 case 'updatedAt':

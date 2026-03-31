@@ -393,7 +393,8 @@
         .section-header { font-size: 0.8rem; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05rem; margin-bottom: 1rem; }
 
         /* Leads Tab Styles */
-        .leads-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .leads-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; position: sticky; top: 0; background: #0d0d14; z-index: 100; padding: 1rem 0; }
+        body.light-mode .leads-toolbar { background: #fff; }
         .leads-filters { display: flex; gap: 1rem; align-items: center; }
         .filter-select, .search-input { background: #16161f; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.5rem 1rem; color: #e0e0e0; font-size: 0.85rem; }
         .search-input { width: 250px; }
@@ -402,7 +403,7 @@
 
         /* Leads Table */
         .leads-table { width: 100%; background: #16161f; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); border-collapse: collapse; overflow: hidden; }
-        .leads-table th { text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.05rem; border-bottom: 1px solid rgba(255,255,255,0.06); background: #12121c; }
+        .leads-table th { text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.05rem; border-bottom: 1px solid rgba(255,255,255,0.06); background: #12121c; position: sticky; top: 70px; z-index: 99; }
         .leads-table th.sortable:hover { color: #00d9ff; }
         .leads-table th.sortable::after { content: ' ↕'; opacity: 0.4; }
         .leads-table th.sortable.asc::after { content: ' ↑'; opacity: 1; }

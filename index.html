@@ -181,6 +181,7 @@
         .item-meta { font-size: 0.75rem; color: #666; margin-top: 0.25rem; }
         .item-value { font-size: 0.9rem; color: #00d9ff; font-weight: 500; }
         .item-badge { font-size: 0.7rem; padding: 0.25rem 0.5rem; border-radius: 4px; background: rgba(0,217,255,0.1); color: #00d9ff; }
+        .item-badge.new { background: rgba(0,191,255,0.15); color: #00bfff; }
         .item-badge.working { background: rgba(136,136,136,0.1); color: #888; }
         .item-badge.tentative { background: rgba(255,170,0,0.1); color: #ffaa00; }
         .item-badge.contract-out { background: rgba(138,43,226,0.1); color: #b366ff; }
@@ -191,6 +192,7 @@
         
         /* Status badges in leads table */
         .status-badge { font-size: 0.7rem; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .status-badge.status-new { background: rgba(0,191,255,0.15); color: #00bfff; }
         .status-badge.status-working { background: rgba(136,136,136,0.1); color: #888; }
         .status-badge.status-dying { background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); }
         .status-badge.status-tentative { background: rgba(255,170,0,0.1); color: #ffaa00; }
@@ -244,6 +246,7 @@
         .pipeline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; }
         .pipeline-item { text-align: center; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 6px; }
         .pipeline-status { font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .pipeline-status.new { color: #00bfff; }
         .pipeline-status.working { color: #888; }
         .pipeline-status.dying { color: #fff; }
         .pipeline-status.tentative { color: #ffaa00; }
@@ -257,6 +260,7 @@
         .revenue-bar-label { width: 100px; font-size: 0.8rem; color: #888; }
         .revenue-bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
         .revenue-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .revenue-bar-fill.new { background: #00bfff; }
         .revenue-bar-fill.working { background: #888; }
         .revenue-bar-fill.tentative { background: #ffaa00; }
         .revenue-bar-fill.contract-out { background: #b366ff; }
@@ -596,6 +600,7 @@
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
                             <select class="filter-select" id="availStatusFilter" onchange="renderAvailability()" style="width: auto;">
                                 <option value="all">All Statuses</option>
+                                <option value="new">New</option>
                                 <option value="working">Working</option>
                                 <option value="dying">Dying</option>
                                 <option value="tentative">Tentative</option>
@@ -667,6 +672,7 @@
                             <select class="filter-select" id="statusFilter">
                                 <option value="active">Active Leads</option>
                                 <option value="all">All Leads</option>
+                                <option value="new">New</option>
                                 <option value="working">Working</option>
                                 <option value="tentative">Tentative</option>
                                 <option value="contract-out">Contract Out</option>
@@ -1011,6 +1017,10 @@
                         <div class="reporting-section">
                             <div class="section-header">Pipeline Breakdown</div>
                             <div class="pipeline-grid" id="pipelineBreakdown">
+                                <div class="pipeline-item" onclick="showPipelineDetail('new')">
+                                    <div class="pipeline-status new">New</div>
+                                    <div class="pipeline-count" id="pipeline-new">0</div>
+                                </div>
                                 <div class="pipeline-item" onclick="showPipelineDetail('working')">
                                     <div class="pipeline-status working">Working</div>
                                     <div class="pipeline-count" id="pipeline-working">0</div>
@@ -1285,6 +1295,7 @@
                                 <div class="form-group">
                                     <label class="form-label">Status</label>
                                     <select class="form-select" id="lead-status">
+                                        <option value="new">New</option>
                                         <option value="working">Working</option>
                                         <option value="tentative">Tentative</option>
                                         <option value="contract-out">Contract Out</option>
@@ -2332,7 +2343,7 @@
             
             // Pipeline breakdown
             const statusCounts = {};
-            ['working', 'dying', 'tentative', 'contract-out', 'definite', 'lost'].forEach(s => {
+            ['new', 'working', 'dying', 'tentative', 'contract-out', 'definite', 'lost'].forEach(s => {
                 statusCounts[s] = leadsInPeriod.filter(l => l.status === s).length;
                 const el = document.getElementById(`pipeline-${s}`);
                 if (el) el.textContent = statusCounts[s];
@@ -2345,16 +2356,16 @@
             const revenueByStatus = {};
             let maxRevenue = 0;
             let totalPipelineRevenue = 0;
-            ['working', 'tentative', 'contract-out', 'definite'].forEach(s => {
+            ['new', 'working', 'tentative', 'contract-out', 'definite'].forEach(s => {
                 revenueByStatus[s] = leadsInPeriod.filter(l => l.status === s).reduce((sum, l) => sum + (parseFloat(l.revenue) || 0), 0);
                 if (revenueByStatus[s] > maxRevenue) maxRevenue = revenueByStatus[s];
                 totalPipelineRevenue += revenueByStatus[s];
             });
             
             const revenueBarsEl = document.getElementById('revenueBars');
-            revenueBarsEl.innerHTML = ['working', 'tentative', 'contract-out', 'definite'].map(s => {
+            revenueBarsEl.innerHTML = ['new', 'working', 'tentative', 'contract-out', 'definite'].map(s => {
                 const pct = maxRevenue > 0 ? (revenueByStatus[s] / maxRevenue * 100) : 0;
-                const label = { working: 'Working', tentative: 'Tentative', 'contract-out': 'Contract Out', definite: 'Definite' }[s];
+                const label = { new: 'New', working: 'Working', tentative: 'Tentative', 'contract-out': 'Contract Out', definite: 'Definite' }[s];
                 return `
                     <div class="revenue-bar-item">
                         <div class="revenue-bar-label">${label}</div>
@@ -3488,7 +3499,7 @@
                 arrival: document.getElementById('lead-arrival').value,
                 departure: document.getElementById('lead-departure').value,
                 type: type,
-                status: document.getElementById('lead-status').value,
+                status: document.getElementById('lead-status').value === 'new' ? 'working' : document.getElementById('lead-status').value,
                 segment: document.getElementById('lead-segment').value,
                 bookingType: document.getElementById('lead-bookingType').value,
                 firstTimeBooking: document.getElementById('lead-firstTimeBooking').checked,

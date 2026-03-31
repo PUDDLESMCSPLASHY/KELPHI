@@ -160,14 +160,6 @@
         .main-content { flex: 1; overflow-y: auto; padding: 2rem; transition: margin-right 0.3s; }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
-        #tab-leads { display: flex; flex-direction: column; max-height: calc(100vh - 120px); }
-        #tab-leads.active { display: flex; }
-        #tab-leads .leads-toolbar { flex-shrink: 0; }
-        #tab-leads .leads-table-container { flex: 1; overflow-y: auto; border-radius: 8px; }
-        #tab-leads .leads-table { border-radius: 0; }
-        #tab-leads .leads-table thead { position: sticky; top: 0; z-index: 10; }
-        #tab-leads .leads-table th { background: #12121c; }
-        body.light-mode #tab-leads .leads-table th { background: #f8f9fa; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Dashboard Styles */
@@ -733,12 +725,10 @@
                             <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
                         </div>
                     </div>
-                    <div class="leads-table-container">
-                        <table class="leads-table">
-                            <thead><tr><th>Booking Name</th><th>Account</th><th>Status</th><th>Arrival</th><th>Type</th><th>Revenue</th></tr></thead>
-                            <tbody id="leadsTableBody"></tbody>
-                        </table>
-                    </div>
+                    <table class="leads-table">
+                        <thead><tr><th>Booking Name</th><th>Account</th><th>Status</th><th>Arrival</th><th>Type</th><th>Revenue</th></tr></thead>
+                        <tbody id="leadsTableBody"></tbody>
+                    </table>
                 </div>
 
                 <!-- Other tabs -->

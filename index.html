@@ -3291,15 +3291,28 @@
                 { key: 'revenue', label: 'Revenue' },
                 { key: 'cutoff', label: 'Cutoff' },
                 { key: 'notes', label: 'Notes' },
+                { key: 'roomBlock', label: 'Room Block', isArray: true },
+                { key: 'events', label: 'Events', isArray: true },
             ];
             
             const tbody = document.getElementById('mergeTableBody');
             tbody.innerHTML = fields.map(f => {
                 const valA = mergeLeadA[f.key] || '';
                 const valB = mergeLeadB[f.key] || '';
-                const displayA = f.key === 'revenue' ? formatCurrency(valA) : valA;
-                const displayB = f.key === 'revenue' ? formatCurrency(valB) : valB;
-                const defaultChoice = valA ? 'A' : (valB ? 'B' : 'A');
+                let displayA, displayB;
+                if (f.isArray) {
+                    const arrA = mergeLeadA[f.key] || [];
+                    const arrB = mergeLeadB[f.key] || [];
+                    displayA = arrA.length > 0 ? `${arrA.length} item(s)` : '(none)';
+                    displayB = arrB.length > 0 ? `${arrB.length} item(s)` : '(none)';
+                } else if (f.key === 'revenue') {
+                    displayA = formatCurrency(valA);
+                    displayB = formatCurrency(valB);
+                } else {
+                    displayA = valA;
+                    displayB = valB;
+                }
+                const defaultChoice = (f.isArray ? (mergeLeadA[f.key]?.length > 0) : valA) ? 'A' : ((f.isArray ? (mergeLeadB[f.key]?.length > 0) : valB) ? 'B' : 'A');
                 mergeFieldChoices[f.key] = defaultChoice;
                 
                 return `
@@ -3348,10 +3361,8 @@
                 mergedLead[field] = mergeFieldChoices[field] === 'A' ? mergeLeadA[field] : mergeLeadB[field];
             });
             
-            // Merge arrays (roomBlock, events, roomPickup) - combine both
-            mergedLead.roomBlock = [...(mergeLeadA.roomBlock || []), ...(mergeLeadB.roomBlock || [])];
-            mergedLead.events = [...(mergeLeadA.events || []), ...(mergeLeadB.events || [])];
-            mergedLead.roomPickup = [...(mergeLeadA.roomPickup || []), ...(mergeLeadB.roomPickup || [])];
+            // Use roomPickup from whichever lead has the roomBlock
+            mergedLead.roomPickup = mergeFieldChoices['roomBlock'] === 'A' ? (mergeLeadA.roomPickup || []) : (mergeLeadB.roomPickup || []);
             
             // Remove duplicates and add merged
             appData.leads = appData.leads.filter(l => l.id !== mergeLeadA.id && l.id !== mergeLeadB.id);

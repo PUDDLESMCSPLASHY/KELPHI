@@ -202,6 +202,29 @@
         .status-badge.status-lost { background: rgba(255,71,87,0.1); color: #ff4757; }
         .status-badge.status-turndown { background: rgba(255,71,87,0.1); color: #ff4757; }
         
+        /* Merge Mode */
+        .merge-mode .leads-table tr { cursor: pointer; }
+        .merge-mode .leads-table tr:hover { background: rgba(0,191,255,0.1); }
+        .merge-mode .leads-table tr.merge-selected { background: rgba(0,191,255,0.2); border-left: 3px solid #00bfff; }
+        #mergeBtn.active { background: #00bfff; color: #000; }
+        .merge-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .merge-content { background: #1a1a2e; border-radius: 12px; padding: 2rem; max-width: 900px; width: 95%; max-height: 85vh; overflow-y: auto; }
+        .merge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .merge-title { font-size: 1.25rem; font-weight: 600; color: #e0e0e0; }
+        .merge-table { width: 100%; border-collapse: collapse; }
+        .merge-table th, .merge-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .merge-table th { color: #888; font-weight: 500; font-size: 0.85rem; }
+        .merge-table th:first-child { width: 120px; }
+        .merge-table td { color: #e0e0e0; }
+        .merge-radio { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.25rem; border-radius: 4px; }
+        .merge-radio:hover { background: rgba(255,255,255,0.05); }
+        .merge-radio input { cursor: pointer; }
+        .merge-radio.selected { background: rgba(0,191,255,0.1); }
+        .merge-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+        body.light-mode .merge-content { background: #fff; }
+        body.light-mode .merge-title { color: #2d3436; }
+        body.light-mode .merge-table td { color: #2d3436; }
+        
         /* Reporting Tab */
         .reporting-container { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
         .reporting-toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
@@ -698,6 +721,7 @@
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
                             <button class="btn btn-secondary" onclick="importFromDelphi()" title="Import new leads from Delphi">⬇️ Import from Delphi</button>
+                            <button class="btn btn-secondary" id="mergeBtn" onclick="toggleMergeMode()" title="Select two leads to merge">🔀 Merge</button>
                             <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
                         </div>
                     </div>
@@ -1244,6 +1268,31 @@
                     <div class="modal-footer">
                         <button class="btn btn-ghost" onclick="closeViewModal()">Cancel</button>
                         <button class="btn btn-primary" onclick="applyView()">Apply</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Merge Modal -->
+            <div id="mergeModal" class="merge-modal" style="display: none;" onclick="if(event.target.id==='mergeModal')closeMergeModal()">
+                <div class="merge-content">
+                    <div class="merge-header">
+                        <div class="merge-title">🔀 Merge Leads</div>
+                        <button class="btn btn-ghost" onclick="closeMergeModal()">&times;</button>
+                    </div>
+                    <p style="color: #888; margin-bottom: 1rem;">Select which value to keep for each field. The merged lead will use your selections.</p>
+                    <table class="merge-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Lead A</th>
+                                <th>Lead B</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mergeTableBody"></tbody>
+                    </table>
+                    <div class="merge-actions">
+                        <button class="btn btn-ghost" onclick="closeMergeModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="executeMerge()">Merge Leads</button>
                     </div>
                 </div>
             </div>
@@ -3127,7 +3176,13 @@
             `).join('');
 
             document.querySelectorAll('#leadsTableBody tr[data-id]').forEach(row => {
-                row.addEventListener('click', () => openLead(row.dataset.id));
+                row.addEventListener('click', () => {
+                    if (mergeMode) {
+                        selectForMerge(row.dataset.id, row);
+                    } else {
+                        openLead(row.dataset.id);
+                    }
+                });
             });
         }
 
@@ -3169,6 +3224,143 @@
                 if (score >= 0.6) return { name: lead.bookingName, score };
             }
             return null;
+        }
+        
+        // ============ MERGE FUNCTIONALITY ============
+        let mergeMode = false;
+        let mergeSelections = [];
+        let mergeLeadA = null;
+        let mergeLeadB = null;
+        let mergeFieldChoices = {};
+        
+        function toggleMergeMode() {
+            mergeMode = !mergeMode;
+            mergeSelections = [];
+            const btn = document.getElementById('mergeBtn');
+            const container = document.querySelector('.tab-content.active');
+            
+            if (mergeMode) {
+                btn.classList.add('active');
+                btn.textContent = '🔀 Cancel Merge';
+                if (container) container.classList.add('merge-mode');
+                showToast('Select two leads to merge', 'info');
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🔀 Merge';
+                if (container) container.classList.remove('merge-mode');
+                document.querySelectorAll('.merge-selected').forEach(el => el.classList.remove('merge-selected'));
+            }
+        }
+        
+        function selectForMerge(id, rowEl) {
+            if (!mergeMode) return false;
+            
+            const idx = mergeSelections.indexOf(id);
+            if (idx > -1) {
+                mergeSelections.splice(idx, 1);
+                rowEl.classList.remove('merge-selected');
+            } else if (mergeSelections.length < 2) {
+                mergeSelections.push(id);
+                rowEl.classList.add('merge-selected');
+            }
+            
+            if (mergeSelections.length === 2) {
+                openMergeModal(mergeSelections[0], mergeSelections[1]);
+            }
+            return true;
+        }
+        
+        function openMergeModal(idA, idB) {
+            mergeLeadA = appData.leads.find(l => l.id === idA);
+            mergeLeadB = appData.leads.find(l => l.id === idB);
+            if (!mergeLeadA || !mergeLeadB) return;
+            
+            mergeFieldChoices = {};
+            const fields = [
+                { key: 'bookingName', label: 'Booking Name' },
+                { key: 'account', label: 'Account' },
+                { key: 'contactFirstName', label: 'Contact First Name' },
+                { key: 'contactLastName', label: 'Contact Last Name' },
+                { key: 'contactEmail', label: 'Contact Email' },
+                { key: 'contactPhone', label: 'Contact Phone' },
+                { key: 'arrival', label: 'Arrival' },
+                { key: 'departure', label: 'Departure' },
+                { key: 'type', label: 'Type' },
+                { key: 'status', label: 'Status' },
+                { key: 'segment', label: 'Segment' },
+                { key: 'revenue', label: 'Revenue' },
+                { key: 'cutoff', label: 'Cutoff' },
+                { key: 'notes', label: 'Notes' },
+            ];
+            
+            const tbody = document.getElementById('mergeTableBody');
+            tbody.innerHTML = fields.map(f => {
+                const valA = mergeLeadA[f.key] || '';
+                const valB = mergeLeadB[f.key] || '';
+                const displayA = f.key === 'revenue' ? formatCurrency(valA) : valA;
+                const displayB = f.key === 'revenue' ? formatCurrency(valB) : valB;
+                const defaultChoice = valA ? 'A' : (valB ? 'B' : 'A');
+                mergeFieldChoices[f.key] = defaultChoice;
+                
+                return `
+                    <tr>
+                        <td style="color: #888; font-size: 0.85rem;">${f.label}</td>
+                        <td>
+                            <label class="merge-radio ${defaultChoice === 'A' ? 'selected' : ''}" onclick="setMergeChoice('${f.key}', 'A', this)">
+                                <input type="radio" name="merge_${f.key}" value="A" ${defaultChoice === 'A' ? 'checked' : ''}>
+                                <span>${displayA || '(empty)'}</span>
+                            </label>
+                        </td>
+                        <td>
+                            <label class="merge-radio ${defaultChoice === 'B' ? 'selected' : ''}" onclick="setMergeChoice('${f.key}', 'B', this)">
+                                <input type="radio" name="merge_${f.key}" value="B" ${defaultChoice === 'B' ? 'checked' : ''}>
+                                <span>${displayB || '(empty)'}</span>
+                            </label>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('mergeModal').style.display = 'flex';
+        }
+        
+        function setMergeChoice(field, choice, el) {
+            mergeFieldChoices[field] = choice;
+            const row = el.closest('tr');
+            row.querySelectorAll('.merge-radio').forEach(r => r.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+        
+        function closeMergeModal() {
+            document.getElementById('mergeModal').style.display = 'none';
+            toggleMergeMode();
+        }
+        
+        function executeMerge() {
+            if (!mergeLeadA || !mergeLeadB) return;
+            
+            // Build merged lead
+            const mergedLead = { ...mergeLeadA };
+            mergedLead.id = generateId();
+            mergedLead.updatedAt = new Date().toISOString();
+            
+            Object.keys(mergeFieldChoices).forEach(field => {
+                mergedLead[field] = mergeFieldChoices[field] === 'A' ? mergeLeadA[field] : mergeLeadB[field];
+            });
+            
+            // Merge arrays (roomBlock, events, roomPickup) - combine both
+            mergedLead.roomBlock = [...(mergeLeadA.roomBlock || []), ...(mergeLeadB.roomBlock || [])];
+            mergedLead.events = [...(mergeLeadA.events || []), ...(mergeLeadB.events || [])];
+            mergedLead.roomPickup = [...(mergeLeadA.roomPickup || []), ...(mergeLeadB.roomPickup || [])];
+            
+            // Remove duplicates and add merged
+            appData.leads = appData.leads.filter(l => l.id !== mergeLeadA.id && l.id !== mergeLeadB.id);
+            appData.leads.push(mergedLead);
+            
+            saveData();
+            closeMergeModal();
+            renderLeads();
+            showToast('Leads merged successfully!', 'success');
         }
         
         async function importFromDelphi() {

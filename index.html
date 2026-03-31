@@ -3497,7 +3497,7 @@
                 pmsAccountNumber: document.getElementById('lead-pmsAccountNumber').value,
                 bookedDate: document.getElementById('lead-bookedDate').value,
                 quoteEmail: document.getElementById('lead-quoteEmail').value,
-                roomBlock: currentRoomBlock,
+                roomBlock: (currentRoomBlock && currentRoomBlock.length > 0) ? currentRoomBlock : (existingLead ? existingLead.roomBlock : []),
                 roomPickup: existingLead ? existingLead.roomPickup : undefined,
                 events: currentEvents,
                 signerName: document.getElementById('lead-signerName').value,

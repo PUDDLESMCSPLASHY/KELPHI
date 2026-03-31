@@ -3399,6 +3399,17 @@
             // Use roomPickup from whichever lead has the roomBlock
             mergedLead.roomPickup = mergeFieldChoices['roomBlock'] === 'A' ? (mergeLeadA.roomPickup || []) : (mergeLeadB.roomPickup || []);
             
+            // Preserve delphiId(s) so Delphi sync doesn't re-import
+            const delphiIds = [];
+            if (mergeLeadA.delphiId) delphiIds.push(mergeLeadA.delphiId);
+            if (mergeLeadB.delphiId) delphiIds.push(mergeLeadB.delphiId);
+            if (mergeLeadA.delphiIds) delphiIds.push(...mergeLeadA.delphiIds);
+            if (mergeLeadB.delphiIds) delphiIds.push(...mergeLeadB.delphiIds);
+            if (delphiIds.length > 0) {
+                mergedLead.delphiId = delphiIds[0]; // Keep first for backward compat
+                mergedLead.delphiIds = [...new Set(delphiIds)]; // Store all unique IDs
+            }
+            
             // Remove duplicates and add merged
             appData.leads = appData.leads.filter(l => l.id !== mergeLeadA.id && l.id !== mergeLeadB.id);
             appData.leads.push(mergedLead);

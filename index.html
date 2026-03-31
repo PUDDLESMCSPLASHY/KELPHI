@@ -1339,8 +1339,8 @@
                             </div>
                             <div class="form-group"><label class="form-label">Contact Title</label><input type="text" class="form-input" id="lead-contactTitle" placeholder="e.g. Executive Assistant, Event Planner"></div>
                             <div class="form-row">
-                                <div class="form-group"><label class="form-label">Arrival Date</label><input type="date" class="form-input" id="lead-arrival"></div>
-                                <div class="form-group"><label class="form-label">Departure Date</label><input type="date" class="form-input" id="lead-departure"></div>
+                                <div class="form-group"><label class="form-label">Arrival Date</label><input type="date" class="form-input" id="lead-arrival" onchange="updateRateRecommendation()"></div>
+                                <div class="form-group"><label class="form-label">Departure Date</label><input type="date" class="form-input" id="lead-departure" onchange="updateRateRecommendation()"></div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -1586,6 +1586,36 @@
                         
                         <!-- Templates Section -->
                         <div class="panel-section" id="section-templates">
+                            <!-- Rate Recommendation -->
+                            <div id="rateRecommendation" style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, #1a2e1a 0%, #16213e 100%); border-radius: 12px; border: 1px solid #334155;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <div>
+                                        <div style="font-size: 14px; font-weight: 600; color: #10b981;">🏷️ Rate Recommendation</div>
+                                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Based on booking pattern & guidelines (BAR: $409)</div>
+                                    </div>
+                                    <button onclick="updateRateRecommendation()" class="btn" style="font-size: 12px; padding: 6px 12px; background: #334155; border: 1px solid #475569; color: #e2e8f0;">🔄 Refresh</button>
+                                </div>
+                                <div id="rateRecommendationContent" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div style="padding: 12px; background: rgba(16,185,129,0.1); border-radius: 8px; border: 1px solid rgba(16,185,129,0.3);">
+                                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">Pattern Type</div>
+                                        <div id="ratePatternType" style="font-size: 14px; font-weight: 600; color: #10b981;">—</div>
+                                    </div>
+                                    <div style="padding: 12px; background: rgba(16,185,129,0.1); border-radius: 8px; border: 1px solid rgba(16,185,129,0.3);">
+                                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">Recommended Rate</div>
+                                        <div id="rateRange" style="font-size: 14px; font-weight: 600; color: #10b981;">—</div>
+                                    </div>
+                                    <div style="padding: 12px; background: rgba(245,158,11,0.1); border-radius: 8px; border: 1px solid rgba(245,158,11,0.3);">
+                                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">F&B Minimum</div>
+                                        <div id="rateFBMin" style="font-size: 14px; font-weight: 600; color: #f59e0b;">—</div>
+                                    </div>
+                                    <div style="padding: 12px; background: rgba(99,102,241,0.1); border-radius: 8px; border: 1px solid rgba(99,102,241,0.3);">
+                                        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">Approval Needed</div>
+                                        <div id="rateApproval" style="font-size: 14px; font-weight: 600; color: #6366f1;">—</div>
+                                    </div>
+                                </div>
+                                <div id="rateNotes" style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 12px; color: #94a3b8; display: none;"></div>
+                            </div>
+
                             <!-- Quote Email Generator -->
                             <div style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; border: 1px solid #334155;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -3634,6 +3664,9 @@
             
             // Update checklist button state
             updateChecklistButton();
+            
+            // Update rate recommendation
+            updateRateRecommendation();
 
             leadPanel.classList.add('open');
             renderLeads();
@@ -3838,6 +3871,183 @@
                     btn.style.cursor = 'pointer';
                     btn.textContent = '📋 Add Checklist';
                 }
+            }
+        }
+        
+        // Rate Recommendation Calculator
+        const BAR_RATE = 409;
+        
+        function updateRateRecommendation() {
+            const arrival = document.getElementById('lead-arrival').value;
+            const departure = document.getElementById('lead-departure').value;
+            
+            if (!arrival || !departure) {
+                setRateDisplay('—', '—', '—', '—', '');
+                return;
+            }
+            
+            const arrDate = new Date(arrival + 'T12:00:00');
+            const depDate = new Date(departure + 'T12:00:00');
+            const nights = Math.round((depDate - arrDate) / (1000 * 60 * 60 * 24));
+            
+            if (nights < 1) {
+                setRateDisplay('Invalid dates', '—', '—', '—', '');
+                return;
+            }
+            
+            // Get days of week for the stay
+            const daysOfWeek = [];
+            for (let d = new Date(arrDate); d < depDate; d.setDate(d.getDate() + 1)) {
+                daysOfWeek.push(d.getDay()); // 0=Sun, 1=Mon, ... 6=Sat
+            }
+            
+            const pattern = determinePattern(nights, daysOfWeek);
+            setRateDisplay(pattern.type, pattern.rateRange, pattern.fbMin, pattern.approval, pattern.notes);
+        }
+        
+        function determinePattern(nights, daysOfWeek) {
+            // Pattern definitions based on booking guidelines
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const stayDays = daysOfWeek.map(d => dayNames[d]).join(', ');
+            
+            // 4+ nights - any pattern
+            if (nights >= 4) {
+                return {
+                    type: `${nights}-Night Stay`,
+                    rateRange: `$${Math.round(BAR_RATE * 0.80)} - $${BAR_RATE}`,
+                    fbMin: '$0 (Any)',
+                    approval: 'NONE',
+                    notes: `✅ Great pattern! 0-20% off BAR allowed. Days: ${stayDays}`
+                };
+            }
+            
+            // 3 nights - specific patterns
+            if (nights === 3) {
+                const goodPatterns = [
+                    [0, 1, 2], // Sun, Mon, Tue
+                    [1, 2, 3], // Mon, Tue, Wed
+                    [2, 3, 4], // Tue, Wed, Thu
+                    [4, 5, 6]  // Thu, Fri, Sat
+                ];
+                const isGood = goodPatterns.some(p => 
+                    p.every((day, i) => daysOfWeek[i] === day)
+                );
+                
+                if (isGood) {
+                    return {
+                        type: '3-Night (Good)',
+                        rateRange: `$${Math.round(BAR_RATE * 0.85)} - $${BAR_RATE}`,
+                        fbMin: '$0 (Any)',
+                        approval: 'NONE',
+                        notes: `✅ Good 3-night pattern. 0-15% off BAR allowed. Days: ${stayDays}`
+                    };
+                } else {
+                    return {
+                        type: '3-Night (Non-standard)',
+                        rateRange: `$${Math.round(BAR_RATE * 0.85)} - $${BAR_RATE}`,
+                        fbMin: 'Check with DOSM',
+                        approval: 'SOFT',
+                        notes: `⚠️ Non-standard 3-night pattern. May need approval. Days: ${stayDays}`
+                    };
+                }
+            }
+            
+            // 2 nights
+            if (nights === 2) {
+                const goodTwoDay = [
+                    [0, 1], // Sun, Mon
+                    [3, 4], // Wed, Thu
+                    [5, 6]  // Fri, Sat
+                ];
+                const poorTwoDay = [
+                    [2, 3], // Tue, Wed
+                    [4, 5]  // Thu, Fri
+                ];
+                
+                const isGood = goodTwoDay.some(p => 
+                    p.every((day, i) => daysOfWeek[i] === day)
+                );
+                const isPoor = poorTwoDay.some(p => 
+                    p.every((day, i) => daysOfWeek[i] === day)
+                );
+                
+                if (isGood) {
+                    return {
+                        type: '2-Night (Good)',
+                        rateRange: `$${Math.round(BAR_RATE * 0.85)} - $${BAR_RATE}`,
+                        fbMin: '$10,000+',
+                        approval: 'NONE',
+                        notes: `✅ Good 2-night pattern. 0-15% off BAR with $10K+ F&B. Days: ${stayDays}`
+                    };
+                } else if (isPoor) {
+                    return {
+                        type: '2-Night (Poor)',
+                        rateRange: `$${BAR_RATE} (no discount)`,
+                        fbMin: '$15,000+',
+                        approval: 'SOFT',
+                        notes: `⚠️ Poor 2-night pattern. BAR only, $15K+ F&B, check with DOSM. Days: ${stayDays}`
+                    };
+                } else {
+                    return {
+                        type: '2-Night (Other)',
+                        rateRange: `$${Math.round(BAR_RATE * 0.85)} - $${BAR_RATE}`,
+                        fbMin: '$10,000+',
+                        approval: 'SOFT',
+                        notes: `⚠️ Non-standard 2-night pattern. Check with DOSM. Days: ${stayDays}`
+                    };
+                }
+            }
+            
+            // 1 night
+            if (nights === 1) {
+                const day = daysOfWeek[0];
+                const goodOneDays = [0, 1, 4, 5]; // Sun, Mon, Thu, Fri
+                const poorOneDays = [2, 3, 6]; // Tue, Wed, Sat
+                
+                if (goodOneDays.includes(day)) {
+                    return {
+                        type: '1-Night (Good)',
+                        rateRange: `$${Math.round(BAR_RATE * 0.85)} - $${BAR_RATE}`,
+                        fbMin: '$10,000+',
+                        approval: 'NONE',
+                        notes: `✅ Good 1-night day. 0-15% off BAR with $10K+ F&B. Day: ${stayDays}`
+                    };
+                } else {
+                    return {
+                        type: '1-Night (Poor)',
+                        rateRange: `$${Math.round(BAR_RATE * 1.25)}+ (BAR +25%)`,
+                        fbMin: '$15,000+',
+                        approval: 'SOFT',
+                        notes: `⚠️ Poor 1-night day. Requires BAR +25% and $15K+ F&B. Day: ${stayDays}`
+                    };
+                }
+            }
+            
+            return { type: '—', rateRange: '—', fbMin: '—', approval: '—', notes: '' };
+        }
+        
+        function setRateDisplay(type, rate, fbMin, approval, notes) {
+            document.getElementById('ratePatternType').textContent = type;
+            document.getElementById('rateRange').textContent = rate;
+            document.getElementById('rateFBMin').textContent = fbMin;
+            document.getElementById('rateApproval').textContent = approval;
+            
+            const notesEl = document.getElementById('rateNotes');
+            if (notes) {
+                notesEl.textContent = notes;
+                notesEl.style.display = 'block';
+            } else {
+                notesEl.style.display = 'none';
+            }
+            
+            // Color code approval
+            const approvalEl = document.getElementById('rateApproval');
+            if (approval === 'NONE') {
+                approvalEl.style.color = '#10b981';
+            } else if (approval === 'SOFT') {
+                approvalEl.style.color = '#f59e0b';
+            } else {
+                approvalEl.style.color = '#6366f1';
             }
         }
         

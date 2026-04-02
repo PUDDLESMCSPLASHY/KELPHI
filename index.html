@@ -4457,6 +4457,15 @@ Kelsey`;
             
             const cutoffDate = new Date(arrivalDate);
             cutoffDate.setDate(cutoffDate.getDate() - cutoffDaysBefore);
+            
+            // If cutoff falls on weekend, push to following Monday
+            const dayOfWeek = cutoffDate.getDay();
+            if (dayOfWeek === 6) { // Saturday → Monday
+                cutoffDate.setDate(cutoffDate.getDate() + 2);
+            } else if (dayOfWeek === 0) { // Sunday → Monday
+                cutoffDate.setDate(cutoffDate.getDate() + 1);
+            }
+            
             cutoffField.value = cutoffDate.toISOString().split('T')[0];
         }
         

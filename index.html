@@ -1751,6 +1751,30 @@
                 return null;
             }
         }
+        
+        // ============ NOTES CLOUD SYNC ============
+        async function syncNotesToCloud() {
+            if (!syncEnabled) return;
+            try {
+                const notesData = { id: 'main', data: stickyNotes, updated_at: new Date().toISOString() };
+                await supabaseClient.from('notes').upsert(notesData);
+                console.log('☁️ Notes synced to cloud');
+            } catch (err) {
+                console.error('Notes sync error:', err);
+            }
+        }
+        
+        async function loadNotesFromCloud() {
+            if (!syncEnabled) return null;
+            try {
+                const { data, error } = await supabaseClient.from('notes').select('*').eq('id', 'main').single();
+                if (error && error.code !== 'PGRST116') throw error;
+                return data?.data || null;
+            } catch (err) {
+                console.error('Load notes from cloud error:', err);
+                return null;
+            }
+        }
         const ROOM_TYPES = [
             'Run of House', 'Deluxe King', 'Deluxe Two Queen', 'Premium King', 
             'Premium Two Queen', 'Studio Suite King', 'One Bedroom Suite King', 'Presidential Suite King'
@@ -2649,6 +2673,33 @@
                 // No cloud data, push local
                 syncToCloud();
                 console.log('☁️ Initial push to cloud');
+            }
+            
+            // Notes cloud sync
+            try {
+                const cloudNotes = await loadNotesFromCloud();
+                if (cloudNotes && cloudNotes.length > 0) {
+                    const localNotes = JSON.parse(localStorage.getItem('kelphi_notes') || '[]');
+                    if (!localNotes || localNotes.length === 0) {
+                        stickyNotes = cloudNotes;
+                        localStorage.setItem('kelphi_notes', JSON.stringify(stickyNotes));
+                        renderStickyNotes();
+                        console.log('☁️ Loaded notes from cloud');
+                    } else if (cloudNotes.length > stickyNotes.length) {
+                        stickyNotes = cloudNotes;
+                        localStorage.setItem('kelphi_notes', JSON.stringify(stickyNotes));
+                        renderStickyNotes();
+                        console.log('☁️ Updated notes from cloud');
+                    } else {
+                        syncNotesToCloud();
+                        console.log('☁️ Pushed notes to cloud');
+                    }
+                } else if (stickyNotes.length > 0) {
+                    syncNotesToCloud();
+                    console.log('☁️ Initial notes push to cloud');
+                }
+            } catch (e) {
+                console.warn('Notes cloud sync issue:', e.message);
             }
         }
         function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
@@ -4768,6 +4819,7 @@ Kelsey`;
         
         function saveNotes() {
             localStorage.setItem('kelphi_notes', JSON.stringify(stickyNotes));
+            syncNotesToCloud(); // Sync to Supabase
         }
         
         function addStickyNote() {

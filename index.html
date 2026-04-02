@@ -1143,14 +1143,16 @@
                 
                 <div class="tab-content" id="tab-csm"><iframe id="csmFrame" src="https://puddlesmcsplashy.github.io/CSM-TIMELINE/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-wrapup">
-                    <div class="leads-toolbar" style="margin-bottom: 1rem;">
-                        <div class="section-header" style="margin: 0;">Post Booking Wrap Up</div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn" id="wrapupActiveBtn" onclick="setWrapupView('active')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Active</button>
-                            <button class="btn" id="wrapupArchivedBtn" onclick="setWrapupView('archived')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Archived</button>
+                    <div style="height: calc(100vh - 180px); display: flex; flex-direction: column;">
+                        <div class="leads-toolbar" style="margin-bottom: 1rem; flex-shrink: 0;">
+                            <div class="section-header" style="margin: 0;">Post Booking Wrap Up</div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn" id="wrapupActiveBtn" onclick="setWrapupView('active')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Active</button>
+                                <button class="btn" id="wrapupArchivedBtn" onclick="setWrapupView('archived')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Archived</button>
+                            </div>
                         </div>
+                        <div id="wrapupList" style="flex: 1; overflow-y: auto;"></div>
                     </div>
-                    <div id="wrapupList"></div>
                 </div>
             </main>
 

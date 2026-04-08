@@ -1310,6 +1310,7 @@
                         <div class="panel-tab active" data-section="booking">Booking Info</div>
                         <div class="panel-tab hidden" data-section="guestroom" id="tabGuestroom">Guestroom</div>
                         <div class="panel-tab hidden" data-section="event" id="tabEvent">Event Info</div>
+                        <div class="panel-tab hidden" data-section="delphi-snapshot" id="tabDelphiSnapshot">Delphi Snapshot</div>
                         <div class="panel-tab" data-section="contract">Contract</div>
                         <div class="panel-tab" data-section="billing">Billing</div>
                         <div class="panel-tab" data-section="notes">Notes</div>
@@ -1494,6 +1495,16 @@
                                 <div class="summary-item"><div class="summary-label">Total Room Rental</div><div class="summary-value" id="totalRoomRental">$0</div></div>
                                 <div class="summary-item"><div class="summary-label">Total F&B Minimum</div><div class="summary-value" id="totalFbMin">$0</div></div>
                                 <div class="summary-item"><div class="summary-label">Total Event Revenue</div><div class="summary-value" id="totalEventRevenue">$0</div></div>
+                            </div>
+                        </div>
+
+                        <!-- Delphi Snapshot Section (read-only) -->
+                        <div class="panel-section" id="section-delphi-snapshot">
+                            <div style="margin-bottom: 16px; padding: 10px 12px; background: rgba(0,217,255,0.06); border: 1px solid rgba(0,217,255,0.15); border-radius: 6px; font-size: 12px; color: #888;">
+                                This is a read-only snapshot of what your team entered in Delphi when this booking was imported. Use it as a reference while filling in the Kelphi fields.
+                            </div>
+                            <div id="delphiSnapshotContent" style="font-size: 13px;">
+                                <div style="color: #666; font-style: italic;">No Delphi data available for this lead.</div>
                             </div>
                         </div>
 
@@ -2896,6 +2907,7 @@
             const type = document.getElementById('lead-type').value;
             const tabGuestroom = document.getElementById('tabGuestroom');
             const tabEvent = document.getElementById('tabEvent');
+            const tabDelphiSnapshot = document.getElementById('tabDelphiSnapshot');
             const roomFields = document.getElementById('roomContractFields');
             const eventFields = document.getElementById('eventContractFields');
             const billingSelect = document.getElementById('lead-billingType');
@@ -2904,10 +2916,15 @@
             tabEvent.classList.toggle('hidden', type === 'rooms');
             roomFields.style.display = type === 'events' ? 'none' : 'block';
             eventFields.style.display = type === 'rooms' ? 'none' : 'block';
-            
+
+            // Show Delphi Snapshot tab only for leads imported from Delphi
+            const lead = currentLeadId ? appData.leads.find(l => l.id === currentLeadId) : null;
+            const hasSnapshot = lead && lead.delphiSnapshot;
+            tabDelphiSnapshot.classList.toggle('hidden', !hasSnapshot);
+
             const ccOption = billingSelect.querySelector('option[value="credit-card"]');
             if (ccOption) ccOption.disabled = type === 'events';
-            
+
             calculateTotalRevenue();
         }
 
@@ -3118,6 +3135,78 @@
             document.getElementById('pickupVsForecast').style.color = vsForecastColor;
             
             container.style.display = 'grid';
+        }
+
+        // ============ DELPHI SNAPSHOT ============
+        function renderDelphiSnapshot(lead) {
+            const container = document.getElementById('delphiSnapshotContent');
+            if (!lead || !lead.delphiSnapshot) {
+                container.innerHTML = '<div style="color: #666; font-style: italic;">No Delphi data available for this lead.</div>';
+                return;
+            }
+
+            const snap = lead.delphiSnapshot;
+            let html = '';
+
+            // Events snapshot
+            if (snap.events && snap.events.length > 0) {
+                html += '<div style="font-weight: 600; color: #00d9ff; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Events from Delphi</div>';
+                snap.events.forEach((evt, i) => {
+                    const dateRange = evt.endDate && evt.endDate !== evt.startDate
+                        ? formatDateShort(evt.startDate) + ' — ' + formatDateShort(evt.endDate)
+                        : formatDateShort(evt.startDate);
+                    html += `<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 6px;">${evt.name || 'Unnamed Event'}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 12px; color: #999;">
+                            <div><span style="color: #666;">Date:</span> ${dateRange}</div>
+                            <div><span style="color: #666;">Room:</span> ${evt.room || '—'}</div>
+                            <div><span style="color: #666;">Time:</span> ${evt.startTime || '—'} – ${evt.endTime || '—'}</div>
+                            <div><span style="color: #666;">Setup:</span> ${evt.setup || '—'}</div>
+                            <div><span style="color: #666;">Headcount:</span> ${evt.headcount || '—'}</div>
+                            <div><span style="color: #666;">Revenue:</span> ${evt.revenue ? formatCurrency(evt.revenue) : '—'}</div>
+                            ${evt.classification ? `<div><span style="color: #666;">Classification:</span> ${evt.classification}</div>` : ''}
+                            ${evt.status ? `<div><span style="color: #666;">Status:</span> ${evt.status}</div>` : ''}
+                        </div>
+                    </div>`;
+                });
+            }
+
+            // Room blocks snapshot
+            if (snap.roomBlocks && snap.roomBlocks.length > 0) {
+                html += '<div style="font-weight: 600; color: #00d9ff; margin: 16px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Room Block from Delphi</div>';
+                snap.roomBlocks.forEach(rb => {
+                    html += `<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-weight: 600;">${rb.type}</span>
+                            <span style="color: #999;">$${rb.rate}/night</span>
+                        </div>
+                        <div style="font-size: 12px; color: #999;">Rooms per night: ${rb.quantities.join(', ')}</div>
+                    </div>`;
+                });
+            }
+
+            // Delphi status + import timestamp
+            let footerParts = [];
+            if (snap.delphiStatus) {
+                footerParts.push(`Delphi status: <strong>${snap.delphiStatus}</strong>`);
+            }
+            if (snap.importedAt) {
+                const d = new Date(snap.importedAt);
+                footerParts.push(`Imported ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`);
+            }
+            if (footerParts.length) {
+                html += `<div style="margin-top: 16px; font-size: 11px; color: #555; text-align: right;">${footerParts.join(' · ')}</div>`;
+            }
+
+            container.innerHTML = html || '<div style="color: #666; font-style: italic;">No Delphi data available for this lead.</div>';
+        }
+
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '—';
+            try {
+                const d = new Date(dateStr + 'T12:00:00');
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } catch (e) { return dateStr; }
         }
 
         // ============ EVENTS ============
@@ -3742,6 +3831,7 @@
             document.getElementById('lead-revenue').value = formatCurrency(lead.revenue || 0);
 
             updatePanelTabs();
+            renderDelphiSnapshot(lead);
             rebuildRoomBlock();
             
             // Show quote room totals reference if available
@@ -3866,6 +3956,8 @@
                 roomBlock: (currentRoomBlock && currentRoomBlock.length > 0) ? currentRoomBlock : (existingLead ? existingLead.roomBlock : []),
                 roomPickup: existingLead ? existingLead.roomPickup : undefined,
                 events: currentEvents,
+                delphiSnapshot: existingLead ? existingLead.delphiSnapshot : undefined,
+                delphiId: existingLead ? existingLead.delphiId : undefined,
                 signerName: document.getElementById('lead-signerName').value,
                 signerEmail: document.getElementById('lead-signerEmail').value,
                 signerPhone: document.getElementById('lead-signerPhone').value,

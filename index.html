@@ -2734,43 +2734,70 @@
         
         function autoDeduplicateLeads() {
             if (!appData.leads || appData.leads.length === 0) return;
-            
-            const byName = {};
+
+            let removed = 0;
+
+            // Pass 1: Deduplicate by delphiId (most reliable — same Salesforce record)
+            const byDelphiId = {};
+            const afterDelphiDedup = [];
             appData.leads.forEach(lead => {
+                const did = lead.delphiId;
+                if (!did) {
+                    afterDelphiDedup.push(lead);
+                    return;
+                }
+                if (!byDelphiId[did]) {
+                    byDelphiId[did] = lead;
+                    afterDelphiDedup.push(lead);
+                } else {
+                    // Keep the one with more work done (non-"new" status wins, then most recently updated)
+                    const existing = byDelphiId[did];
+                    const existingHasWork = existing.status !== 'new';
+                    const newHasWork = lead.status !== 'new';
+                    if (newHasWork && !existingHasWork) {
+                        // Replace existing with this one
+                        const idx = afterDelphiDedup.indexOf(existing);
+                        if (idx !== -1) afterDelphiDedup[idx] = lead;
+                        byDelphiId[did] = lead;
+                    }
+                    // Otherwise keep existing, drop this one
+                    removed++;
+                }
+            });
+
+            // Pass 2: Deduplicate by exact name (original logic)
+            const byName = {};
+            afterDelphiDedup.forEach(lead => {
                 const name = (lead.bookingName || '').toLowerCase().trim();
                 if (!name) return;
                 if (!byName[name]) byName[name] = [];
                 byName[name].push(lead);
             });
-            
-            // Check if there are any duplicates
+
             const hasDupes = Object.values(byName).some(arr => arr.length > 1);
-            if (!hasDupes) return;
-            
-            // Keep newest of each (by updatedAt or createdAt)
-            const kept = [];
-            let removed = 0;
-            
-            Object.entries(byName).forEach(([name, arr]) => {
-                if (arr.length === 1) {
-                    kept.push(arr[0]);
-                } else {
-                    arr.sort((a, b) => {
-                        const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
-                        const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
-                        return bTime - aTime; // Newest first
-                    });
-                    kept.push(arr[0]);
-                    removed += arr.length - 1;
-                }
-            });
-            
-            // Add back leads without booking names
-            appData.leads.filter(l => !(l.bookingName || '').trim()).forEach(l => kept.push(l));
-            
-            if (removed > 0) {
-                console.log(`🧹 Auto-deduplicated: removed ${removed} duplicate leads`);
+            if (hasDupes) {
+                const kept = [];
+                Object.entries(byName).forEach(([name, arr]) => {
+                    if (arr.length === 1) {
+                        kept.push(arr[0]);
+                    } else {
+                        arr.sort((a, b) => {
+                            const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
+                            const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
+                            return bTime - aTime;
+                        });
+                        kept.push(arr[0]);
+                        removed += arr.length - 1;
+                    }
+                });
+                afterDelphiDedup.filter(l => !(l.bookingName || '').trim()).forEach(l => kept.push(l));
                 appData.leads = kept;
+            } else {
+                appData.leads = afterDelphiDedup;
+            }
+
+            if (removed > 0) {
+                console.log(`Auto-deduplicated: removed ${removed} duplicate leads`);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
                 syncToCloud();
                 renderLeads();

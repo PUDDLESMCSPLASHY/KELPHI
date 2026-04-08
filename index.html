@@ -1500,11 +1500,26 @@
 
                         <!-- Delphi Snapshot Section (read-only) -->
                         <div class="panel-section" id="section-delphi-snapshot">
+                            <div id="delphiChangesAlert" style="display: none; margin-bottom: 16px; padding: 12px; background: rgba(240,173,78,0.1); border: 1px solid rgba(240,173,78,0.3); border-radius: 6px;">
+                                <div style="font-weight: 600; color: #f0ad4e; margin-bottom: 8px; font-size: 13px;">⚠️ Changes Detected in Delphi</div>
+                                <div id="delphiChangesList" style="font-size: 12px; margin-bottom: 12px;"></div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="btn" onclick="resolveDelphiConflict('accept')" style="font-size: 11px; padding: 6px 12px; background: rgba(240,173,78,0.15); border-color: rgba(240,173,78,0.4); color: #f0ad4e;">Accept Delphi's Changes</button>
+                                    <button class="btn" onclick="resolveDelphiConflict('keep')" style="font-size: 11px; padding: 6px 12px; background: rgba(0,217,255,0.1); border-color: rgba(0,217,255,0.3); color: #00d9ff;">Keep Kelphi's Version</button>
+                                    <button class="btn" onclick="resolveDelphiConflict('dismiss')" style="font-size: 11px; padding: 6px 12px;">Dismiss for Now</button>
+                                </div>
+                            </div>
                             <div style="margin-bottom: 16px; padding: 10px 12px; background: rgba(0,217,255,0.06); border: 1px solid rgba(0,217,255,0.15); border-radius: 6px; font-size: 12px; color: #888;">
                                 This is a read-only snapshot of what your team entered in Delphi when this booking was imported. Use it as a reference while filling in the Kelphi fields.
                             </div>
                             <div id="delphiSnapshotContent" style="font-size: 13px;">
                                 <div style="color: #666; font-style: italic;">No Delphi data available for this lead.</div>
+                            </div>
+                            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+                                <button class="btn btn-primary" id="pushToDelphiBtn" onclick="pushToDelphi()" style="width: 100%; padding: 10px; font-size: 13px;">
+                                    Push Kelphi Data to Delphi
+                                </button>
+                                <div id="pushToDelphiStatus" style="margin-top: 8px; font-size: 12px; display: none;"></div>
                             </div>
                         </div>
 
@@ -3209,6 +3224,163 @@
             } catch (e) { return dateStr; }
         }
 
+        function renderDelphiChanges(lead) {
+            const alert = document.getElementById('delphiChangesAlert');
+            if (!lead || !lead.delphiChanges) {
+                alert.style.display = 'none';
+                return;
+            }
+
+            const changes = lead.delphiChanges.changes || [];
+            if (changes.length === 0) {
+                alert.style.display = 'none';
+                return;
+            }
+
+            const list = document.getElementById('delphiChangesList');
+            list.innerHTML = changes.map(c => {
+                if (c.detail) {
+                    return `<div style="padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>${c.field}:</strong> ${c.detail}</div>`;
+                }
+                return `<div style="padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>${c.field}:</strong> <span style="color: #999; text-decoration: line-through;">${c.from}</span> → <span style="color: #f0ad4e;">${c.to}</span></div>`;
+            }).join('');
+
+            const detected = lead.delphiChanges.detectedAt;
+            if (detected) {
+                const d = new Date(detected);
+                list.innerHTML += `<div style="margin-top: 8px; font-size: 11px; color: #666;">Detected ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>`;
+            }
+
+            alert.style.display = 'block';
+        }
+
+        function resolveDelphiConflict(action) {
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead || !lead.delphiChanges) return;
+
+            if (action === 'accept') {
+                // Update snapshot to current Delphi data and update Kelphi event cards
+                const newData = lead.delphiChanges.currentDelphiData;
+                if (newData) {
+                    // Update the snapshot to the new Delphi state
+                    lead.delphiSnapshot = {
+                        events: newData.events,
+                        roomBlocks: newData.roomBlocks,
+                        delphiStatus: newData.delphiStatus,
+                        importedAt: lead.delphiSnapshot?.importedAt || '',
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    // Re-generate Kelphi event cards from new Delphi data
+                    // Pre-fill name, date, headcount; leave room/setup/rental/fbMin blank
+                    if (newData.events && newData.events.length > 0) {
+                        currentEvents = newData.events.map(e => ({
+                            name: e.name || '',
+                            date: e.startDate || '',
+                            startTime: e.startTime || '',
+                            endTime: e.endTime || '',
+                            headcount: e.headcount || 0,
+                            room: '',
+                            setup: '',
+                            rental: 0,
+                            fbMin: 0,
+                            notes: ''
+                        }));
+                        renderEvents();
+                    }
+
+                    // Update room blocks if changed
+                    if (newData.roomBlocks) {
+                        currentRoomBlock = JSON.parse(JSON.stringify(newData.roomBlocks));
+                        rebuildRoomBlock();
+                    }
+                }
+                delete lead.delphiChanges;
+                saveData();
+                renderDelphiSnapshot(lead);
+                renderDelphiChanges(lead);
+                renderLeads();
+
+            } else if (action === 'keep') {
+                // Keep Kelphi as-is, update snapshot to acknowledge the new Delphi state
+                // (so we don't keep re-flagging the same change)
+                const newData = lead.delphiChanges.currentDelphiData;
+                if (newData) {
+                    lead.delphiSnapshot = {
+                        events: newData.events,
+                        roomBlocks: newData.roomBlocks,
+                        delphiStatus: newData.delphiStatus,
+                        importedAt: lead.delphiSnapshot?.importedAt || '',
+                        updatedAt: new Date().toISOString()
+                    };
+                }
+                delete lead.delphiChanges;
+                saveData();
+                renderDelphiSnapshot(lead);
+                renderDelphiChanges(lead);
+                renderLeads();
+
+            } else if (action === 'dismiss') {
+                // Just hide the alert but keep the flag so it shows up again next check
+                // Actually, remove the flag — if the difference persists, it'll get re-flagged at :05
+                delete lead.delphiChanges;
+                saveData();
+                renderDelphiChanges(lead);
+                renderLeads();
+            }
+        }
+
+        async function pushToDelphi() {
+            if (!currentLeadId) return;
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead || !lead.delphiId) return;
+
+            const btn = document.getElementById('pushToDelphiBtn');
+            const status = document.getElementById('pushToDelphiStatus');
+
+            // Confirm before pushing
+            if (!confirm('Push your Kelphi event data (rooms, setup, headcount, rental) back to Delphi? This will overwrite the current Delphi values for this booking.')) {
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Pushing to Delphi...';
+            status.style.display = 'none';
+
+            try {
+                const resp = await fetch(`${DELPHI_API}/api/sync/push-to-delphi`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ leadId: currentLeadId })
+                });
+                const result = await resp.json();
+
+                status.style.display = 'block';
+                if (result.ok) {
+                    status.style.color = '#2ecc71';
+                    status.innerHTML = `✓ ${result.message}`;
+                    // Reload lead data to get updated snapshot
+                    await loadFromCloud();
+                    const updatedLead = appData.leads.find(l => l.id === currentLeadId);
+                    if (updatedLead) {
+                        renderDelphiSnapshot(updatedLead);
+                        renderDelphiChanges(updatedLead);
+                    }
+                    renderLeads();
+                } else {
+                    status.style.color = '#e74c3c';
+                    status.innerHTML = `✗ ${result.error || result.message || 'Push failed'}`;
+                }
+            } catch (e) {
+                status.style.display = 'block';
+                status.style.color = '#e74c3c';
+                status.innerHTML = `✗ Connection error: ${e.message}`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Push Kelphi Data to Delphi';
+        }
+
         // ============ EVENTS ============
         function renderEvents() {
             const container = document.getElementById('eventsContainer');
@@ -3832,6 +4004,7 @@
 
             updatePanelTabs();
             renderDelphiSnapshot(lead);
+            renderDelphiChanges(lead);
             rebuildRoomBlock();
             
             // Show quote room totals reference if available
@@ -3957,6 +4130,7 @@
                 roomPickup: existingLead ? existingLead.roomPickup : undefined,
                 events: currentEvents,
                 delphiSnapshot: existingLead ? existingLead.delphiSnapshot : undefined,
+                delphiChanges: existingLead ? existingLead.delphiChanges : undefined,
                 delphiId: existingLead ? existingLead.delphiId : undefined,
                 signerName: document.getElementById('lead-signerName').value,
                 signerEmail: document.getElementById('lead-signerEmail').value,
@@ -5865,7 +6039,8 @@ Kelsey`;
                     const hasContract = appData.contracts && appData.contracts.some(c => c.leadId === lead.id);
                     const contractBadge = hasContract ? '<span class="contract-badge" title="Contract generated">&#128196;</span>' : '';
                     const checklistBadge = lead.hasChecklist ? '<span class="checklist-badge" title="Checklist active" style="margin-left: 4px;">📋</span>' : '';
-                    return `<span class="lead-name-cell">${lead.bookingName || lead.account || 'Untitled'}${contractBadge}${checklistBadge}</span>`;
+                    const delphiChangeBadge = lead.delphiChanges ? '<span title="Delphi data changed" style="margin-left: 4px; color: #f0ad4e; font-size: 11px;">⚠️</span>' : '';
+                    return `<span class="lead-name-cell">${lead.bookingName || lead.account || 'Untitled'}${contractBadge}${checklistBadge}${delphiChangeBadge}</span>`;
                 case 'status':
                     const statusLabels = { 'working': 'Working', 'dying': 'Dying', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost', 'turndown': 'Turndown' };
                     return `<span class="status-badge status-${lead.status}">${statusLabels[lead.status] || lead.status}</span>`;

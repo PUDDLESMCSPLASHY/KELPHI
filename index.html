@@ -2730,6 +2730,8 @@
             
             // Auto-deduplicate after sync
             autoDeduplicateLeads();
+            // Fix Delphi Definite leads that landed as New
+            fixDelphiDefiniteStatus();
         }
         
         function autoDeduplicateLeads() {
@@ -2804,6 +2806,22 @@
             }
         }
         
+        function fixDelphiDefiniteStatus() {
+            if (!appData.leads || appData.leads.length === 0) return;
+            let fixed = 0;
+            appData.leads.forEach(lead => {
+                if (lead.delphiId && lead.status === 'new' && lead.delphiSnapshot && lead.delphiSnapshot.delphiStatus === 'Definite') {
+                    lead.status = 'definite';
+                    fixed++;
+                }
+            });
+            if (fixed > 0) {
+                console.log(`Fixed ${fixed} Delphi Definite leads from new -> definite`);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                syncToCloud();
+            }
+        }
+
         function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
 
         // ============ DOM ============

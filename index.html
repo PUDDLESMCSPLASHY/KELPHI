@@ -2957,7 +2957,16 @@
             document.getElementById('panelSave').addEventListener('click', saveLead);
 
             // Filters
-            statusFilter.addEventListener('change', () => { saveFilterState(); renderLeads(); });
+            statusFilter.addEventListener('change', () => {
+                // Auto-sort by Date Definite (newest first) when viewing Definite or Completed
+                if ((statusFilter.value === 'definite' || statusFilter.value === 'completed') && leadsSortColumn !== 'definiteDate') {
+                    leadsSortColumn = 'definiteDate';
+                    leadsSortDirection = 'desc';
+                    updateTableColumns();
+                }
+                saveFilterState();
+                renderLeads();
+            });
             document.getElementById('updatedFilter').addEventListener('change', () => { saveFilterState(); renderLeads(); });
             leadSearch.addEventListener('input', renderLeads);
         }
@@ -3756,6 +3765,9 @@
                     } else if (leadsSortColumn === 'createdAt') {
                         valA = a.createdAt || '';
                         valB = b.createdAt || '';
+                    } else if (leadsSortColumn === 'definiteDate') {
+                        valA = a.definiteDate || '';
+                        valB = b.definiteDate || '';
                     }
                     const cmp = valA.localeCompare(valB);
                     return leadsSortDirection === 'asc' ? cmp : -cmp;
@@ -6151,7 +6163,7 @@ Kelsey`;
         
         function updateTableColumns() {
             const thead = document.querySelector('.leads-table thead tr');
-            const sortableColumns = ['bookingName', 'arrival', 'createdAt'];
+            const sortableColumns = ['bookingName', 'arrival', 'createdAt', 'definiteDate'];
             thead.innerHTML = currentViewColumns.map(key => {
                 const col = ALL_COLUMNS.find(c => c.key === key);
                 const label = col ? col.label : key;

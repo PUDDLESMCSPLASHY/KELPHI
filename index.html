@@ -3375,6 +3375,8 @@
             }
         }
 
+        let pushPreviewData = null;
+
         async function pushToDelphi() {
             if (!currentLeadId) return;
             const lead = appData.leads.find(l => l.id === currentLeadId);
@@ -3383,11 +3385,141 @@
             const btn = document.getElementById('pushToDelphiBtn');
             const status = document.getElementById('pushToDelphiStatus');
 
-            // Confirm before pushing
-            if (!confirm('Push your Kelphi event data (rooms, setup, headcount, rental) back to Delphi? This will overwrite the current Delphi values for this booking.')) {
+            btn.disabled = true;
+            btn.textContent = 'Loading preview...';
+            status.style.display = 'none';
+
+            try {
+                const resp = await fetch(`${DELPHI_API}/api/sync/push-preview`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ leadId: currentLeadId })
+                });
+                const result = await resp.json();
+
+                if (!result.ok) {
+                    status.style.display = 'block';
+                    status.style.color = '#e74c3c';
+                    status.innerHTML = `✗ ${result.error || 'Preview failed'}`;
+                    btn.disabled = false;
+                    btn.textContent = 'Push Kelphi Data to Delphi';
+                    return;
+                }
+
+                if (!result.preview || result.preview.length === 0) {
+                    status.style.display = 'block';
+                    status.style.color = '#aaa';
+                    status.innerHTML = 'Nothing to push — Kelphi and Delphi are already in sync for this booking.';
+                    btn.disabled = false;
+                    btn.textContent = 'Push Kelphi Data to Delphi';
+                    return;
+                }
+
+                pushPreviewData = result;
+                showPushPreviewModal(result);
+            } catch (e) {
+                status.style.display = 'block';
+                status.style.color = '#e74c3c';
+                status.innerHTML = `✗ Connection error: ${e.message}`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Push Kelphi Data to Delphi';
+        }
+
+        function showPushPreviewModal(data) {
+            const existing = document.getElementById('pushPreviewModal');
+            if (existing) existing.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'pushPreviewModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+
+            let html = `
+                <div style="background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:8px;width:90%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;">
+                    <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                        <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:4px;">Review Changes Before Pushing</div>
+                        <div style="font-size:12px;color:#888;">Uncheck anything you don't want to push. ${data.totalChanges} change${data.totalChanges === 1 ? '' : 's'} across ${data.preview.length} event${data.preview.length === 1 ? '' : 's'}.</div>
+                    </div>
+                    <div style="padding:16px 24px;overflow-y:auto;flex:1;">
+            `;
+
+            data.preview.forEach((evt, evtIdx) => {
+                html += `
+                    <div style="margin-bottom:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                            <div style="font-weight:600;color:#00d9ff;">${evt.eventName || 'Unnamed Event'}</div>
+                            <div style="font-size:11px;color:#666;">${formatDateShort(evt.eventDate)}</div>
+                        </div>
+                `;
+                evt.changes.forEach((c, cIdx) => {
+                    html += `
+                        <label style="display:flex;align-items:flex-start;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <input type="checkbox" checked data-evt="${evt.delphiEventId}" data-field="${c.field}" style="margin-right:10px;margin-top:3px;">
+                            <div style="flex:1;font-size:13px;">
+                                <div style="color:#bbb;font-weight:500;margin-bottom:2px;">${c.label}</div>
+                                <div style="font-size:12px;color:#888;">
+                                    <span style="text-decoration:line-through;color:#666;">${c.from}</span>
+                                    <span style="margin:0 6px;">→</span>
+                                    <span style="color:#2ecc71;">${c.to}</span>
+                                </div>
+                            </div>
+                        </label>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            if (data.unmatched && data.unmatched.length > 0) {
+                html += `
+                    <div style="margin-top:12px;padding:10px;background:rgba(240,173,78,0.08);border:1px solid rgba(240,173,78,0.2);border-radius:6px;font-size:12px;color:#f0ad4e;">
+                        ${data.unmatched.length} Delphi event${data.unmatched.length === 1 ? '' : 's'} couldn't be matched to a Kelphi card and won't be touched: ${data.unmatched.join(', ')}
+                    </div>
+                `;
+            }
+
+            html += `
+                    </div>
+                    <div style="padding:16px 24px;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:flex-end;gap:10px;">
+                        <button class="btn" onclick="closePushPreview()" style="padding:8px 16px;">Cancel</button>
+                        <button class="btn btn-primary" onclick="confirmPushSelections()" style="padding:8px 16px;">Push Selected to Delphi</button>
+                    </div>
+                </div>
+            `;
+
+            modal.innerHTML = html;
+            document.body.appendChild(modal);
+        }
+
+        function closePushPreview() {
+            const m = document.getElementById('pushPreviewModal');
+            if (m) m.remove();
+            pushPreviewData = null;
+        }
+
+        async function confirmPushSelections() {
+            const modal = document.getElementById('pushPreviewModal');
+            if (!modal) return;
+
+            // Build selections from checked boxes
+            const selections = {};
+            modal.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                const evtId = cb.dataset.evt;
+                const field = cb.dataset.field;
+                if (!selections[evtId]) selections[evtId] = [];
+                selections[evtId].push(field);
+            });
+
+            const totalSelected = Object.values(selections).reduce((s, a) => s + a.length, 0);
+            if (totalSelected === 0) {
+                alert('No changes selected. Uncheck Cancel if you want to back out.');
                 return;
             }
 
+            closePushPreview();
+
+            const status = document.getElementById('pushToDelphiStatus');
+            const btn = document.getElementById('pushToDelphiBtn');
             btn.disabled = true;
             btn.textContent = 'Pushing to Delphi...';
             status.style.display = 'none';
@@ -3396,7 +3528,7 @@
                 const resp = await fetch(`${DELPHI_API}/api/sync/push-to-delphi`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ leadId: currentLeadId })
+                    body: JSON.stringify({ leadId: currentLeadId, selections })
                 });
                 const result = await resp.json();
 
@@ -3404,7 +3536,6 @@
                 if (result.ok) {
                     status.style.color = '#2ecc71';
                     status.innerHTML = `✓ ${result.message}`;
-                    // Reload lead data to get updated snapshot
                     await loadFromCloud();
                     const updatedLead = appData.leads.find(l => l.id === currentLeadId);
                     if (updatedLead) {

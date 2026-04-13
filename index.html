@@ -6826,9 +6826,12 @@ Sales Manager`;
             
             // Basic info
             data.account = lead.account || '';
-            data.contact_name = `${lead.contactFirstName || ''} ${lead.contactLastName || ''}`.trim();
-            data.contact_phone = lead.contactPhone || '';
-            data.contact_email = lead.contactEmail || '';
+            // Contract uses signer fields (Contract tab) when filled,
+            // falls back to booking contact (Booking Info tab) if blank
+            const bookingContactName = `${lead.contactFirstName || ''} ${lead.contactLastName || ''}`.trim();
+            data.contact_name = (lead.signerName || '').trim() || bookingContactName;
+            data.contact_phone = lead.signerPhone || lead.contactPhone || '';
+            data.contact_email = lead.signerEmail || lead.contactEmail || '';
             data.contact_address = lead.signerAddress || '';
             data.booking_name = lead.bookingName || '';
             data.arrival_date = formatContractDate(lead.arrival);

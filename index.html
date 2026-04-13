@@ -3269,6 +3269,20 @@
             } catch (e) { return dateStr; }
         }
 
+        function convert12hTo24h(t12) {
+            if (!t12) return '';
+            // Already 24h?
+            if (/^\d{1,2}:\d{2}$/.test(String(t12).trim())) return String(t12).trim();
+            const m = String(t12).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            if (!m) return t12;
+            let h = parseInt(m[1]);
+            const min = m[2];
+            const ampm = m[3].toUpperCase();
+            if (ampm === 'PM' && h !== 12) h += 12;
+            if (ampm === 'AM' && h === 12) h = 0;
+            return String(h).padStart(2, '0') + ':' + min;
+        }
+
         function renderDelphiChanges(lead) {
             const alert = document.getElementById('delphiChangesAlert');
             if (!lead || !lead.delphiChanges) {
@@ -3304,9 +3318,35 @@
             if (!lead || !lead.delphiChanges) return;
 
             if (action === 'accept') {
-                // Update snapshot to current Delphi data and update Kelphi event cards
+                // Apply changes field-by-field instead of wiping cards
                 const newData = lead.delphiChanges.currentDelphiData;
+                const changes = lead.delphiChanges.changes || [];
+                const skipped = [];
+
                 if (newData) {
+                    changes.forEach(c => {
+                        if (!c.kelphiField) {
+                            // No equivalent Kelphi field (e.g. revenue, status, added/removed events)
+                            if (c.field) skipped.push(c.field);
+                            return;
+                        }
+                        // Find the matching Kelphi event card by delphiEventId
+                        if (!c.delphiEventId) return;
+                        const card = currentEvents.find(e => e._delphiEventId === c.delphiEventId);
+                        if (!card) return;
+
+                        let newVal = c.newValue;
+                        // Convert times from 12h to 24h for HTML time inputs
+                        if (c.kelphiField === 'startTime' || c.kelphiField === 'endTime') {
+                            newVal = convert12hTo24h(newVal);
+                        }
+                        // Coerce headcount to number
+                        if (c.kelphiField === 'headcount') {
+                            newVal = parseInt(newVal) || 0;
+                        }
+                        card[c.kelphiField] = newVal;
+                    });
+
                     // Update the snapshot to the new Delphi state
                     lead.delphiSnapshot = {
                         events: newData.events,
@@ -3316,35 +3356,19 @@
                         updatedAt: new Date().toISOString()
                     };
 
-                    // Re-generate Kelphi event cards from new Delphi data
-                    // Pre-fill name, date, headcount; leave room/setup/rental/fbMin blank
-                    if (newData.events && newData.events.length > 0) {
-                        currentEvents = newData.events.map(e => ({
-                            name: e.name || '',
-                            date: e.startDate || '',
-                            startTime: e.startTime || '',
-                            endTime: e.endTime || '',
-                            headcount: e.headcount || 0,
-                            room: '',
-                            setup: '',
-                            rental: 0,
-                            fbMin: 0,
-                            notes: ''
-                        }));
-                        renderEvents();
-                    }
-
-                    // Update room blocks if changed
-                    if (newData.roomBlocks) {
-                        currentRoomBlock = JSON.parse(JSON.stringify(newData.roomBlocks));
-                        rebuildRoomBlock();
-                    }
+                    renderEvents();
                 }
+
                 delete lead.delphiChanges;
+                lead.events = currentEvents;
                 saveData();
                 renderDelphiSnapshot(lead);
                 renderDelphiChanges(lead);
                 renderLeads();
+
+                if (skipped.length > 0) {
+                    setTimeout(() => alert('Snapshot updated. These changes have no Kelphi field to update so were skipped:\n\n• ' + skipped.join('\n• ')), 100);
+                }
 
             } else if (action === 'keep') {
                 // Keep Kelphi as-is, update snapshot to acknowledge the new Delphi state

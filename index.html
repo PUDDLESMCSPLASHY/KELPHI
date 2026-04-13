@@ -722,11 +722,33 @@
                         <div style="display: flex; gap: 0.5rem;">
                             <button class="btn btn-secondary" onclick="importFromDelphi()" title="Import new leads from Delphi">⬇️ Import from Delphi</button>
                             <button class="btn btn-secondary" id="mergeBtn" onclick="toggleMergeMode()" title="Select two leads to merge">🔀 Merge</button>
+                            <button class="btn btn-secondary" id="bulkBtn" onclick="toggleBulkMode()" title="Select multiple leads for bulk actions">☑️ Select</button>
                             <button class="btn btn-primary" id="newLeadBtn">+ New Lead</button>
                         </div>
                     </div>
+                    <!-- Bulk action bar (visible when in bulk mode) -->
+                    <div id="bulkActionBar" style="display:none; margin-bottom: 0.75rem; padding: 0.75rem 1rem; background: rgba(0,217,255,0.08); border: 1px solid rgba(0,217,255,0.25); border-radius: 8px; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <span id="bulkSelectedCount" style="font-weight: 500; color: #00d9ff;">0 selected</span>
+                        <span style="color: #666;">|</span>
+                        <span style="color: #aaa; font-size: 0.85rem;">Change status to:</span>
+                        <select id="bulkStatusSelect" class="filter-select" style="max-width: 180px;">
+                            <option value="">Choose status...</option>
+                            <option value="new">New</option>
+                            <option value="working">Working</option>
+                            <option value="tentative">Tentative</option>
+                            <option value="contract-out">Contract Out</option>
+                            <option value="definite">Definite</option>
+                            <option value="completed">Completed</option>
+                            <option value="dying">Dying</option>
+                            <option value="lost">Lost / Turndown</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="applyBulkStatus()" style="padding: 6px 14px;">Apply</button>
+                        <span style="flex: 1;"></span>
+                        <button class="btn btn-ghost" onclick="bulkSelectAllVisible()" style="padding: 6px 12px; font-size: 0.8rem;">Select all visible</button>
+                        <button class="btn btn-ghost" onclick="clearBulkSelection()" style="padding: 6px 12px; font-size: 0.8rem;">Clear</button>
+                    </div>
                     <table class="leads-table">
-                        <thead><tr><th>Booking Name</th><th>Account</th><th>Status</th><th>Arrival</th><th>Type</th><th>Revenue</th></tr></thead>
+                        <thead><tr><th id="bulkHeaderCell" style="display:none; width: 36px;"><input type="checkbox" id="bulkSelectAllCheckbox" onclick="toggleBulkSelectAll(this)"></th><th>Booking Name</th><th>Account</th><th>Status</th><th>Arrival</th><th>Type</th><th>Revenue</th></tr></thead>
                         <tbody id="leadsTableBody"></tbody>
                     </table>
                 </div>
@@ -3779,16 +3801,26 @@
                 return;
             }
 
-            leadsTableBody.innerHTML = leads.map(lead => `
+            leadsTableBody.innerHTML = leads.map(lead => {
+                const checkboxCell = bulkMode
+                    ? `<td style="width: 36px;" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-checkbox" data-id="${lead.id}" ${bulkSelected.has(lead.id) ? 'checked' : ''} onchange="toggleBulkSelectOne('${lead.id}', this.checked)"></td>`
+                    : '';
+                return `
                 <tr data-id="${lead.id}" class="${currentLeadId === lead.id ? 'selected' : ''}">
-                    ${currentViewColumns.map(key => `<td>${getColumnValue(lead, key)}</td>`).join('')}
-                </tr>
-            `).join('');
+                    ${checkboxCell}${currentViewColumns.map(key => `<td>${getColumnValue(lead, key)}</td>`).join('')}
+                </tr>`;
+            }).join('');
 
             document.querySelectorAll('#leadsTableBody tr[data-id]').forEach(row => {
                 row.addEventListener('click', () => {
                     if (mergeMode) {
                         selectForMerge(row.dataset.id, row);
+                    } else if (bulkMode) {
+                        // In bulk mode, clicking the row toggles the checkbox
+                        const id = row.dataset.id;
+                        toggleBulkSelectOne(id, !bulkSelected.has(id));
+                        const cb = row.querySelector('.bulk-checkbox');
+                        if (cb) cb.checked = bulkSelected.has(id);
                     } else {
                         openLead(row.dataset.id);
                     }
@@ -3842,6 +3874,107 @@
         let mergeLeadA = null;
         let mergeLeadB = null;
         let mergeFieldChoices = {};
+
+        // Bulk selection state
+        let bulkMode = false;
+        let bulkSelected = new Set();
+
+        function toggleBulkMode() {
+            bulkMode = !bulkMode;
+            bulkSelected.clear();
+            const btn = document.getElementById('bulkBtn');
+            const bar = document.getElementById('bulkActionBar');
+            const headerCell = document.getElementById('bulkHeaderCell');
+
+            if (bulkMode) {
+                // If merge mode is active, turn it off
+                if (mergeMode) toggleMergeMode();
+                btn.classList.add('active');
+                btn.textContent = '☑️ Cancel Select';
+                bar.style.display = 'flex';
+                if (headerCell) headerCell.style.display = '';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '☑️ Select';
+                bar.style.display = 'none';
+                if (headerCell) headerCell.style.display = 'none';
+                const checkAll = document.getElementById('bulkSelectAllCheckbox');
+                if (checkAll) checkAll.checked = false;
+            }
+            updateBulkCount();
+            renderLeads();
+        }
+
+        function toggleBulkSelectOne(id, checked) {
+            if (checked) bulkSelected.add(id);
+            else bulkSelected.delete(id);
+            updateBulkCount();
+        }
+
+        function bulkSelectAllVisible() {
+            document.querySelectorAll('#leadsTableBody tr[data-id]').forEach(row => {
+                bulkSelected.add(row.dataset.id);
+            });
+            updateBulkCount();
+            renderLeads();
+        }
+
+        function clearBulkSelection() {
+            bulkSelected.clear();
+            updateBulkCount();
+            renderLeads();
+        }
+
+        function toggleBulkSelectAll(checkbox) {
+            if (checkbox.checked) bulkSelectAllVisible();
+            else clearBulkSelection();
+        }
+
+        function updateBulkCount() {
+            const el = document.getElementById('bulkSelectedCount');
+            if (el) el.textContent = `${bulkSelected.size} selected`;
+        }
+
+        function applyBulkStatus() {
+            if (bulkSelected.size === 0) {
+                alert('No leads selected.');
+                return;
+            }
+            const newStatus = document.getElementById('bulkStatusSelect').value;
+            if (!newStatus) {
+                alert('Please choose a status from the dropdown.');
+                return;
+            }
+            const statusLabels = {
+                'new': 'New', 'working': 'Working', 'tentative': 'Tentative',
+                'contract-out': 'Contract Out', 'definite': 'Definite',
+                'completed': 'Completed', 'dying': 'Dying', 'lost': 'Lost / Turndown'
+            };
+            const label = statusLabels[newStatus] || newStatus;
+
+            if (!confirm(`Change ${bulkSelected.size} lead${bulkSelected.size === 1 ? '' : 's'} to "${label}"?`)) return;
+
+            let changed = 0;
+            const now = new Date().toISOString();
+            appData.leads.forEach(lead => {
+                if (bulkSelected.has(lead.id) && lead.status !== newStatus) {
+                    lead.status = newStatus;
+                    lead.updatedAt = now;
+                    if (newStatus === 'definite' && !lead.definiteDate) {
+                        lead.definiteDate = now;
+                    }
+                    changed++;
+                }
+            });
+
+            saveData();
+            renderLeads();
+            if (typeof updateDashboard === 'function') updateDashboard();
+
+            // Exit bulk mode after applying
+            toggleBulkMode();
+            alert(`${changed} lead${changed === 1 ? '' : 's'} updated to ${label}.`);
+        }
         
         function toggleMergeMode() {
             mergeMode = !mergeMode;

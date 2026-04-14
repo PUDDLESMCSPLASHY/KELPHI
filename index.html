@@ -276,6 +276,7 @@
         .pipeline-status.contract-out { color: #b366ff; }
         .pipeline-status.definite { color: #00d98f; }
         .pipeline-status.lost { color: #ff4757; }
+        .pipeline-status.turndown { color: #ff4757; }
         .pipeline-count { font-size: 1.5rem; font-weight: 600; color: #e0e0e0; }
         
         .revenue-bars { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -707,7 +708,8 @@
                                 <option value="definite">Definite</option>
                                 <option value="completed">Completed</option>
                                 <option value="dying">Dying</option>
-                                <option value="lost">Lost / Turndown</option>
+                                <option value="lost">Lost</option>
+                                <option value="turndown">Turndown</option>
                                 <option value="archived">Archived</option>
                             </select>
                             <select class="filter-select" id="updatedFilter">
@@ -745,7 +747,8 @@
                             <option value="definite">Definite</option>
                             <option value="completed">Completed</option>
                             <option value="dying">Dying</option>
-                            <option value="lost">Lost / Turndown</option>
+                            <option value="lost">Lost</option>
+                            <option value="turndown">Turndown</option>
                         </select>
                         <button class="btn btn-primary" onclick="applyBulkStatus()" style="padding: 6px 14px;">Apply</button>
                         <span style="flex: 1;"></span>
@@ -1096,6 +1099,10 @@
                                     <div class="pipeline-status lost">Lost</div>
                                     <div class="pipeline-count" id="pipeline-lost">0</div>
                                 </div>
+                                <div class="pipeline-item" onclick="showPipelineDetail('turndown')">
+                                    <div class="pipeline-status turndown">Turndown</div>
+                                    <div class="pipeline-count" id="pipeline-turndown">0</div>
+                                </div>
                             </div>
                         </div>
                         
@@ -1381,7 +1388,8 @@
                                         <option value="definite">Definite</option>
                                         <option value="completed">Completed</option>
                                         <option value="dying">Dying</option>
-                                        <option value="lost">Lost / Turndown</option>
+                                        <option value="lost">Lost</option>
+                                        <option value="turndown">Turndown</option>
                                     </select>
                                 </div>
                             </div>
@@ -2512,7 +2520,7 @@
             
             // Pipeline breakdown
             const statusCounts = {};
-            ['new', 'working', 'dying', 'tentative', 'contract-out', 'definite', 'lost'].forEach(s => {
+            ['new', 'working', 'dying', 'tentative', 'contract-out', 'definite', 'lost', 'turndown'].forEach(s => {
                 statusCounts[s] = leadsInPeriod.filter(l => l.status === s).length;
                 const el = document.getElementById(`pipeline-${s}`);
                 if (el) el.textContent = statusCounts[s];
@@ -2629,7 +2637,7 @@
         let reportingLeadsInPeriod = [];
         
         function showPipelineDetail(status) {
-            const statusLabels = { 'working': 'Working', 'dying': 'Dying', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'lost': 'Lost' };
+            const statusLabels = { 'working': 'Working', 'dying': 'Dying', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'lost': 'Lost', 'turndown': 'Turndown' };
             const leads = reportingLeadsInPeriod.filter(l => l.status === status);
             
             // Calculate revenues
@@ -3998,7 +4006,7 @@
                 // Hide archived leads from all other views
                 if (lead.archived) return false;
                 
-                if (filter === 'active' && ['completed', 'lost'].includes(lead.status)) return false;
+                if (filter === 'active' && ['completed', 'lost', 'turndown'].includes(lead.status)) return false;
                 if (filter !== 'all' && filter !== 'active' && lead.status !== filter) return false;
                 if (search && !(lead.bookingName || '').toLowerCase().includes(search) && !(lead.account || '').toLowerCase().includes(search)) return false;
                 
@@ -4187,7 +4195,7 @@
             const statusLabels = {
                 'new': 'New', 'working': 'Working', 'tentative': 'Tentative',
                 'contract-out': 'Contract Out', 'definite': 'Definite',
-                'completed': 'Completed', 'dying': 'Dying', 'lost': 'Lost / Turndown'
+                'completed': 'Completed', 'dying': 'Dying', 'lost': 'Lost', 'turndown': 'Turndown'
             };
             const label = statusLabels[newStatus] || newStatus;
 
@@ -6042,7 +6050,7 @@ Kelsey`;
             const typeFilter = document.getElementById('availTypeFilter')?.value || 'all';
             
             // Get active leads (not completed or lost)
-            let leads = appData.leads.filter(l => !['completed', 'lost', 'cancelled'].includes(l.status));
+            let leads = appData.leads.filter(l => !['completed', 'lost', 'turndown', 'cancelled'].includes(l.status));
             
             // Apply status filter
             if (statusFilter !== 'all') {
@@ -6206,7 +6214,7 @@ Kelsey`;
             const typeFilter = document.getElementById('availTypeFilter')?.value || 'all';
             
             // Get leads with events
-            let leads = appData.leads.filter(l => !['completed', 'lost', 'cancelled'].includes(l.status));
+            let leads = appData.leads.filter(l => !['completed', 'lost', 'turndown', 'cancelled'].includes(l.status));
             if (statusFilter !== 'all') leads = leads.filter(l => l.status === statusFilter);
             const eventLeads = leads.filter(l => l.type === 'events' || l.type === 'both');
             
@@ -6830,7 +6838,7 @@ Kelsey`;
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); 
         }
         function formatShortDate(d) { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }); }
-        function formatStatus(s) { return { 'working': 'Working', 'dying': 'Dying', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost' }[s] || s; }
+        function formatStatus(s) { return { 'working': 'Working', 'dying': 'Dying', 'tentative': 'Tentative', 'contract-out': 'Contract Out', 'definite': 'Definite', 'completed': 'Completed', 'lost': 'Lost', 'turndown': 'Turndown' }[s] || s; }
         function formatType(t) { return { 'rooms': 'Rooms Only', 'events': 'Events Only', 'both': 'Rooms + Events' }[t] || t; }
     
         // ============ CONTRACTS TAB ============

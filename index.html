@@ -1717,8 +1717,8 @@
                                 </button>
                                 
                                 <button class="btn template-btn" onclick="showEmailTemplate('intro-arianna')" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; text-align: left; padding: 12px 16px;">
-                                    <div style="font-weight: 600;">🤝 Intro to Arianna</div>
-                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Handover introduction to Conference Services Manager</div>
+                                    <div style="font-weight: 600;">🤝 Intro to Planning Team</div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Handover introduction to Rebecca &amp; Arianna</div>
                                 </button>
                             </div>
                             
@@ -5585,26 +5585,30 @@ Thanks!
                     
                 case 'intro-arianna':
                     let detailsSection = '';
+                    let nextStepsLine = '';
                     let closingLine = '';
-                    
+
                     if (bookingType === 'rooms') {
-                        detailsSection = `For next steps, I wanted to e-introduce you to Arianna Evans, our Conference Services Manager. I've brought her up to speed on everything we've discussed so far. She'll be working with you on all the details of your group's visit, like arrival times, room assignments, ADA accommodations, and anything else you need to make your ${arrivalDate} stay seamless.`;
+                        detailsSection = `For next steps, I wanted to e-introduce you to our Planning Team, Rebecca and Arianna. My colleagues have been brought up to speed on everything we've discussed so far. They'll be working with you on all the details of your group's visit, like arrival times, room assignments, ADA accommodations, and anything else you need to make your ${arrivalDate} stay seamless.`;
+                        nextStepsLine = `You can expect to hear from someone in the next few days. In the meantime, I'm still here if you need anything; don't hesitate to reach out.`;
                         closingLine = `Here's to great things ahead in our little corner of the Ozarks. See you soon!`;
                     } else if (bookingType === 'events') {
-                        detailsSection = `For next steps, I wanted to e-introduce you to Arianna Evans, our Conference Services Manager. I've brought her up to speed on everything we've discussed so far. She'll be working with you on all the details of your event, like space set-up, menu selections, timing, and anything else you need to make your ${arrivalDate} event seamless.`;
+                        detailsSection = `For next steps, I wanted to e-introduce you to our Planning Team, Rebecca and Arianna. My colleagues have been brought up to speed on everything we've discussed so far. They'll be working with you on all the details of your event, like space set-up, menu selections, timing, and anything else you need to make your ${arrivalDate} event seamless.`;
+                        nextStepsLine = `You can expect to hear from someone in the next few days. In the meantime, I'm still here if you need anything; don't hesitate to reach out.`;
                         closingLine = `Here's to great things ahead.`;
                     } else {
-                        detailsSection = `For next steps, I wanted to e-introduce you to Arianna Evans, our Conference Services Manager. I've brought her up to speed on everything we've discussed so far. She'll be working with you on all the details of your visit, like arrival times and room assignments, event set-up and menu selections, and everything else to make your ${arrivalDate} stay seamless.`;
+                        detailsSection = `For next steps, I wanted to e-introduce you to our Planning Team, Rebecca and Arianna. My colleagues have been brought up to speed on everything we've discussed so far. They'll be working with you on all the details of your visit, like arrival times and room assignments, event set-up and menu selections, and everything else to make your ${arrivalDate} stay seamless.`;
+                        nextStepsLine = `You can expect to hear from someone in the next few days. In the meantime, I'm still here if you need anything; don't hesitate to reach out.`;
                         closingLine = `We're excited to welcome you to our little corner of the Ozarks. Here's to good times and great company.`;
                     }
-                    
+
                     template = `Hi ${firstName},
 
 Thank you so much for getting everything completed for the ${groupName}! We're excited to have you.
 
 ${detailsSection}
 
-You can expect to hear from Arianna in the next few days. In the meantime, I'm still here if you need anything; don't hesitate to reach out.
+${nextStepsLine}
 
 ${closingLine}
 

@@ -4530,6 +4530,16 @@
             const lead = appData.leads.find(l => l.id === id);
             if (!lead) return;
 
+            // If another lead was already open, save its in-progress edits
+            // before swapping. Prevents event card edits (and other fields)
+            // from being silently lost when jumping between leads.
+            if (currentLeadId && currentLeadId !== id) {
+                const prev = appData.leads.find(l => l.id === currentLeadId);
+                if (prev && (prev.bookingName || prev.account)) {
+                    try { saveLead({suppressClose: true}); } catch (e) { console.warn('Auto-save on lead switch failed:', e); }
+                }
+            }
+
             currentLeadId = id;
             currentRoomBlock = lead.roomBlock ? JSON.parse(JSON.stringify(lead.roomBlock)) : [];
             currentEvents = lead.events ? JSON.parse(JSON.stringify(lead.events)) : [];
@@ -4646,7 +4656,8 @@
         }
 
         function closePanel() {
-            // Check if current lead is empty (no booking name) and delete it
+            // Auto-save any in-progress edits before closing so field
+            // changes (especially event cards) aren't silently lost.
             if (currentLeadId) {
                 const lead = appData.leads.find(l => l.id === currentLeadId);
                 if (lead && !lead.bookingName && !lead.account) {
@@ -4656,6 +4667,9 @@
                         appData.leads.splice(idx, 1);
                         saveData();
                     }
+                } else if (lead) {
+                    // Save existing lead with any edits that haven't been persisted
+                    try { saveLead({suppressClose: true}); } catch (e) { console.warn('Auto-save on close failed:', e); }
                 }
             }
             leadPanel.classList.remove('open');
@@ -4671,7 +4685,8 @@
             });
         }
 
-        function saveLead() {
+        function saveLead(opts) {
+            opts = opts || {};
             const type = document.getElementById('lead-type').value;
             const existingLead = currentLeadId ? appData.leads.find(l => l.id === currentLeadId) : null;
             
@@ -4776,8 +4791,10 @@
             if (oldLead && oldLead.type !== leadData.type) {
                 updateChecklistType(leadData.id, leadData.type);
             }
-            
-            closePanel();
+
+            if (!opts.suppressClose) {
+                closePanel();
+            }
             renderLeads();
             updateDashboard();
         }

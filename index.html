@@ -1626,9 +1626,16 @@
                         <div class="panel-section" id="section-notes">
                             <div class="form-group"><label class="form-label">General Notes</label><textarea class="form-textarea" id="lead-notes" placeholder="Add general notes..." style="min-height: 120px;"></textarea></div>
                             <div class="form-divider"></div>
+
                             <div class="form-group"><label class="form-label">Handover Notes <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(syncs with Handover tab)</span></label><textarea class="form-textarea" id="lead-handoverNotes" placeholder="Notes for the handover process..." style="min-height: 100px;" oninput="syncMirroredField('handoverNotes', this.value)"></textarea></div>
+                            <div class="form-group"><label class="form-label" style="font-size: 11px;">Delphi Note Title (auto-generated, editable)</label><input type="text" class="form-input" id="handover-note-title" style="margin-bottom: 8px;"></div>
+                            <button type="button" class="btn btn-primary" onclick="sendHandoverNotesToDelphi()" style="padding: 8px 16px; font-size: 13px;">📝 Send Handover Notes to Delphi</button>
+                            <div id="handover-note-status" style="margin-top: 8px; font-size: 12px; display: none;"></div>
+
                             <div class="form-divider"></div>
                             <div class="form-group"><label class="form-label">Special Concessions <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(syncs with Contract tab)</span></label><textarea class="form-textarea" id="lead-concessionsMirror" placeholder="Enter concessions (one per line)..." style="min-height: 100px;" oninput="syncMirroredField('concessions', this.value)"></textarea></div>
+                            <div class="form-divider"></div>
+                            <button type="button" class="btn btn-secondary" onclick="openNewNoteModal()" style="padding: 8px 16px; font-size: 13px;">📝 Send New Note to Delphi</button>
                             <div class="form-divider"></div>
                             <div class="form-group">
                                 <label class="form-label">Sticky Notes <span style="color: var(--text-muted); font-weight: normal; font-size: 12px;">(tagged with @mention)</span></label>
@@ -3779,6 +3786,122 @@
 
         let pushPreviewData = null;
 
+        // ============ DELPHI NOTES ============
+        function formatDateForNote(d) {
+            d = d || new Date();
+            return `${d.getMonth() + 1}.${d.getDate()}.${d.getFullYear()}`;
+        }
+
+        function autogenHandoverNoteTitle() {
+            const el = document.getElementById('handover-note-title');
+            if (el && !el.value) {
+                el.value = `Handover Notes - ${formatDateForNote()}`;
+            }
+        }
+
+        async function sendHandoverNotesToDelphi() {
+            if (!currentLeadId) return;
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead || !lead.delphiId) {
+                alert('This lead isn\'t linked to a Delphi booking.');
+                return;
+            }
+            const title = (document.getElementById('handover-note-title').value || '').trim();
+            const body = (document.getElementById('lead-handoverNotes').value || '').trim();
+            if (!title || !body) {
+                alert('Title and Handover Notes body must both be filled in before sending.');
+                return;
+            }
+            const status = document.getElementById('handover-note-status');
+            status.style.display = 'block';
+            status.style.color = '#aaa';
+            status.textContent = 'Sending note to Delphi…';
+            try {
+                const resp = await fetch(`${DELPHI_API}/api/sync/create-note`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ leadId: currentLeadId, title, body })
+                });
+                const result = await resp.json();
+                if (result.ok) {
+                    status.style.color = '#2ecc71';
+                    status.textContent = `✓ ${result.message}`;
+                } else {
+                    status.style.color = '#e74c3c';
+                    status.textContent = `✗ ${result.error || 'Failed to send note'}`;
+                }
+            } catch (e) {
+                status.style.color = '#e74c3c';
+                status.textContent = `✗ Connection error: ${e.message}`;
+            }
+        }
+
+        function openNewNoteModal() {
+            if (!currentLeadId) return;
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead || !lead.delphiId) {
+                alert('This lead isn\'t linked to a Delphi booking.');
+                return;
+            }
+            const existing = document.getElementById('newNoteModal');
+            if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'newNoteModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+            modal.innerHTML = `
+                <div style="background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:8px;width:90%;max-width:560px;padding:24px;">
+                    <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:4px;">Send New Note to Delphi</div>
+                    <div style="font-size:12px;color:#888;margin-bottom:16px;">This creates a Note attached to this booking in Delphi, visible to everyone.</div>
+                    <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="newNoteTitle" placeholder="e.g. Menu Selections ${formatDateForNote()}"></div>
+                    <div class="form-group"><label class="form-label">Body</label><textarea class="form-textarea" id="newNoteBody" placeholder="Type your note here..." style="min-height: 160px;"></textarea></div>
+                    <div id="newNoteStatus" style="font-size:12px;margin-top:8px;display:none;"></div>
+                    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+                        <button class="btn" onclick="closeNewNoteModal()" style="padding:8px 16px;">Cancel</button>
+                        <button class="btn btn-primary" onclick="sendNewNote()" style="padding:8px 16px;">Send to Delphi</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            setTimeout(() => document.getElementById('newNoteTitle')?.focus(), 50);
+        }
+
+        function closeNewNoteModal() {
+            const m = document.getElementById('newNoteModal');
+            if (m) m.remove();
+        }
+
+        async function sendNewNote() {
+            const title = (document.getElementById('newNoteTitle').value || '').trim();
+            const body = (document.getElementById('newNoteBody').value || '').trim();
+            if (!title || !body) {
+                alert('Both title and body are required.');
+                return;
+            }
+            const status = document.getElementById('newNoteStatus');
+            status.style.display = 'block';
+            status.style.color = '#aaa';
+            status.textContent = 'Sending…';
+            try {
+                const resp = await fetch(`${DELPHI_API}/api/sync/create-note`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ leadId: currentLeadId, title, body })
+                });
+                const result = await resp.json();
+                if (result.ok) {
+                    status.style.color = '#2ecc71';
+                    status.textContent = `✓ ${result.message}`;
+                    setTimeout(closeNewNoteModal, 1200);
+                } else {
+                    status.style.color = '#e74c3c';
+                    status.textContent = `✗ ${result.error || 'Failed to send note'}`;
+                }
+            } catch (e) {
+                status.style.color = '#e74c3c';
+                status.textContent = `✗ Connection error: ${e.message}`;
+            }
+        }
+
         async function pushToDelphi() {
             if (!currentLeadId) return;
             const lead = appData.leads.find(l => l.id === currentLeadId);
@@ -4822,6 +4945,11 @@
             renderDelphiSnapshot(lead);
             renderDelphiChanges(lead);
             renderHistory(lead);
+            // Reset + auto-generate today's handover-note title
+            const hNoteTitle = document.getElementById('handover-note-title');
+            if (hNoteTitle) hNoteTitle.value = `Handover Notes - ${formatDateForNote()}`;
+            const hNoteStatus = document.getElementById('handover-note-status');
+            if (hNoteStatus) hNoteStatus.style.display = 'none';
             rebuildRoomBlock();
             
             // Show quote room totals reference if available

@@ -3662,6 +3662,9 @@
                     <div style="padding:16px 24px;overflow-y:auto;flex:1;">
             `;
 
+            if (data.preview.length > 0) {
+                html += `<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Events</div>`;
+            }
             data.preview.forEach((evt, evtIdx) => {
                 html += `
                     <div style="margin-bottom:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:12px;">
@@ -3687,6 +3690,35 @@
                 });
                 html += `</div>`;
             });
+
+            // Guestrooms section
+            if (data.roomPreview && data.roomPreview.length > 0) {
+                html += `<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">Guestrooms</div>`;
+                data.roomPreview.forEach(room => {
+                    html += `
+                        <div style="margin-bottom:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:12px;">
+                            <div style="font-weight:600;color:#00d9ff;margin-bottom:10px;">${room.type}</div>
+                    `;
+                    room.changes.forEach(c => {
+                        const fromDisplay = Array.isArray(c.from) ? `[${c.from.join(', ')}]` : String(c.from);
+                        const toDisplay = Array.isArray(c.to) ? `[${c.to.join(', ')}]` : String(c.to);
+                        html += `
+                            <label style="display:flex;align-items:flex-start;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                <input type="checkbox" checked data-room="${room.type}" data-room-field="${c.field}" style="margin-right:10px;margin-top:3px;">
+                                <div style="flex:1;font-size:13px;">
+                                    <div style="color:#bbb;font-weight:500;margin-bottom:2px;">${c.label}</div>
+                                    <div style="font-size:12px;color:#888;">
+                                        <span style="text-decoration:line-through;color:#666;">${fromDisplay}</span>
+                                        <span style="margin:0 6px;">→</span>
+                                        <span style="color:#2ecc71;">${toDisplay}</span>
+                                    </div>
+                                </div>
+                            </label>
+                        `;
+                    });
+                    html += `</div>`;
+                });
+            }
 
             if (data.unmatched && data.unmatched.length > 0) {
                 html += `
@@ -3719,18 +3751,28 @@
             const modal = document.getElementById('pushPreviewModal');
             if (!modal) return;
 
-            // Build selections from checked boxes
+            // Build event-field selections
             const selections = {};
-            modal.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            modal.querySelectorAll('input[type="checkbox"][data-evt]:checked').forEach(cb => {
                 const evtId = cb.dataset.evt;
                 const field = cb.dataset.field;
                 if (!selections[evtId]) selections[evtId] = [];
                 selections[evtId].push(field);
             });
 
-            const totalSelected = Object.values(selections).reduce((s, a) => s + a.length, 0);
-            if (totalSelected === 0) {
-                alert('No changes selected. Uncheck Cancel if you want to back out.');
+            // Build room-block selections
+            const roomSelections = {};
+            modal.querySelectorAll('input[type="checkbox"][data-room]:checked').forEach(cb => {
+                const rtype = cb.dataset.room;
+                const field = cb.dataset.roomField;
+                if (!roomSelections[rtype]) roomSelections[rtype] = [];
+                roomSelections[rtype].push(field);
+            });
+
+            const eventCount = Object.values(selections).reduce((s, a) => s + a.length, 0);
+            const roomCount = Object.values(roomSelections).reduce((s, a) => s + a.length, 0);
+            if (eventCount + roomCount === 0) {
+                alert('No changes selected. Click Cancel if you want to back out.');
                 return;
             }
 
@@ -3746,7 +3788,7 @@
                 const resp = await fetch(`${DELPHI_API}/api/sync/push-to-delphi`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ leadId: currentLeadId, selections })
+                    body: JSON.stringify({ leadId: currentLeadId, selections, roomSelections })
                 });
                 const result = await resp.json();
 

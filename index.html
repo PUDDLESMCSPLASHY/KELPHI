@@ -1349,6 +1349,7 @@
                         <div class="panel-tab" data-section="billing">Billing</div>
                         <div class="panel-tab" data-section="notes">Notes</div>
                         <div class="panel-tab" data-section="templates">Templates</div>
+                        <div class="panel-tab" data-section="history">History</div>
                         <div class="panel-tab" data-section="delete" style="color: var(--danger);">Delete</div>
                     </div>
                     <div class="panel-content">
@@ -1731,6 +1732,16 @@
                             </div>
                         </div>
                         
+                        <!-- History Section -->
+                        <div class="panel-section" id="section-history">
+                            <div style="margin-bottom: 16px; padding: 10px 12px; background: rgba(0,217,255,0.06); border: 1px solid rgba(0,217,255,0.15); border-radius: 6px; font-size: 12px; color: #888;">
+                                A log of edits to this booking. Shows the 50 most recent changes. Tracking started April 2026.
+                            </div>
+                            <div id="historyList" style="font-size: 13px;">
+                                <div style="color: #666; font-style: italic;">No history recorded yet for this lead.</div>
+                            </div>
+                        </div>
+
                         <!-- Delete Section -->
                         <div class="panel-section" id="section-delete">
                             <!-- Archive Option (hidden if already archived) -->
@@ -2864,6 +2875,209 @@
         }
 
         function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
+
+        // ============ HISTORY TRACKING ============
+        // Field keys we log at the "Medium" level. Internal/derived fields
+        // (updatedAt, createdAt, revenue, roomPickup, delphiSnapshot, etc.)
+        // are intentionally skipped.
+        const HISTORY_TOP_FIELDS = {
+            bookingName: 'Booking Name',
+            account: 'Account',
+            contactFirstName: 'Contact First Name',
+            contactLastName: 'Contact Last Name',
+            contactPhone: 'Contact Phone',
+            contactEmail: 'Contact Email',
+            contactTitle: 'Contact Title',
+            arrival: 'Arrival',
+            departure: 'Departure',
+            type: 'Booking Type',
+            status: 'Status',
+            segment: 'Market Segment',
+            bookingType: 'Industry / Booking Type',
+            pmsAccountNumber: 'PMS Account Number',
+            bookedDate: 'Booked Date',
+            signerName: 'Signer Name',
+            signerEmail: 'Signer Email',
+            signerPhone: 'Signer Phone',
+            signerAddress: 'Signer Address',
+            resProcedure: 'Reservation Procedure',
+            roomPayment: 'Room Payment',
+            cutoff: 'Cut-off Date',
+            commissionable: 'Commissionable',
+            commission: 'Commission %',
+            waiveRental: 'Room Rental Applies',
+            fbCombined: 'F&B Minimum Combined',
+            billingType: 'Billing Type',
+            paymentMethod: 'Payment Method',
+            ccDeposit: 'CC Deposit',
+            concessions: 'Concessions',
+            notes: 'Notes',
+            handoverNotes: 'Handover Notes',
+            firstTimeBooking: 'First Time Booking',
+            milestoneEvent: 'Milestone Event',
+            quoteEmail: 'Quote Email'
+        };
+
+        function historyAppend(leadData, entries, source) {
+            if (!entries || entries.length === 0) return;
+            if (!Array.isArray(leadData.history)) leadData.history = [];
+            const ts = new Date().toISOString();
+            entries.forEach(e => {
+                leadData.history.push({
+                    t: ts,
+                    source: source || 'manual',
+                    ...e
+                });
+            });
+            // Cap at 50 entries — keep newest
+            if (leadData.history.length > 50) {
+                leadData.history = leadData.history.slice(-50);
+            }
+        }
+
+        function diffLeadForHistory(oldLead, newLead) {
+            const entries = [];
+            if (!oldLead) return entries; // new lead — no diff
+
+            // Top-level field changes
+            Object.entries(HISTORY_TOP_FIELDS).forEach(([key, label]) => {
+                const oldVal = oldLead[key];
+                const newVal = newLead[key];
+                // Normalize for comparison (treat undefined/null/"" as equivalent)
+                const a = (oldVal === undefined || oldVal === null) ? '' : String(oldVal);
+                const b = (newVal === undefined || newVal === null) ? '' : String(newVal);
+                if (a !== b) {
+                    entries.push({
+                        field: label,
+                        from: a || '(empty)',
+                        to: b || '(empty)'
+                    });
+                }
+            });
+
+            // Events: diff by _delphiEventId when available, otherwise by name+date
+            const oldEvents = oldLead.events || [];
+            const newEvents = newLead.events || [];
+            const keyOf = e => e._delphiEventId || `${e.name || ''}|${e.date || ''}`;
+            const oldEvtMap = {}, newEvtMap = {};
+            oldEvents.forEach(e => { oldEvtMap[keyOf(e)] = e; });
+            newEvents.forEach(e => { newEvtMap[keyOf(e)] = e; });
+
+            // Added events
+            Object.entries(newEvtMap).forEach(([k, ne]) => {
+                if (!oldEvtMap[k]) {
+                    entries.push({ field: `Event added: ${ne.name || '(unnamed)'}`, from: '—', to: ne.date || '' });
+                } else {
+                    // Modified event
+                    const oe = oldEvtMap[k];
+                    const evtFields = { name: 'Name', date: 'Date', classification: 'Classification', startTime: 'Start Time', endTime: 'End Time', room: 'Room', setup: 'Setup', headcount: 'Headcount', rental: 'Rental', fbMin: 'F&B Min', attendance: 'Attendance' };
+                    Object.entries(evtFields).forEach(([ek, elabel]) => {
+                        const a = (oe[ek] === undefined || oe[ek] === null) ? '' : String(oe[ek]);
+                        const b = (ne[ek] === undefined || ne[ek] === null) ? '' : String(ne[ek]);
+                        if (a !== b) {
+                            entries.push({
+                                field: `${ne.name || 'Event'} → ${elabel}`,
+                                from: a || '(empty)',
+                                to: b || '(empty)'
+                            });
+                        }
+                    });
+                }
+            });
+            // Removed events
+            Object.entries(oldEvtMap).forEach(([k, oe]) => {
+                if (!newEvtMap[k]) {
+                    entries.push({ field: `Event removed: ${oe.name || '(unnamed)'}`, from: oe.date || '', to: '—' });
+                }
+            });
+
+            // Room block: diff by type
+            const oldRooms = oldLead.roomBlock || [];
+            const newRooms = newLead.roomBlock || [];
+            const oldRoomMap = {}, newRoomMap = {};
+            oldRooms.forEach(r => { if (r.type) oldRoomMap[r.type] = r; });
+            newRooms.forEach(r => { if (r.type) newRoomMap[r.type] = r; });
+
+            Object.entries(newRoomMap).forEach(([t, nr]) => {
+                if (!oldRoomMap[t]) {
+                    entries.push({ field: `Room Block added: ${t}`, from: '—', to: `${(nr.quantities||[]).reduce((s,q)=>s+(+q||0),0)} nights` });
+                } else {
+                    const or = oldRoomMap[t];
+                    if ((or.rate || 0) != (nr.rate || 0)) {
+                        entries.push({ field: `${t} → Rate`, from: `$${or.rate || 0}`, to: `$${nr.rate || 0}` });
+                    }
+                    if (JSON.stringify(or.quantities || []) !== JSON.stringify(nr.quantities || [])) {
+                        entries.push({ field: `${t} → Agreed Rooms`, from: JSON.stringify(or.quantities || []), to: JSON.stringify(nr.quantities || []) });
+                    }
+                    if (JSON.stringify(or.forecast || []) !== JSON.stringify(nr.forecast || [])) {
+                        entries.push({ field: `${t} → Forecast Rooms`, from: JSON.stringify(or.forecast || []), to: JSON.stringify(nr.forecast || []) });
+                    }
+                    if (JSON.stringify(or.block || []) !== JSON.stringify(nr.block || [])) {
+                        entries.push({ field: `${t} → Blocked Rooms`, from: JSON.stringify(or.block || []), to: JSON.stringify(nr.block || []) });
+                    }
+                }
+            });
+            Object.entries(oldRoomMap).forEach(([t, or]) => {
+                if (!newRoomMap[t]) {
+                    entries.push({ field: `Room Block removed: ${t}`, from: `${(or.quantities||[]).reduce((s,q)=>s+(+q||0),0)} nights`, to: '—' });
+                }
+            });
+
+            return entries;
+        }
+
+        function renderHistory(lead) {
+            const container = document.getElementById('historyList');
+            if (!container) return;
+            const history = (lead && lead.history) || [];
+            if (history.length === 0) {
+                container.innerHTML = '<div style="color: #666; font-style: italic;">No history recorded yet for this lead.</div>';
+                return;
+            }
+            const sourceLabel = {
+                'manual': '✏️ Manual edit',
+                'delphi-sync': '🔄 Delphi sync',
+                'push-back': '⬆️ Pushed to Delphi',
+                'conflict-accept': '✅ Accepted Delphi change',
+                'conflict-keep': '🛡️ Kept Kelphi version',
+                'conflict-dismiss': '👁️ Dismissed flag',
+                'bulk-status': '☑️ Bulk status change',
+                'import': '📥 Imported from Delphi'
+            };
+            // Group by timestamp (same save = same group)
+            const groups = [];
+            let lastTs = null;
+            let lastSource = null;
+            history.slice().reverse().forEach(h => {
+                if (h.t !== lastTs || h.source !== lastSource) {
+                    groups.push({ t: h.t, source: h.source, entries: [] });
+                    lastTs = h.t;
+                    lastSource = h.source;
+                }
+                groups[groups.length - 1].entries.push(h);
+            });
+
+            container.innerHTML = groups.map(g => {
+                const d = new Date(g.t);
+                const when = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                return `
+                    <div style="margin-bottom:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <div style="font-size:12px;color:#00d9ff;font-weight:500;">${sourceLabel[g.source] || g.source}</div>
+                            <div style="font-size:11px;color:#666;">${when}</div>
+                        </div>
+                        ${g.entries.map(e => `
+                            <div style="padding:3px 0;font-size:12px;">
+                                <span style="color:#bbb;">${e.field}:</span>
+                                <span style="color:#999;text-decoration:line-through;margin:0 4px;">${e.from}</span>
+                                →
+                                <span style="color:#2ecc71;margin-left:4px;">${e.to}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
 
         // ============ DOM ============
         const lockScreen = document.getElementById('lockScreen');
@@ -4607,6 +4821,7 @@
             updatePanelTabs();
             renderDelphiSnapshot(lead);
             renderDelphiChanges(lead);
+            renderHistory(lead);
             rebuildRoomBlock();
             
             // Show quote room totals reference if available
@@ -4760,8 +4975,15 @@
                 handoverNotes: document.getElementById('lead-handoverNotes').value,
                 revenue: revenue,
                 createdAt: currentLeadId ? (appData.leads.find(l => l.id === currentLeadId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                history: existingLead ? (existingLead.history || []) : []
             };
+
+            // Compute and append history entries for this save
+            const historyEntries = diffLeadForHistory(existingLead, leadData);
+            if (historyEntries.length > 0) {
+                historyAppend(leadData, historyEntries, opts.historySource || 'manual');
+            }
 
             // Check if status changed to contract-out (trigger checklist creation)
             const oldLead = currentLeadId ? appData.leads.find(l => l.id === currentLeadId) : null;

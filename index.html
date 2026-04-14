@@ -3133,20 +3133,20 @@
 
                 const forecastRow = `
                     <tr data-idx="${idx}" data-row="forecast">
-                        <td style="font-size: 0.75rem; color: #aaa;">Forecast</td>
+                        <td style="font-size: 0.75rem; color: #666;">Forecast</td>
                         ${dates.map((d, di) => `
                             <td class="date-cell">
-                                <input type="number" class="qty-input qty-forecast" data-idx="${idx}" data-date="${di}" value="${row.forecast[di] || ''}" placeholder="0" min="0" title="Auto-fills to 80% of Agreed; edit to override">
+                                <input type="number" class="qty-input qty-forecast" data-idx="${idx}" data-date="${di}" value="${row.forecast[di] || ''}" placeholder="0" min="0" style="color: #777;" title="Auto-fills to 80% of Agreed; edit to override">
                             </td>
                         `).join('')}
                     </tr>`;
 
                 const blockRow = `
                     <tr data-idx="${idx}" data-row="block">
-                        <td style="font-size: 0.75rem; color: #aaa;">Blocked</td>
+                        <td style="font-size: 0.75rem; color: #666;">Blocked</td>
                         ${dates.map((d, di) => `
                             <td class="date-cell">
-                                <input type="number" class="qty-input qty-block" data-idx="${idx}" data-date="${di}" value="${row.block[di] || ''}" placeholder="0" min="0" title="Auto-fills to Agreed; edit to override">
+                                <input type="number" class="qty-input qty-block" data-idx="${idx}" data-date="${di}" value="${row.block[di] || ''}" placeholder="0" min="0" style="color: #777;" title="Auto-fills to Agreed; edit to override">
                             </td>
                         `).join('')}
                     </tr>`;

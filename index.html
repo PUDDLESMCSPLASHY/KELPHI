@@ -3662,6 +3662,28 @@
                     <div style="padding:16px 24px;overflow-y:auto;flex:1;">
             `;
 
+            // Booking-level fields section (renders first, at the top)
+            if (data.bookingPreview && data.bookingPreview.length > 0) {
+                html += `<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Booking Info</div>`;
+                html += `<div style="margin-bottom:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:12px;">`;
+                data.bookingPreview.forEach(c => {
+                    html += `
+                        <label style="display:flex;align-items:flex-start;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <input type="checkbox" checked data-booking-field="${c.field}" style="margin-right:10px;margin-top:3px;">
+                            <div style="flex:1;font-size:13px;">
+                                <div style="color:#bbb;font-weight:500;margin-bottom:2px;">${c.label}</div>
+                                <div style="font-size:12px;color:#888;">
+                                    <span style="text-decoration:line-through;color:#666;">${c.from}</span>
+                                    <span style="margin:0 6px;">→</span>
+                                    <span style="color:#2ecc71;">${c.to}</span>
+                                </div>
+                            </div>
+                        </label>
+                    `;
+                });
+                html += `</div>`;
+            }
+
             if (data.preview.length > 0) {
                 html += `<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Events</div>`;
             }
@@ -3769,9 +3791,15 @@
                 roomSelections[rtype].push(field);
             });
 
+            // Build booking-level selections
+            const bookingFields = [];
+            modal.querySelectorAll('input[type="checkbox"][data-booking-field]:checked').forEach(cb => {
+                bookingFields.push(cb.dataset.bookingField);
+            });
+
             const eventCount = Object.values(selections).reduce((s, a) => s + a.length, 0);
             const roomCount = Object.values(roomSelections).reduce((s, a) => s + a.length, 0);
-            if (eventCount + roomCount === 0) {
+            if (eventCount + roomCount + bookingFields.length === 0) {
                 alert('No changes selected. Click Cancel if you want to back out.');
                 return;
             }
@@ -3788,7 +3816,7 @@
                 const resp = await fetch(`${DELPHI_API}/api/sync/push-to-delphi`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ leadId: currentLeadId, selections, roomSelections })
+                    body: JSON.stringify({ leadId: currentLeadId, selections, roomSelections, bookingFields })
                 });
                 const result = await resp.json();
 

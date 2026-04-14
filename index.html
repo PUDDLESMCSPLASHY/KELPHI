@@ -463,6 +463,11 @@
         .room-block-table .total-row td { background: #1a1a24; font-weight: 600; color: #00d9ff; }
         .room-block-table input { width: 100%; background: transparent; border: none; color: #e0e0e0; text-align: center; font-size: 0.8rem; padding: 0.25rem; }
         .room-block-table input:focus { outline: none; background: rgba(0,217,255,0.1); }
+        /* Forecast and Blocked rows render dimmer so Agreed stands out */
+        .room-block-table .qty-secondary { color: #777; }
+        .room-block-table .qty-row-label { font-size: 0.7rem; color: #666; text-align: left; padding-left: 0.75rem; }
+        body.light-mode .room-block-table .qty-secondary { color: #4a5568; }
+        body.light-mode .room-block-table .qty-row-label { color: #4a5568; }
         .room-block-table select { background: #1a1a24; border: none; color: #e0e0e0; font-size: 0.75rem; padding: 0.25rem; width: 100%; }
         .room-block-table .remove-row { color: #ff4757; cursor: pointer; font-size: 1rem; opacity: 0.5; }
         .room-block-table .remove-row:hover { opacity: 1; }
@@ -1824,9 +1829,15 @@
             }
         }
         const ROOM_TYPES = [
-            'Run of House', 'Deluxe King', 'Deluxe Two Queen', 'Premium King', 
-            'Premium Two Queen', 'Studio Suite King', 'One Bedroom Suite King', 'Presidential Suite King'
+            'Run of House', 'Deluxe King', 'Deluxe Two Queen', 'Premium King',
+            'Premium Two Queen', 'Studio Suite King', 'Premium Studio King Suite', 'Presidential Suite King'
         ];
+
+        // Migration map: old room type names -> current names
+        const ROOM_TYPE_RENAMES = {
+            'One Bedroom Suite King': 'Premium Studio King Suite',
+            'One Bedroom Suite': 'Premium Studio King Suite'
+        };
         const FUNCTION_ROOMS = ['Dogwood Ballroom', 'Dogwood Ballroom A', 'Dogwood Ballroom B', 'The Gallery', 'Ozark Room', 'The Front Porch', 'Guestroom Suite', 'Reception Foyer', 'Lobby Lounge', 'The Atrium', 'The Eddy', 'The Sunroom', 'Sestina', 'Private Dining Room', 'Sestina Terrace', 'Crystal Room', 'Field Notes'];
         const SETUP_STYLES = ['Classroom', 'Classroom Chevron', 'Conference/Boardroom', 'Crescent Rounds', 'Empty', 'Exhibition', 'Existing Setup', 'Hollow Square', 'Hollow Rectangle', 'Reception', 'Road Show', 'Rounds', 'See Floor Plan', 'Special Setup', 'Theatre', 'U Shape'];
 
@@ -3068,6 +3079,10 @@
         }
 
         function ensureRoomRowShape(row, length) {
+            // Auto-migrate any renamed room types
+            if (row.type && ROOM_TYPE_RENAMES[row.type]) {
+                row.type = ROOM_TYPE_RENAMES[row.type];
+            }
             if (!Array.isArray(row.quantities)) row.quantities = new Array(length).fill(0);
             while (row.quantities.length < length) row.quantities.push(0);
 
@@ -3133,20 +3148,20 @@
 
                 const forecastRow = `
                     <tr data-idx="${idx}" data-row="forecast">
-                        <td style="font-size: 0.75rem; color: #666;">Forecast</td>
+                        <td class="qty-row-label">Forecast</td>
                         ${dates.map((d, di) => `
                             <td class="date-cell">
-                                <input type="number" class="qty-input qty-forecast" data-idx="${idx}" data-date="${di}" value="${row.forecast[di] || ''}" placeholder="0" min="0" style="color: #777;" title="Auto-fills to 80% of Agreed; edit to override">
+                                <input type="number" class="qty-input qty-forecast qty-secondary" data-idx="${idx}" data-date="${di}" value="${row.forecast[di] || ''}" placeholder="0" min="0" title="Auto-fills to 80% of Agreed; edit to override">
                             </td>
                         `).join('')}
                     </tr>`;
 
                 const blockRow = `
                     <tr data-idx="${idx}" data-row="block">
-                        <td style="font-size: 0.75rem; color: #666;">Blocked</td>
+                        <td class="qty-row-label">Blocked</td>
                         ${dates.map((d, di) => `
                             <td class="date-cell">
-                                <input type="number" class="qty-input qty-block" data-idx="${idx}" data-date="${di}" value="${row.block[di] || ''}" placeholder="0" min="0" style="color: #777;" title="Auto-fills to Agreed; edit to override">
+                                <input type="number" class="qty-input qty-block qty-secondary" data-idx="${idx}" data-date="${di}" value="${row.block[di] || ''}" placeholder="0" min="0" title="Auto-fills to Agreed; edit to override">
                             </td>
                         `).join('')}
                     </tr>`;

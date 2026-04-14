@@ -3586,6 +3586,16 @@
                     return;
                 }
 
+                // If the booking is Definite/Lost/Turndown in Delphi, show the
+                // blocked modal even if there are no changes (so user knows why)
+                if (result.blocked) {
+                    pushPreviewData = result;
+                    showPushPreviewModal(result);
+                    btn.disabled = false;
+                    btn.textContent = 'Push Kelphi Data to Delphi';
+                    return;
+                }
+
                 if (!result.preview || result.preview.length === 0) {
                     status.style.display = 'block';
                     status.style.color = '#aaa';
@@ -3615,12 +3625,40 @@
             modal.id = 'pushPreviewModal';
             modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
 
+            // Fully blocked: Definite / Lost / Turndown — show only a warning, no push button
+            if (data.blocked) {
+                modal.innerHTML = `
+                    <div style="background:#1a1a24;border:1px solid rgba(231,76,60,0.3);border-radius:8px;width:90%;max-width:540px;padding:28px 28px 22px;">
+                        <div style="font-size:42px;text-align:center;margin-bottom:12px;">🚫</div>
+                        <div style="font-size:17px;font-weight:600;color:#e74c3c;text-align:center;margin-bottom:12px;">Push-back is disabled for this booking</div>
+                        <div style="font-size:14px;color:#ddd;line-height:1.5;text-align:center;margin-bottom:20px;">
+                            This booking is <strong style="color:#f0ad4e;">${data.delphiStatus}</strong> in Delphi. To keep data safe, Kelphi won't push changes to Delphi once a booking reaches this status.
+                            <br><br>
+                            Please update the fields manually in Delphi directly.
+                        </div>
+                        <div style="display:flex;justify-content:center;">
+                            <button class="btn" onclick="closePushPreview()" style="padding:8px 24px;">OK</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                return;
+            }
+
+            // Warning banner (Tentative) or clean header (Prospect)
+            const warningBanner = data.warning ? `
+                <div style="margin:12px 24px 0;padding:12px;background:rgba(240,173,78,0.1);border:1px solid rgba(240,173,78,0.3);border-radius:6px;font-size:13px;color:#f0ad4e;">
+                    ⚠️ <strong>Heads up:</strong> This booking is <strong>${data.delphiStatus}</strong> in Delphi. Push-back is allowed but any change here will overwrite Delphi values. Double-check before confirming.
+                </div>
+            ` : '';
+
             let html = `
                 <div style="background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:8px;width:90%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;">
                     <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);">
                         <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:4px;">Review Changes Before Pushing</div>
-                        <div style="font-size:12px;color:#888;">Uncheck anything you don't want to push. ${data.totalChanges} change${data.totalChanges === 1 ? '' : 's'} across ${data.preview.length} event${data.preview.length === 1 ? '' : 's'}.</div>
+                        <div style="font-size:12px;color:#888;">Delphi status: <strong>${data.delphiStatus || '?'}</strong>. Uncheck anything you don't want to push. ${data.totalChanges} change${data.totalChanges === 1 ? '' : 's'} across ${data.preview.length} event${data.preview.length === 1 ? '' : 's'}.</div>
                     </div>
+                    ${warningBanner}
                     <div style="padding:16px 24px;overflow-y:auto;flex:1;">
             `;
 

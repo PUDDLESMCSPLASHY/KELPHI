@@ -3821,9 +3821,15 @@
                 const result = await resp.json();
 
                 status.style.display = 'block';
+                const errorDetail = (result.errors && result.errors.length > 0)
+                    ? '<div style="margin-top:8px;font-size:11px;color:#e74c3c;">Errors:<br>' +
+                      result.errors.map(e => `• ${e.event || ''}: ${e.error || ''}`).join('<br>') +
+                      '</div>'
+                    : '';
+
                 if (result.ok) {
                     status.style.color = '#2ecc71';
-                    status.innerHTML = `✓ ${result.message}`;
+                    status.innerHTML = `✓ ${result.message}${errorDetail}`;
                     await loadFromCloud();
                     const updatedLead = appData.leads.find(l => l.id === currentLeadId);
                     if (updatedLead) {
@@ -3833,7 +3839,7 @@
                     renderLeads();
                 } else {
                     status.style.color = '#e74c3c';
-                    status.innerHTML = `✗ ${result.error || result.message || 'Push failed'}`;
+                    status.innerHTML = `✗ ${result.error || result.message || 'Push failed'}${errorDetail}`;
                 }
             } catch (e) {
                 status.style.display = 'block';

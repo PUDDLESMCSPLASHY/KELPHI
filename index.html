@@ -1493,7 +1493,7 @@
                                     <div class="summary-item"><div class="summary-label">Total Room Nights</div><div class="summary-value" id="totalRoomNights">0</div></div>
                                     <div class="summary-item"><div class="summary-label">Peak Rooms</div><div class="summary-value" id="peakRooms">0</div></div>
                                     <div class="summary-item"><div class="summary-label">Anticipated Revenue</div><div class="summary-value" id="roomRevenue">$0</div></div>
-                                    <div class="summary-item"><div class="summary-label">Forecasted (80%)</div><div class="summary-value" id="forecastedRevenue">$0</div></div>
+                                    <div class="summary-item"><div class="summary-label">Forecasted Revenue</div><div class="summary-value" id="forecastedRevenue">$0</div></div>
                                 </div>
                                 
                                 <!-- Pickup Summary (from Delphi) -->
@@ -3037,7 +3037,7 @@
             const arrival = document.getElementById('lead-arrival').value;
             const departure = document.getElementById('lead-departure').value;
             const dates = getDatesArray(arrival, departure);
-            
+
             const msgEl = document.getElementById('guestroomDateMsg');
             const containerEl = document.getElementById('roomBlockContainer');
 
@@ -3055,12 +3055,45 @@
             thead.innerHTML = `<tr>
                 <th class="room-type-cell">Room Type</th>
                 <th class="rate-cell">Rate</th>
+                <th style="width: 90px; font-size: 0.7rem; color: #888;">Row</th>
                 ${dates.map(d => `<th class="date-cell">${formatShortDate(d)}</th>`).join('')}
                 <th></th>
             </tr>`;
 
+            // Migrate any old-format rows (only had `quantities`) to include forecast + block
+            currentRoomBlock.forEach(row => ensureRoomRowShape(row, dates.length));
+
             // Rebuild body with existing data
             renderRoomBlockBody(dates);
+        }
+
+        function ensureRoomRowShape(row, length) {
+            if (!Array.isArray(row.quantities)) row.quantities = new Array(length).fill(0);
+            while (row.quantities.length < length) row.quantities.push(0);
+
+            // Forecast defaults to 80% of Agreed when not set
+            if (!Array.isArray(row.forecast)) {
+                row.forecast = row.quantities.map(q => Math.round((q || 0) * 0.8));
+            }
+            while (row.forecast.length < length) {
+                const idx = row.forecast.length;
+                row.forecast.push(Math.round((row.quantities[idx] || 0) * 0.8));
+            }
+
+            // Block defaults to Agreed when not set
+            if (!Array.isArray(row.block)) {
+                row.block = row.quantities.slice();
+            }
+            while (row.block.length < length) {
+                row.block.push(row.quantities[row.block.length] || 0);
+            }
+
+            // Manual flags: track whether user has hand-edited a cell
+            if (!Array.isArray(row.forecastManual)) row.forecastManual = new Array(length).fill(false);
+            while (row.forecastManual.length < length) row.forecastManual.push(false);
+
+            if (!Array.isArray(row.blockManual)) row.blockManual = new Array(length).fill(false);
+            while (row.blockManual.length < length) row.blockManual.push(false);
         }
 
         function renderRoomBlockBody(dates) {
@@ -3071,25 +3104,55 @@
             }
 
             const tbody = document.getElementById('roomBlockBody');
-            tbody.innerHTML = currentRoomBlock.map((row, idx) => `
-                <tr data-idx="${idx}">
-                    <td class="room-type-cell">
+            tbody.innerHTML = currentRoomBlock.map((row, idx) => {
+                ensureRoomRowShape(row, dates.length);
+                const typeCell = `
+                    <td class="room-type-cell" rowspan="3" style="vertical-align: middle;">
                         <select class="room-type-select" data-idx="${idx}">
                             <option value="">Select type...</option>
                             ${ROOM_TYPES.map(t => `<option value="${t}" ${row.type === t ? 'selected' : ''}>${t}</option>`).join('')}
                         </select>
                     </td>
-                    <td class="rate-cell">
+                    <td class="rate-cell" rowspan="3" style="vertical-align: middle;">
                         <input type="number" class="rate-input" data-idx="${idx}" value="${row.rate || ''}" placeholder="0" min="0" step="0.01">
-                    </td>
-                    ${dates.map((d, di) => `
-                        <td class="date-cell">
-                            <input type="number" class="qty-input" data-idx="${idx}" data-date="${di}" value="${row.quantities[di] || ''}" placeholder="0" min="0">
-                        </td>
-                    `).join('')}
-                    <td><span class="remove-row" data-idx="${idx}">&times;</span></td>
-                </tr>
-            `).join('');
+                    </td>`;
+
+                const removeCell = `<td rowspan="3" style="vertical-align: middle;"><span class="remove-row" data-idx="${idx}">&times;</span></td>`;
+
+                const agreedRow = `
+                    <tr data-idx="${idx}" data-row="agreed" style="border-top: 2px solid rgba(255,255,255,0.06);">
+                        ${typeCell}
+                        <td style="font-size: 0.75rem; color: #00d9ff; font-weight: 500;">Agreed</td>
+                        ${dates.map((d, di) => `
+                            <td class="date-cell">
+                                <input type="number" class="qty-input qty-agreed" data-idx="${idx}" data-date="${di}" value="${row.quantities[di] || ''}" placeholder="0" min="0">
+                            </td>
+                        `).join('')}
+                        ${removeCell}
+                    </tr>`;
+
+                const forecastRow = `
+                    <tr data-idx="${idx}" data-row="forecast">
+                        <td style="font-size: 0.75rem; color: #aaa;">Forecast</td>
+                        ${dates.map((d, di) => `
+                            <td class="date-cell">
+                                <input type="number" class="qty-input qty-forecast" data-idx="${idx}" data-date="${di}" value="${row.forecast[di] || ''}" placeholder="0" min="0" title="Auto-fills to 80% of Agreed; edit to override">
+                            </td>
+                        `).join('')}
+                    </tr>`;
+
+                const blockRow = `
+                    <tr data-idx="${idx}" data-row="block">
+                        <td style="font-size: 0.75rem; color: #aaa;">Blocked</td>
+                        ${dates.map((d, di) => `
+                            <td class="date-cell">
+                                <input type="number" class="qty-input qty-block" data-idx="${idx}" data-date="${di}" value="${row.block[di] || ''}" placeholder="0" min="0" title="Auto-fills to Agreed; edit to override">
+                            </td>
+                        `).join('')}
+                    </tr>`;
+
+                return agreedRow + forecastRow + blockRow;
+            }).join('');
 
             // Add listeners
             tbody.querySelectorAll('.room-type-select').forEach(el => {
@@ -3104,11 +3167,45 @@
                     calculateRoomTotals();
                 });
             });
-            tbody.querySelectorAll('.qty-input').forEach(el => {
+            tbody.querySelectorAll('.qty-agreed').forEach(el => {
                 el.addEventListener('input', e => {
                     const idx = parseInt(e.target.dataset.idx);
                     const dateIdx = parseInt(e.target.dataset.date);
-                    currentRoomBlock[idx].quantities[dateIdx] = parseInt(e.target.value) || 0;
+                    const newAgreed = parseInt(e.target.value) || 0;
+                    const row = currentRoomBlock[idx];
+                    row.quantities[dateIdx] = newAgreed;
+
+                    // Auto-fill Forecast (80%) and Block (= Agreed) ONLY for cells the user hasn't manually edited
+                    if (!row.forecastManual[dateIdx]) {
+                        row.forecast[dateIdx] = Math.round(newAgreed * 0.8);
+                        const fEl = tbody.querySelector(`.qty-forecast[data-idx="${idx}"][data-date="${dateIdx}"]`);
+                        if (fEl) fEl.value = row.forecast[dateIdx] || '';
+                    }
+                    if (!row.blockManual[dateIdx]) {
+                        row.block[dateIdx] = newAgreed;
+                        const bEl = tbody.querySelector(`.qty-block[data-idx="${idx}"][data-date="${dateIdx}"]`);
+                        if (bEl) bEl.value = row.block[dateIdx] || '';
+                    }
+                    calculateRoomTotals();
+                });
+            });
+            tbody.querySelectorAll('.qty-forecast').forEach(el => {
+                el.addEventListener('input', e => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    const dateIdx = parseInt(e.target.dataset.date);
+                    const row = currentRoomBlock[idx];
+                    row.forecast[dateIdx] = parseInt(e.target.value) || 0;
+                    row.forecastManual[dateIdx] = true;
+                    calculateRoomTotals();
+                });
+            });
+            tbody.querySelectorAll('.qty-block').forEach(el => {
+                el.addEventListener('input', e => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    const dateIdx = parseInt(e.target.dataset.date);
+                    const row = currentRoomBlock[idx];
+                    row.block[dateIdx] = parseInt(e.target.value) || 0;
+                    row.blockManual[dateIdx] = true;
                     calculateRoomTotals();
                 });
             });
@@ -3127,11 +3224,15 @@
             const arrival = document.getElementById('lead-arrival').value;
             const departure = document.getElementById('lead-departure').value;
             const dates = getDatesArray(arrival, departure);
-            
+
             currentRoomBlock.push({
                 type: '',
                 rate: 0,
-                quantities: new Array(dates.length).fill(0)
+                quantities: new Array(dates.length).fill(0),
+                forecast: new Array(dates.length).fill(0),
+                block: new Array(dates.length).fill(0),
+                forecastManual: new Array(dates.length).fill(false),
+                blockManual: new Array(dates.length).fill(false)
             });
             renderRoomBlockBody(dates);
         }
@@ -3141,15 +3242,22 @@
             const departure = document.getElementById('lead-departure').value;
             const dates = getDatesArray(arrival, departure);
 
-            let totalNights = 0;
-            let totalRevenue = 0;
+            let totalNights = 0;          // Sum of Agreed
+            let totalRevenue = 0;         // Agreed × rate
+            let totalForecastNights = 0;  // Sum of Forecast
+            let forecastRevenue = 0;      // Forecast × rate
             let dailyTotals = new Array(dates.length).fill(0);
 
             currentRoomBlock.forEach(row => {
+                ensureRoomRowShape(row, dates.length);
                 row.quantities.forEach((qty, i) => {
                     dailyTotals[i] += qty;
                     totalNights += qty;
                     totalRevenue += qty * (row.rate || 0);
+                });
+                row.forecast.forEach((fqty, i) => {
+                    totalForecastNights += fqty;
+                    forecastRevenue += fqty * (row.rate || 0);
                 });
             });
 
@@ -3158,14 +3266,16 @@
             document.getElementById('totalRoomNights').textContent = totalNights;
             document.getElementById('peakRooms').textContent = peakRooms;
             document.getElementById('roomRevenue').textContent = formatCurrency(totalRevenue);
-            document.getElementById('forecastedRevenue').textContent = formatCurrency(totalRevenue * 0.8);
+            // Use actual Forecast values now (was always 80% before)
+            document.getElementById('forecastedRevenue').textContent = formatCurrency(forecastRevenue);
 
-            // Update footer totals
+            // Update footer totals (Agreed row totals)
             const tfoot = document.getElementById('roomBlockFoot');
             if (dates.length > 0) {
                 tfoot.innerHTML = `<tr class="total-row">
                     <td class="room-type-cell"><strong>TOTAL</strong></td>
                     <td></td>
+                    <td style="font-size: 0.7rem; color: #888;">Agreed</td>
                     ${dailyTotals.map(t => `<td class="date-cell"><strong>${t}</strong></td>`).join('')}
                     <td></td>
                 </tr>`;

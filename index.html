@@ -4806,6 +4806,30 @@
                 updateChecklistType(leadData.id, leadData.type);
             }
 
+            // If the user just changed Kelphi status to contract-out, lost, or
+            // turndown — prompt them to push the corresponding Delphi status
+            // change along with any other pending field updates.
+            const SYNCABLE = { 'contract-out': 'Tentative', 'lost': 'Lost', 'turndown': 'TurnedDown' };
+            const justChangedToSyncable = SYNCABLE[leadData.status] && (!oldLead || oldLead.status !== leadData.status);
+            if (justChangedToSyncable && leadData.delphiId && !opts.suppressStatusPrompt) {
+                const kelphiLabel = { 'contract-out': 'Contract Out', 'lost': 'Lost', 'turndown': 'Turndown' }[leadData.status];
+                const delphiLabel = SYNCABLE[leadData.status];
+                const confirmed = confirm(`You just flipped this lead to "${kelphiLabel}".\n\nWould you like to review and push the status change to Delphi (${delphiLabel}) along with any pending field updates?\n\nClick OK to review, Cancel to skip (you can push later from the Delphi Snapshot tab).`);
+                if (confirmed) {
+                    // Ensure we keep the panel open so the user can see the modal
+                    if (!opts.suppressClose) {
+                        // Skip the close because we're about to show the preview modal
+                        renderLeads();
+                        updateDashboard();
+                    }
+                    // Temporarily keep currentLeadId pointing to this lead
+                    currentLeadId = leadData.id;
+                    // Trigger the push preview
+                    setTimeout(() => { pushToDelphi(); }, 100);
+                    return;
+                }
+            }
+
             if (!opts.suppressClose) {
                 closePanel();
             }

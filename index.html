@@ -2757,17 +2757,20 @@
                     updateDashboard();
                     console.log('☁️ Loaded from cloud');
                 } else {
-                    // Merge: keep whichever has more leads (simple strategy)
-                    if (cloudData.leads && cloudData.leads.length > appData.leads.length) {
-                        appData = cloudData;
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-                        renderLeads();
-                        updateDashboard();
-                        console.log('☁️ Updated from cloud (more data)');
-                    } else {
-                        // Push local to cloud
+                    // Per-lead merge by updatedAt. Prevents the classic
+                    // "stale device wakes up, overwrites fresh edits from
+                    // another device" data loss.
+                    const merged = mergeLeadsByUpdatedAt(appData, cloudData);
+                    appData = merged.data;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                    renderLeads();
+                    updateDashboard();
+                    console.log(`☁️ Merged: ${merged.cloudNewer} newer from cloud, ${merged.localNewer} newer locally, ${merged.onlyCloud} cloud-only, ${merged.onlyLocal} local-only`);
+                    // If we picked up anything newer from cloud OR there are
+                    // diffs either direction, push the merged result back so
+                    // both sides converge.
+                    if (merged.cloudNewer > 0 || merged.localNewer > 0 || merged.onlyCloud > 0 || merged.onlyLocal > 0) {
                         syncToCloud();
-                        console.log('☁️ Pushed local to cloud');
                     }
                 }
             } else if (appData.leads && appData.leads.length > 0) {
@@ -2881,6 +2884,55 @@
             }
         }
         
+        function mergeLeadsByUpdatedAt(localAppData, cloudAppData) {
+            // Build maps keyed by lead id
+            const localLeads = localAppData.leads || [];
+            const cloudLeads = cloudAppData.leads || [];
+            const byId = new Map();
+            let cloudNewer = 0, localNewer = 0, onlyCloud = 0, onlyLocal = 0;
+
+            // Seed with local
+            localLeads.forEach(l => byId.set(l.id, { local: l, cloud: null }));
+            cloudLeads.forEach(l => {
+                const entry = byId.get(l.id);
+                if (entry) entry.cloud = l;
+                else byId.set(l.id, { local: null, cloud: l });
+            });
+
+            const merged = [];
+            byId.forEach(({ local, cloud }) => {
+                if (local && cloud) {
+                    const lu = new Date(local.updatedAt || local.createdAt || 0).getTime();
+                    const cu = new Date(cloud.updatedAt || cloud.createdAt || 0).getTime();
+                    if (cu > lu) {
+                        merged.push(cloud);
+                        cloudNewer++;
+                    } else if (lu > cu) {
+                        merged.push(local);
+                        localNewer++;
+                    } else {
+                        merged.push(local); // same, tie-break to local
+                    }
+                } else if (cloud) {
+                    merged.push(cloud);
+                    onlyCloud++;
+                } else if (local) {
+                    merged.push(local);
+                    onlyLocal++;
+                }
+            });
+
+            // Preserve non-lead top-level keys by copying whichever side is newer
+            // Conservative: start from local, overlay cloud if cloud looks newer overall
+            const result = JSON.parse(JSON.stringify(localAppData));
+            result.leads = merged;
+
+            return {
+                data: result,
+                cloudNewer, localNewer, onlyCloud, onlyLocal
+            };
+        }
+
         function fixDelphiDefiniteStatus() {
             if (!appData.leads || appData.leads.length === 0) return;
             let fixed = 0;

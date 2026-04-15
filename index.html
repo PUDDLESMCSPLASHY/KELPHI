@@ -577,6 +577,10 @@
                         <div class="stat-card"><div class="stat-label">Viable Revenue</div><div class="stat-value cyan" id="stat-viableRev">$0</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Working/Tentative &lt;7 days</div></div>
                         <div class="stat-card">
                             <div class="stat-label">Definite Revenue</div>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                                <button class="toggle-btn active" onclick="toggleDefiniteView('quarter')" id="defToggleQuarter">This Quarter</button>
+                                <button class="toggle-btn" onclick="toggleDefiniteView('year')" id="defToggleYear">This Year</button>
+                            </div>
                             <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
                                 <div><div style="font-size: 0.7rem; color: #666;">Rooms</div><div class="stat-value green" style="font-size: 1.25rem;" id="stat-definiteRooms">$0</div></div>
                                 <div><div style="font-size: 0.7rem; color: #666;">Events</div><div class="stat-value green" style="font-size: 1.25rem;" id="stat-definiteEvents">$0</div></div>
@@ -596,15 +600,27 @@
                     <!-- Production Metrics Row -->
                     <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
                         <div class="stat-card">
-                            <div class="stat-label">Quarterly Production</div>
-                            <div class="stat-value" style="color: #a78bfa;" id="stat-quarterlyPct">0%</div>
+                            <div class="stat-label" id="stat-productionLabel">Quarterly Production</div>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                                <button class="toggle-btn active" onclick="toggleProductionView('quarter')" id="prodToggleQuarter">Quarterly</button>
+                                <button class="toggle-btn" onclick="toggleProductionView('month')" id="prodToggleMonth">Monthly</button>
+                            </div>
+                            <div class="stat-value" style="color: #a78bfa; margin-top: 0.5rem;" id="stat-quarterlyPct">0%</div>
                             <div style="font-size: 0.7rem; color: #888; margin-top: 6px;">
                                 <div id="stat-quarterlyRooms">Rooms: $0 ($0)</div>
                                 <div id="stat-quarterlyCatering">Catering: $0 ($0)</div>
                             </div>
                         </div>
-                        <div class="stat-card"><div class="stat-label">Avg Time to Flip</div><div class="stat-value cyan" id="stat-avgFlipTime">— days</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Tentative → Definite</div></div>
-                        <div class="stat-card"><div class="stat-label">Average Quoted ADR</div><div class="stat-value green" id="stat-avgADR">$0</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">From room leads</div></div>
+                        <div class="stat-card"><div class="stat-label">Avg Time to Flip</div><div class="stat-value cyan" id="stat-avgFlipTime">— days</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Contract Out → Definite</div></div>
+                        <div class="stat-card">
+                            <div class="stat-label">Average Quoted ADR</div>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                                <button class="toggle-btn active" onclick="toggleADRView('quarter')" id="adrToggleQuarter">This Quarter</button>
+                                <button class="toggle-btn" onclick="toggleADRView('year')" id="adrToggleYear">This Year</button>
+                            </div>
+                            <div class="stat-value green" style="margin-top: 0.5rem;" id="stat-avgADR">$0</div>
+                            <div style="font-size: 0.7rem; color: #666; margin-top: 4px;">From room leads</div>
+                        </div>
                     </div>
                     
                     <!-- Action Lists -->
@@ -5954,16 +5970,58 @@ Kelsey`;
             return lead.events.reduce((sum, evt) => sum + (parseFloat(evt.rental) || 0) + (parseFloat(evt.fbMin) || 0), 0);
         }
         
+        // View state for the dashboard toggles
+        let definiteView = 'quarter'; // 'quarter' | 'year'
+        let adrView = 'quarter';      // 'quarter' | 'year'
+        let productionView = 'quarter'; // 'quarter' | 'month'
+
+        function _currentQuarterBounds(now) {
+            const q = Math.floor(now.getMonth() / 3); // 0..3
+            const start = new Date(now.getFullYear(), q * 3, 1);
+            const end = new Date(now.getFullYear(), q * 3 + 3, 0, 23, 59, 59);
+            return [start, end];
+        }
+        function _currentYearBounds(now) {
+            const start = new Date(now.getFullYear(), 0, 1);
+            const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+            return [start, end];
+        }
+        function _isArrivalInRange(lead, start, end) {
+            if (!lead.arrival) return false;
+            const a = new Date(lead.arrival + 'T12:00:00');
+            return a >= start && a <= end;
+        }
+
+        function toggleDefiniteView(v) {
+            definiteView = v;
+            document.getElementById('defToggleQuarter').classList.toggle('active', v === 'quarter');
+            document.getElementById('defToggleYear').classList.toggle('active', v === 'year');
+            updateDashboard();
+        }
+        function toggleADRView(v) {
+            adrView = v;
+            document.getElementById('adrToggleQuarter').classList.toggle('active', v === 'quarter');
+            document.getElementById('adrToggleYear').classList.toggle('active', v === 'year');
+            updateDashboard();
+        }
+        function toggleProductionView(v) {
+            productionView = v;
+            document.getElementById('prodToggleQuarter').classList.toggle('active', v === 'quarter');
+            document.getElementById('prodToggleMonth').classList.toggle('active', v === 'month');
+            document.getElementById('stat-productionLabel').textContent = v === 'month' ? 'Monthly Production' : 'Quarterly Production';
+            updateDashboard();
+        }
+
         function updateDashboard() {
             const leads = appData.leads;
             const now = new Date();
             const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
             const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-            
+
             // Contract Out Revenue
             const contractOutRev = leads.filter(l => l.status === 'contract-out').reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-contractOutRev').textContent = formatCurrency(contractOutRev);
-            
+
             // Viable Revenue (Working/Tentative, updated within 7 days)
             const viableLeads = leads.filter(l => {
                 if (!['working', 'tentative'].includes(l.status)) return false;
@@ -5972,35 +6030,41 @@ Kelsey`;
             });
             const viableRev = viableLeads.reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-viableRev').textContent = formatCurrency(viableRev);
-            
-            // Definite Revenue Split
-            const definiteLeads = leads.filter(l => l.status === 'definite');
+
+            // Definite Revenue Split (filtered by toggle: arrival in current quarter or year)
+            const [defStart, defEnd] = definiteView === 'year' ? _currentYearBounds(now) : _currentQuarterBounds(now);
+            const definiteLeads = leads.filter(l => l.status === 'definite' && _isArrivalInRange(l, defStart, defEnd));
             const definiteRooms = definiteLeads.reduce((sum, l) => sum + calcRoomRevenue(l), 0);
             const definiteEvents = definiteLeads.reduce((sum, l) => sum + calcEventRevenue(l), 0);
             document.getElementById('stat-definiteRooms').textContent = formatCurrency(definiteRooms);
             document.getElementById('stat-definiteEvents').textContent = formatCurrency(definiteEvents);
-            
+
             // Completed Revenue
             updateCompletedRevenue();
-            
-            // Quarterly Production Preview - uses goals from GOALS app
-            updateQuarterlyProduction();
-            
-            // Average Time to Flip (Tentative → Definite)
-            const flippedLeads = leads.filter(l => l.status === 'definite' && l.tentativeDate && l.definiteDate);
+
+            // Production Preview - uses goals from GOALS app; month or quarter based on toggle
+            updateQuarterlyProduction(productionView);
+
+            // Average Time to Flip (Contract Out → Definite)
+            const flippedLeads = leads.filter(l => l.status === 'definite' && l.contractOutDate && l.definiteDate);
             let avgFlipDays = '—';
             if (flippedLeads.length > 0) {
                 const totalDays = flippedLeads.reduce((sum, l) => {
-                    const tentDate = new Date(l.tentativeDate);
+                    const coDate = new Date(l.contractOutDate);
                     const defDate = new Date(l.definiteDate);
-                    return sum + Math.ceil((defDate - tentDate) / (1000 * 60 * 60 * 24));
+                    return sum + Math.max(0, Math.ceil((defDate - coDate) / (1000 * 60 * 60 * 24)));
                 }, 0);
                 avgFlipDays = Math.round(totalDays / flippedLeads.length);
             }
             document.getElementById('stat-avgFlipTime').textContent = avgFlipDays + ' days';
-            
-            // Average Quoted ADR
-            const roomLeads = leads.filter(l => (l.type === 'rooms' || l.type === 'both') && l.roomBlock && l.roomBlock.length > 0);
+
+            // Average Quoted ADR (filtered by arrival in current quarter or year)
+            const [adrStart, adrEnd] = adrView === 'year' ? _currentYearBounds(now) : _currentQuarterBounds(now);
+            const roomLeads = leads.filter(l =>
+                (l.type === 'rooms' || l.type === 'both') &&
+                l.roomBlock && l.roomBlock.length > 0 &&
+                _isArrivalInRange(l, adrStart, adrEnd)
+            );
             let avgADR = 0;
             if (roomLeads.length > 0) {
                 const totalADR = roomLeads.reduce((sum, l) => {
@@ -6080,8 +6144,11 @@ Kelsey`;
             }
         }
         
-        function updateQuarterlyProduction() {
+        function updateQuarterlyProduction(view) {
+            view = view || 'quarter';
             const now = new Date();
+            const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+            const currentMonthKey = MONTH_KEYS[now.getMonth()];
             const currentQuarter = Math.floor(now.getMonth() / 3);
             const quarterMonths = [
                 ['jan', 'feb', 'mar'],
@@ -6089,44 +6156,41 @@ Kelsey`;
                 ['jul', 'aug', 'sep'],
                 ['oct', 'nov', 'dec']
             ][currentQuarter];
-            
-            // Get actuals and budgets from Goals tracker data
+
+            // Which months count toward this view
+            const months = view === 'month' ? [currentMonthKey] : quarterMonths;
+
             let roomsActual = 0;
             let cateringActual = 0;
             let roomsBudget = 0;
             let cateringBudget = 0;
-            
+
             if (goalsData) {
-                // Calculate actuals from Goals bookings for current quarter
                 if (goalsData.bookings) {
                     goalsData.bookings.forEach(b => {
-                        if (quarterMonths.includes(b.month)) {
-                            // Room revenue (net = 80% of gross)
+                        if (months.includes(b.month)) {
                             const roomRev = (b.adr || 0) * (b.roomNights || 0) * 0.8;
                             roomsActual += roomRev;
-                            // Catering revenue
                             cateringActual += (b.roomRental || 0) + (b.fnb || 0) + (b.av || 0);
                         }
                     });
                 }
-                
-                // Get budgets from goals
                 if (goalsData.goals) {
-                    quarterMonths.forEach(month => {
+                    months.forEach(month => {
                         roomsBudget += goalsData.goals.rooms?.[month] || 0;
                         cateringBudget += goalsData.goals.catering?.[month] || 0;
                     });
                 }
             }
-            
-            // Fallback defaults if no goals data
-            if (roomsBudget === 0) roomsBudget = 77000;
-            if (cateringBudget === 0) cateringBudget = 67000;
-            
+
+            // Fallback budget defaults — scale appropriately if viewing by month
+            if (roomsBudget === 0) roomsBudget = view === 'month' ? 25667 : 77000;
+            if (cateringBudget === 0) cateringBudget = view === 'month' ? 22333 : 67000;
+
             const totalActual = roomsActual + cateringActual;
             const totalBudget = roomsBudget + cateringBudget;
             const pct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
-            
+
             document.getElementById('stat-quarterlyPct').textContent = pct + '%';
             document.getElementById('stat-quarterlyRooms').textContent = `Rooms: ${formatCurrency(roomsActual)} (${formatCurrency(roomsBudget)})`;
             document.getElementById('stat-quarterlyCatering').textContent = `Catering: ${formatCurrency(cateringActual)} (${formatCurrency(cateringBudget)})`;

@@ -4374,6 +4374,9 @@
                     } else if (leadsSortColumn === 'definiteDate') {
                         valA = a.definiteDate || '';
                         valB = b.definiteDate || '';
+                    } else if (leadsSortColumn === 'updatedAt') {
+                        valA = a.updatedAt || '';
+                        valB = b.updatedAt || '';
                     }
                     const cmp = valA.localeCompare(valB);
                     return leadsSortDirection === 'asc' ? cmp : -cmp;
@@ -6938,7 +6941,7 @@ Kelsey`;
         
         function updateTableColumns() {
             const thead = document.querySelector('.leads-table thead tr');
-            const sortableColumns = ['bookingName', 'arrival', 'createdAt', 'definiteDate'];
+            const sortableColumns = ['bookingName', 'arrival', 'createdAt', 'definiteDate', 'updatedAt'];
             thead.innerHTML = currentViewColumns.map(key => {
                 const col = ALL_COLUMNS.find(c => c.key === key);
                 const label = col ? col.label : key;

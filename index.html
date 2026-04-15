@@ -5151,7 +5151,9 @@
                 const idx = appData.leads.findIndex(l => l.id === leadData.id);
                 if (idx !== -1) appData.leads[idx].definiteDate = leadData.definiteDate;
                 saveData();
-                addBookingToGoals(leadData);
+                // Open the Goals Add Booking form pre-filled so Kelsey can verify
+                // (skip if this came from bulk/auto paths to avoid 10+ modals)
+                addBookingToGoals(leadData, { prompt: !opts.suppressGoalsPrompt });
             }
             
             // If booking type changed and there's a checklist, update it (preserve task progress)
@@ -5841,40 +5843,72 @@ Kelsey`;
         }
         
         // Add booking to embedded GOALS app
-        function addBookingToGoals(lead) {
+        function addBookingToGoals(lead, opts) {
+            opts = opts || {};
             // Calculate room revenue from room block
             let roomRevenue = 0;
+            let roomNights = 0;
+            let avgRate = 0;
             if (lead.roomBlock && lead.roomBlock.length > 0) {
+                let totalRates = 0;
+                let rateCount = 0;
                 lead.roomBlock.forEach(row => {
                     const rate = parseFloat(row.rate) || 0;
                     const totalNights = row.quantities ? row.quantities.reduce((sum, q) => sum + (parseInt(q) || 0), 0) : 0;
                     roomRevenue += rate * totalNights;
+                    roomNights += totalNights;
+                    if (rate > 0) { totalRates += rate; rateCount++; }
                 });
+                avgRate = rateCount > 0 ? totalRates / rateCount : 0;
             }
-            
-            // Calculate catering revenue from events
-            let cateringRevenue = 0;
+
+            // Catering revenue from events (rental + fbMin)
+            let roomRental = 0;
+            let fbMinimum = 0;
             if (lead.events && lead.events.length > 0) {
                 lead.events.forEach(evt => {
-                    cateringRevenue += (parseFloat(evt.rental) || 0) + (parseFloat(evt.fbMin) || 0);
+                    roomRental += parseFloat(evt.rental) || 0;
+                    fbMinimum += parseFloat(evt.fbMin) || 0;
                 });
             }
-            
+            const cateringRevenue = roomRental + fbMinimum;
+
             const bookingData = {
                 ...lead,
                 roomRevenue: roomRevenue,
-                cateringRevenue: cateringRevenue
+                cateringRevenue: cateringRevenue,
+                roomNights: roomNights,
+                avgRate: Math.round(avgRate * 100) / 100,
+                roomRental: roomRental,
+                fbMinimum: fbMinimum
             };
-            
-            // Save to pending queue in localStorage (GOALS will pick this up)
+
+            // Save to pending queue in localStorage (GOALS will pick this up if iframe isn't loaded yet)
             const pending = JSON.parse(localStorage.getItem('kelphi_pendingBookings') || '[]');
-            // Remove any existing entry for this lead
             const filtered = pending.filter(b => b.id !== lead.id);
             filtered.push(bookingData);
             localStorage.setItem('kelphi_pendingBookings', JSON.stringify(filtered));
-            
-            // Also try to send directly if GOALS iframe is loaded
+
             const goalsFrame = document.getElementById('goalsFrame');
+
+            if (opts.prompt) {
+                // Switch to Goals tab and ask the iframe to open its Add Booking form pre-filled
+                const goalsTab = document.querySelector('.nav-tab[data-tab="goals"]');
+                if (goalsTab) goalsTab.click();
+
+                // Give the iframe a moment to be visible, then send the message
+                setTimeout(() => {
+                    if (goalsFrame && goalsFrame.contentWindow) {
+                        goalsFrame.contentWindow.postMessage({
+                            type: 'PREFILL_BOOKING_FORM',
+                            data: bookingData
+                        }, '*');
+                    }
+                }, 250);
+                return;
+            }
+
+            // Silent add (used by re-sync flows) — keeps original behavior
             if (goalsFrame && goalsFrame.contentWindow) {
                 goalsFrame.contentWindow.postMessage({
                     type: 'ADD_BOOKING',

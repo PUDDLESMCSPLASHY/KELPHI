@@ -5482,6 +5482,74 @@
             }
         }
         
+        // ── Rate guide (mirror of RATE-CALCULATOR/index.html) ────────────────
+        // Update both files together when rates change.
+        const QUOTE_SPACE_KEY = {
+            'dogwood ballroom': 'dogwood', 'dogwood ballroom a': 'dogwood-a',
+            'dogwood ballroom b': 'dogwood-b', 'the gallery': 'gallery', 'ozark room': 'ozark',
+            'the front porch': 'front-porch', 'guestroom suite': 'guest-suite',
+            'reception foyer': 'reception-foyer', 'lobby lounge': 'lobby-lounge',
+            'the atrium': 'atrium',
+        };
+        const QUOTE_OUTLET_KEY = {
+            'the eddy': 'eddy', 'the sunroom': 'sunroom',
+            'sestina': 'sestina', 'private dining room': 'pdr',
+        };
+        const QUOTE_PEAK_PRICING = {
+            peak: { 'dogwood': [6000, 20000], 'dogwood-a': [3500, 10000], 'dogwood-b': [2500, 10000], 'gallery': [1500, 3500], 'ozark': [1000, 1250], 'front-porch': [1000, 2500], 'guest-suite': [2000, 500], 'reception-foyer': [1000, 3000], 'lobby-lounge': [1000, 3000], 'atrium': [1000, 3000] },
+            need: { 'dogwood': [4500, 15000], 'dogwood-a': [2500, 7500], 'dogwood-b': [2000, 7500], 'gallery': [1000, 2500], 'ozark': [750, 1000], 'front-porch': [750, 2000], 'guest-suite': [1500, 500], 'reception-foyer': [750, 2250], 'lobby-lounge': [750, 2250], 'atrium': [750, 2250] },
+        };
+        const QUOTE_NONPEAK_PRICING = {
+            peak: { 'dogwood': [3000, 10000], 'dogwood-a': [2000, 5000], 'dogwood-b': [1500, 5000], 'gallery': [1000, 2500], 'ozark': [750, 1000], 'front-porch': [750, 2000], 'guest-suite': [1500, 500], 'reception-foyer': [500, 1500], 'lobby-lounge': [500, 1500], 'atrium': [500, 1500] },
+            need: { 'dogwood': [2250, 7500], 'dogwood-a': [1500, 3750], 'dogwood-b': [1250, 3750], 'gallery': [750, 2000], 'ozark': [500, 750], 'front-porch': [500, 1500], 'guest-suite': [1500, 500], 'reception-foyer': [375, 1125], 'lobby-lounge': [375, 1125], 'atrium': [375, 1125] },
+        };
+        const QUOTE_OUTLET_PRICING = {
+            'eddy':    { peakRental: 2000, needRental: 1000, fbNonBusiness: { mon: 3000, tue: 3000, wed: 3000, thu: 3000, fri: 3000, sat: 3000, sun: 3000 } },
+            'sunroom': { peakRental: 1000, needRental: 500,  fbNonBusiness: { mon: 1000, tue: 1000, wed: 1000, thu: 2000, fri: 2000, sat: 3000, sun: 3000 } },
+            'sestina': { peakRental: 5000, needRental: 3000, fbNonBusiness: { mon: 3500, tue: 3500, wed: 3500, thu: 3500, fri: 3500, sat: 10000, sun: 10000 } },
+            'pdr':     { peakRental: 1000, needRental: 750,  fbNonBusiness: { mon: 1200, tue: 1200, wed: 1200, thu: 2000, fri: 2000, sat: 5000, sun: 5000 } },
+        };
+        function _quoteIsPeakSeason(dateStr) {
+            if (!dateStr) return false;
+            const month = parseInt(dateStr.split('-')[1], 10);
+            return (month >= 3 && month <= 6) || (month >= 9 && month <= 10) || month === 12;
+        }
+        function _quoteIsEventPeakDay(dateStr) {
+            if (!dateStr) return false;
+            const dow = ['sun','mon','tue','wed','thu','fri','sat'][new Date(dateStr + 'T12:00:00').getDay()];
+            return _quoteIsPeakSeason(dateStr)
+                ? ['tue','wed','thu','fri','sat'].includes(dow)
+                : ['mon','tue','wed','thu'].includes(dow);
+        }
+        function _quoteIsOutletPeakDay(dateStr) {
+            if (!dateStr) return false;
+            const dow = ['sun','mon','tue','wed','thu','fri','sat'][new Date(dateStr + 'T12:00:00').getDay()];
+            return ['fri','sat'].includes(dow);
+        }
+        // Returns [rental, fbMin] suggested by the rate guide for a given
+        // room name + event date. Returns [0, 0] if the room is unknown or
+        // uses a compound/shared space that isn't in the guide.
+        function getQuoteDefaultPricing(roomName, dateStr) {
+            const key = (roomName || '').trim().toLowerCase();
+            const spaceKey = QUOTE_SPACE_KEY[key];
+            if (spaceKey) {
+                const seasonal = _quoteIsPeakSeason(dateStr) ? QUOTE_PEAK_PRICING : QUOTE_NONPEAK_PRICING;
+                const dayType = _quoteIsEventPeakDay(dateStr) ? 'peak' : 'need';
+                return seasonal[dayType][spaceKey] || [0, 0];
+            }
+            const outletKey = QUOTE_OUTLET_KEY[key];
+            if (outletKey) {
+                const outlet = QUOTE_OUTLET_PRICING[outletKey];
+                if (!outlet) return [0, 0];
+                const rental = _quoteIsOutletPeakDay(dateStr) ? outlet.peakRental : outlet.needRental;
+                const dow = dateStr
+                    ? ['sun','mon','tue','wed','thu','fri','sat'][new Date(dateStr + 'T12:00:00').getDay()]
+                    : 'mon';
+                return [rental, outlet.fbNonBusiness[dow] || 0];
+            }
+            return [0, 0];
+        }
+
         // Quote Email Generator (matches Rate Calculator structure)
         function regenerateQuote() {
             if (!currentLeadId) return;
@@ -5548,8 +5616,12 @@
                 const sortedEvents = [...lead.events].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
                 
                 const eventLines = sortedEvents.map((evt, idx) => {
-                    const rental = parseFloat(evt.rental) || 0;
-                    const fbMin = parseFloat(evt.fbMin) || 0;
+                    // Fall back to the rate guide when a field is left blank.
+                    // Any value the user typed (including 0) wins.
+                    const hasExplicit = (v) => v !== undefined && v !== null && v !== '';
+                    const [defaultRental, defaultFb] = getQuoteDefaultPricing(evt.room, evt.date);
+                    const rental = hasExplicit(evt.rental) ? (parseFloat(evt.rental) || 0) : defaultRental;
+                    const fbMin  = hasExplicit(evt.fbMin)  ? (parseFloat(evt.fbMin)  || 0) : defaultFb;
                     const subtotal = rental + fbMin;
                     // Room Rental: base + 2% A&P + 23% service fee + 9.5% tax on that fee
                     //   = rental × (1 + 0.02 + 0.23 + 0.23 × 0.095) = rental × 1.27185

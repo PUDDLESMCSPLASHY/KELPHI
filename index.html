@@ -1491,6 +1491,7 @@
                                 <div class="form-group"><label class="form-label">PMS Account Number</label><input type="text" class="form-input" id="lead-pmsAccountNumber" placeholder="From StayNTouch"></div>
                                 <div class="form-group"><label class="form-label">Booked Date</label><input type="date" class="form-input" id="lead-bookedDate" title="Date booking was created in Delphi"></div>
                             </div>
+                            <div class="form-group"><label class="form-label">Booking Link <span style="color: #666; font-weight: normal;">(individually-booked guestrooms)</span></label><input type="url" class="form-input" id="lead-bookingLink" placeholder="https://be.synxis.com/..." title="Syncs with Delphi's Comments field"></div>
                             <div class="form-group" style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
                                 <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #888; cursor: pointer;">
                                     <input type="checkbox" id="lead-firstTimeBooking" style="width: 16px; height: 16px; accent-color: #00d9ff;">
@@ -4971,7 +4972,7 @@
 
             // Simple fields
             ['bookingName', 'account', 'contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'contactTitle', 'arrival', 'departure', 'type', 'status', 'segment', 'bookingType',
-             'pmsAccountNumber', 'bookedDate', 'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
+             'pmsAccountNumber', 'bookingLink', 'bookedDate', 'signerName', 'signerEmail', 'signerPhone', 'signerAddress', 'resProcedure', 'roomPayment', 'cutoff', 'commission',
              'billingType', 'paymentMethod', 'concessions', 'notes', 'handoverNotes', 'ccDeposit', 'quoteEmail'].forEach(f => {
                 const el = document.getElementById(`lead-${f}`);
                 if (el) el.value = lead[f] || '';
@@ -5145,6 +5146,7 @@
                 milestoneEvent: document.getElementById('lead-milestoneEvent').checked,
                 contactTitle: document.getElementById('lead-contactTitle').value,
                 pmsAccountNumber: document.getElementById('lead-pmsAccountNumber').value,
+                bookingLink: document.getElementById('lead-bookingLink').value,
                 bookedDate: document.getElementById('lead-bookedDate').value,
                 quoteEmail: document.getElementById('lead-quoteEmail').value,
                 roomBlock: (currentRoomBlock && currentRoomBlock.length > 0) ? currentRoomBlock : (existingLead ? existingLead.roomBlock : []),

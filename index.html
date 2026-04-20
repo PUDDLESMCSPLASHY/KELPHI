@@ -6073,15 +6073,19 @@ Kelsey`;
         function updateCompletedRevenue() {
             const leads = appData.leads.filter(l => l.status === 'completed');
             let total = 0;
-            
+
             if (completedViewMode === 'total') {
-                total = leads.reduce((sum, l) => sum + (l.revenue || 0), 0);
+                // Fresh calc (rooms + events) to match the other dashboard cards
+                // and avoid stale l.revenue values from old saves.
+                total = leads.reduce(
+                    (sum, l) => sum + calcRoomRevenue(l) + calcEventRevenue(l), 0
+                );
             } else if (completedViewMode === 'rooms') {
                 total = leads.filter(l => l.type === 'rooms' || l.type === 'both').reduce((sum, l) => sum + calcRoomRevenue(l), 0);
             } else if (completedViewMode === 'events') {
                 total = leads.filter(l => l.type === 'events' || l.type === 'both').reduce((sum, l) => sum + calcEventRevenue(l), 0);
             }
-            
+
             document.getElementById('stat-completedRev').textContent = formatCurrency(total);
         }
         
@@ -6151,14 +6155,25 @@ Kelsey`;
             const contractOutRev = leads.filter(l => l.status === 'contract-out').reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-contractOutRev').textContent = formatCurrency(contractOutRev);
 
-            // Viable Revenue (Tentative or Contract Out)
+            // Viable Revenue (Tentative or Contract Out).
+            // Compute fresh from roomBlock + events so stale stored values
+            // (e.g., leads saved under old tax math) don't inflate the total.
             const viableLeads = leads.filter(l => ['tentative', 'contract-out'].includes(l.status));
-            const viableRev = viableLeads.reduce((sum, l) => sum + (l.revenue || 0), 0);
+            const viableRev = viableLeads.reduce(
+                (sum, l) => sum + calcRoomRevenue(l) + calcEventRevenue(l), 0
+            );
             document.getElementById('stat-viableRev').textContent = formatCurrency(viableRev);
 
-            // Definite Revenue Split (filtered by toggle: arrival in current quarter or year)
+            // Definite Revenue Split — filter by when the lead WENT Definite
+            // (definiteDate) in the current quarter or year. "Production by
+            // close-month" matches how Kelsey tracks goals.
             const [defStart, defEnd] = definiteView === 'year' ? _currentYearBounds(now) : _currentQuarterBounds(now);
-            const definiteLeads = leads.filter(l => l.status === 'definite' && _isArrivalInRange(l, defStart, defEnd));
+            const _isDefiniteInRange = (l) => {
+                if (!l.definiteDate) return false;
+                const d = new Date(l.definiteDate);
+                return d >= defStart && d <= defEnd;
+            };
+            const definiteLeads = leads.filter(l => l.status === 'definite' && _isDefiniteInRange(l));
             const definiteRooms = definiteLeads.reduce((sum, l) => sum + calcRoomRevenue(l), 0);
             const definiteEvents = definiteLeads.reduce((sum, l) => sum + calcEventRevenue(l), 0);
             document.getElementById('stat-definiteRooms').textContent = formatCurrency(definiteRooms);
@@ -7284,7 +7299,8 @@ Kelsey`;
                     const timeStr = updatedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                     return `<div style="line-height: 1.3;"><div>${dateStr}, ${timeStr}</div><div style="font-size: 0.7rem; color: #888;">${relativeTime}</div></div>`;
                 case 'revenue':
-                    return formatCurrency(lead[key] || 0);
+                    // Compute fresh so the list matches the dashboard cards
+                    return formatCurrency(calcRoomRevenue(lead) + calcEventRevenue(lead));
                 case 'type':
                     const typeLabels = { 'rooms': 'Rooms', 'events': 'Events', 'both': 'Rooms + Events' };
                     return typeLabels[lead[key]] || lead[key] || '';

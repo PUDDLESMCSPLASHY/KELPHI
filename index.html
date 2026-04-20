@@ -5534,7 +5534,7 @@
                 
                 const numNights = lead.arrival && lead.departure ? Math.ceil((new Date(lead.departure) - new Date(lead.arrival)) / (1000 * 60 * 60 * 24)) : '{{Number of nights}}';
                 const subtotal = totalRoomNights * avgRate;
-                const total = subtotal * 1.1475; // Tax estimate
+                const total = subtotal * 1.135; // Guestroom tax: 13.5%
                 
                 roomBlockPara = `As I understand it, you're interested in a group room block of ${peakRooms} room${peakRooms !== 1 ? 's' : ''} over the span of ${numNights} night${numNights !== 1 ? 's' : ''}, with a check-in date of ${formatDateLong(lead.arrival)} and a check-out on ${formatDateLong(lead.departure)}. For this request, I can approve a nightly rate of ${formatCurrency(avgRate)} for one of our single occupancy rooms before tax. That would be a subtotal of ${formatCurrency(subtotal)}, and approximately ${formatCurrency(total)} after all applicable taxes and fees.`;
             }
@@ -5551,7 +5551,11 @@
                     const rental = parseFloat(evt.rental) || 0;
                     const fbMin = parseFloat(evt.fbMin) || 0;
                     const subtotal = rental + fbMin;
-                    const total = (rental * 1.0875) + (fbMin * 1.32); // Tax estimates
+                    // Room Rental: base + 2% A&P + 23% service fee + 9.5% tax on that fee
+                    //   = rental × (1 + 0.02 + 0.23 + 0.23 × 0.095) = rental × 1.27185
+                    // F&B: base + 10.5% food/drink sales tax + 23% service fee + 9.5% tax on that fee
+                    //   = fbMin × (1 + 0.105 + 0.23 + 0.23 × 0.095) = fbMin × 1.35685
+                    const total = (rental * 1.27185) + (fbMin * 1.35685);
                     eventTotal += total;
                     
                     const headcount = evt.headcount || evt.attendance || '{{Headcount}}';

@@ -574,7 +574,7 @@
                     <!-- Revenue Row -->
                     <div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr);">
                         <div class="stat-card"><div class="stat-label">Contract Out Revenue</div><div class="stat-value orange" id="stat-contractOutRev">$0</div></div>
-                        <div class="stat-card"><div class="stat-label">Viable Revenue</div><div class="stat-value cyan" id="stat-viableRev">$0</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Working/Tentative &lt;7 days</div></div>
+                        <div class="stat-card"><div class="stat-label">Viable Revenue</div><div class="stat-value cyan" id="stat-viableRev">$0</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Tentative or Contract Out</div></div>
                         <div class="stat-card">
                             <div class="stat-label">Definite Revenue</div>
                             <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
@@ -5740,14 +5740,15 @@ Kelsey`;
                     break;
                     
                 case 'definite-request':
-                    // Calculate revenue from the lead
+                    // Subtotal only — no tax, no service charge.
+                    // Guestrooms use the Agreed column (row.quantities), not forecast.
                     const guestroomRevenue = (() => {
                         if (!lead.roomBlock || lead.roomBlock.length === 0) return 0;
                         let total = 0;
                         lead.roomBlock.forEach(row => {
                             const rooms = (row.quantities || []).reduce((sum, q) => sum + (parseInt(q) || 0), 0);
                             const rate = parseFloat(row.rate) || 0;
-                            total += rooms * rate * 1.1475; // Include tax
+                            total += rooms * rate;
                         });
                         return total;
                     })();
@@ -5757,7 +5758,7 @@ Kelsey`;
                         lead.events.forEach(evt => {
                             const rental = parseFloat(evt.rental) || 0;
                             const fbMin = parseFloat(evt.fbMin) || 0;
-                            total += (rental * 1.0875) + (fbMin * 1.32); // Include tax
+                            total += rental + fbMin;
                         });
                         return total;
                     })();
@@ -6074,12 +6075,8 @@ Kelsey`;
             const contractOutRev = leads.filter(l => l.status === 'contract-out').reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-contractOutRev').textContent = formatCurrency(contractOutRev);
 
-            // Viable Revenue (Working/Tentative, updated within 7 days)
-            const viableLeads = leads.filter(l => {
-                if (!['working', 'tentative'].includes(l.status)) return false;
-                if (!l.updatedAt) return false;
-                return new Date(l.updatedAt) >= sevenDaysAgo;
-            });
+            // Viable Revenue (Tentative or Contract Out)
+            const viableLeads = leads.filter(l => ['tentative', 'contract-out'].includes(l.status));
             const viableRev = viableLeads.reduce((sum, l) => sum + (l.revenue || 0), 0);
             document.getElementById('stat-viableRev').textContent = formatCurrency(viableRev);
 

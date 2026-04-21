@@ -6614,6 +6614,23 @@ Kelsey`;
         }
         
         // ============ AVAILABILITY TAB ============
+        // Cache of Delphi events (colleagues' bookings) keyed by "start|end"
+        // so we don't re-fetch on every filter change.
+        const availDelphiCache = new Map();
+        async function fetchAvailDelphiEvents(startDate, endDate) {
+            const key = `${startDate}|${endDate}`;
+            if (availDelphiCache.has(key)) return availDelphiCache.get(key);
+            try {
+                const res = await fetch(`${DELPHI_API}/api/availability/events?start=${startDate}&end=${endDate}`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                const events = data.events || [];
+                availDelphiCache.set(key, events);
+                return events;
+            } catch (e) {
+                return [];
+            }
+        }
         let availView = 'week';
         let availStartDate = new Date();
         let availGanttStartDate = new Date();
@@ -6737,19 +6754,42 @@ Kelsey`;
                 document.getElementById('availDateRange').textContent = `${startStr} — ${endStr}`;
             }
             
-            renderAvailCalendar(leads, dates);
-            if (availView === 'week') {
-                renderAvailGantt();
-            }
+            // Fetch colleague bookings (Delphi events) for this date range.
+            // Exclude events whose booking is already in Kelphi as a lead — those
+            // get rendered as Kelphi leads in their full styling.
+            const startIso = dates[0].toISOString().split('T')[0];
+            const endIso = dates[dates.length - 1].toISOString().split('T')[0];
+            const kelphiDelphiIds = new Set(
+                appData.leads.map(l => l.delphiId).filter(Boolean)
+            );
+            fetchAvailDelphiEvents(startIso, endIso).then(allEvents => {
+                let colleagueEvents = allEvents.filter(e => !kelphiDelphiIds.has(e.booking_id));
+                // Respect the type filter — "events only" should hide guestroom-only views
+                // (Delphi events are inherently event-space bookings, so leave as-is)
+                renderAvailCalendar(leads, dates, colleagueEvents);
+                if (availView === 'week') {
+                    renderAvailGantt(colleagueEvents);
+                }
+            });
         }
         
-        function renderAvailCalendar(leads, dates) {
+        // Visual treatment for colleagues' bookings (from Delphi, not Kelphi leads).
+        // Muted gray so they're visible but clearly secondary to your own leads.
+        const AVAIL_COLLEAGUE_COLOR = {
+            bg: 'rgba(148, 163, 184, 0.18)',
+            border: '#94a3b8',
+            text: '#94a3b8',
+        };
+        function escAttr(s) { return String(s ?? '').replace(/"/g, '&quot;'); }
+
+        function renderAvailCalendar(leads, dates, colleagueEvents) {
+            colleagueEvents = colleagueEvents || [];
             const container = document.getElementById('availCalendar');
-            
+
             // Filter leads with dates in range
             const startTime = dates[0].getTime();
             const endTime = dates[dates.length - 1].getTime() + 86400000;
-            
+
             const relevantLeads = leads.filter(l => {
                 if (!l.arrival) return false;
                 const arrival = new Date(l.arrival + 'T00:00:00').getTime();
@@ -6793,17 +6833,46 @@ Kelsey`;
                     html += `<div style="min-height: 80px; padding: 0.25rem; background: ${isToday ? 'rgba(0,217,255,0.08)' : '#16161f'}; cursor: pointer; border: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${dateStr}')">`;
                     html += `<div style="font-size: 0.75rem; color: ${isToday ? '#00d9ff' : '#888'}; margin-bottom: 0.25rem;">${d.getDate()}</div>`;
                     
-                    // Show up to 3 bookings, then "+X more"
-                    bookingsOnDate.slice(0, 3).forEach(lead => {
+                    // Find colleague events on this date (grouped by booking so we
+                    // don't show every sub-event — one line per booking)
+                    const colleagueByBooking = new Map();
+                    colleagueEvents.forEach(e => {
+                        if (!e.start_date) return;
+                        const eStart = new Date(e.start_date + 'T00:00:00').getTime();
+                        const eEnd = new Date((e.end_date || e.start_date) + 'T00:00:00').getTime();
+                        if (eStart <= d.getTime() && eEnd + 86400000 > d.getTime()) {
+                            if (!colleagueByBooking.has(e.booking_id)) colleagueByBooking.set(e.booking_id, e);
+                        }
+                    });
+                    const colleagueOnDate = [...colleagueByBooking.values()];
+
+                    const totalItems = bookingsOnDate.length + colleagueOnDate.length;
+                    const maxShow = 3;
+                    let shown = 0;
+
+                    // Your own leads first (full color)
+                    bookingsOnDate.slice(0, maxShow).forEach(lead => {
                         const colors = AVAIL_STATUS_COLORS[lead.status] || AVAIL_STATUS_COLORS['working'];
                         html += `<div style="font-size: 0.65rem; padding: 2px 4px; margin-bottom: 2px; background: ${colors.bg}; border-left: 2px solid ${colors.border}; border-radius: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; color: ${colors.text};"
                             onclick="event.stopPropagation(); openLead('${lead.id}')"
                             onmouseenter="showAvailPopup(event, '${lead.id}')"
                             onmouseleave="hideAvailPopup()"
                             title="${lead.bookingName || 'Untitled'}">${lead.bookingName || 'Untitled'}</div>`;
+                        shown++;
                     });
-                    if (bookingsOnDate.length > 3) {
-                        html += `<div style="font-size: 0.6rem; color: #666;">+${bookingsOnDate.length - 3} more</div>`;
+                    // Then colleagues' bookings (muted) up to the remaining slots
+                    colleagueOnDate.slice(0, Math.max(0, maxShow - shown)).forEach(e => {
+                        const c = AVAIL_COLLEAGUE_COLOR;
+                        const tip = `${e.booking_name}\n${e.seller} · ${e.booking_status}\nRoom: ${e.room || '—'}`;
+                        html += `<div style="font-size: 0.65rem; padding: 2px 4px; margin-bottom: 2px; background: ${c.bg}; border-left: 2px dashed ${c.border}; border-radius: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; color: ${c.text}; font-style: italic;"
+                            onclick="event.stopPropagation();"
+                            onmouseenter="showAvailColleaguePopup(event, '${escAttr(e.booking_id)}')"
+                            onmouseleave="hideAvailPopup()"
+                            title="${escAttr(tip)}">${e.booking_name || 'Untitled'}</div>`;
+                        shown++;
+                    });
+                    if (totalItems > maxShow) {
+                        html += `<div style="font-size: 0.6rem; color: #666;">+${totalItems - maxShow} more</div>`;
                     }
                     html += `</div>`;
                 });
@@ -6824,7 +6893,30 @@ Kelsey`;
                 });
                 html += `</div>`;
                 
-                if (relevantLeads.length === 0) {
+                // Collapse colleague events into one row per booking (earliest start, latest end)
+                const colleagueRowsMap = new Map();
+                colleagueEvents.forEach(e => {
+                    if (!e.start_date) return;
+                    const existing = colleagueRowsMap.get(e.booking_id);
+                    if (!existing) {
+                        colleagueRowsMap.set(e.booking_id, {
+                            booking_id: e.booking_id,
+                            booking_name: e.booking_name,
+                            seller: e.seller,
+                            booking_status: e.booking_status,
+                            account: e.account,
+                            start: e.start_date,
+                            end: e.end_date || e.start_date,
+                        });
+                    } else {
+                        if (e.start_date < existing.start) existing.start = e.start_date;
+                        const thisEnd = e.end_date || e.start_date;
+                        if (thisEnd > existing.end) existing.end = thisEnd;
+                    }
+                });
+                const colleagueRows = [...colleagueRowsMap.values()];
+
+                if (relevantLeads.length === 0 && colleagueRows.length === 0) {
                     html += `<div style="padding: 2rem; text-align: center; color: #666;">No bookings in this date range</div>`;
                 } else {
                     relevantLeads.forEach(lead => {
@@ -6859,8 +6951,40 @@ Kelsey`;
                         });
                         html += `</div>`;
                     });
+
+                    // Render colleague rows (muted, non-clickable) beneath Kelphi rows
+                    colleagueRows.forEach(row => {
+                        const c = AVAIL_COLLEAGUE_COLOR;
+                        const arrival = new Date(row.start + 'T00:00:00');
+                        const departure = new Date(row.end + 'T00:00:00');
+                        const tip = `${row.booking_name} · ${row.seller} · ${row.booking_status}`;
+                        html += `<div style="display: flex; min-height: 36px; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0.85;">`;
+                        html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.75rem; color: ${c.text}; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-style: italic;" title="${escAttr(tip)}">
+                            <span style="font-size: 0.7rem; opacity: 0.6;">👥</span>${row.booking_name || 'Untitled'}
+                        </div>`;
+                        dates.forEach(d => {
+                            const dayStart = d.getTime();
+                            const dayEnd = dayStart + 86400000;
+                            const isInRange = arrival.getTime() < dayEnd && departure.getTime() + 86400000 > dayStart;
+                            const isStart = arrival.getTime() >= dayStart && arrival.getTime() < dayEnd;
+                            const isEnd = departure.getTime() >= dayStart && departure.getTime() < dayEnd;
+                            if (isInRange) {
+                                html += `<div style="flex: 1; padding: 4px 2px; display: flex; align-items: center; border-left: 1px solid rgba(255,255,255,0.06);"
+                                    onmouseenter="showAvailColleaguePopup(event, '${escAttr(row.booking_id)}')"
+                                    onmouseleave="hideAvailPopup()">
+                                    <div style="width: 100%; height: 22px; background: ${c.bg}; border-top: 2px dashed ${c.border}; border-bottom: 2px dashed ${c.border};
+                                        ${isStart ? 'border-left: 2px dashed ' + c.border + '; border-radius: 4px 0 0 4px;' : ''}
+                                        ${isEnd ? 'border-right: 2px dashed ' + c.border + '; border-radius: 0 4px 4px 0;' : ''}
+                                        ${isStart && isEnd ? 'border-radius: 4px;' : ''}"></div>
+                                </div>`;
+                            } else {
+                                html += `<div style="flex: 1; border-left: 1px solid rgba(255,255,255,0.06);"></div>`;
+                            }
+                        });
+                        html += `</div>`;
+                    });
                 }
-                
+
                 // Empty row for creating new leads
                 html += `<div style="display: flex; min-height: 32px; opacity: 0.5;">`;
                 html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.75rem; color: #444; flex-shrink: 0; display: flex; align-items: center;">+ Click to add</div>`;
@@ -6874,11 +6998,12 @@ Kelsey`;
             }
         }
         
-        function renderAvailGantt() {
+        function renderAvailGantt(colleagueEvents) {
+            colleagueEvents = colleagueEvents || [];
             const container = document.getElementById('availGantt');
             const statusFilter = document.getElementById('availStatusFilter')?.value || 'all';
             const typeFilter = document.getElementById('availTypeFilter')?.value || 'all';
-            
+
             // Get leads with events
             let leads = appData.leads.filter(l => !['completed', 'lost', 'turndown', 'cancelled'].includes(l.status));
             if (statusFilter !== 'all') leads = leads.filter(l => l.status === statusFilter);
@@ -6941,6 +7066,13 @@ Kelsey`;
                         });
                     });
                     
+                    // Also find colleague events in this room on this date
+                    const colleagueInRoom = colleagueEvents.filter(e => {
+                        if (e.room !== room) return false;
+                        const eStart = new Date(e.start_date + 'T00:00:00').getTime();
+                        return eStart <= dayTime && eStart + 86400000 > dayTime;
+                    });
+
                     if (eventsOnDate.length > 0) {
                         const firstEvent = eventsOnDate[0];
                         const colors = AVAIL_STATUS_COLORS[firstEvent.lead.status] || AVAIL_STATUS_COLORS['working'];
@@ -6954,6 +7086,17 @@ Kelsey`;
                                 ${hasMultiple ? '<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ' + colors.border + ';"></div>' : ''}
                             </div>
                         </div>`;
+                    } else if (colleagueInRoom.length > 0) {
+                        const c = AVAIL_COLLEAGUE_COLOR;
+                        const e = colleagueInRoom[0];
+                        const tip = `${e.booking_name}\n${e.seller} · ${e.booking_status}`;
+                        html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06);">
+                            <div style="height: 24px; background: ${c.bg}; border: 1px dashed ${c.border}; border-radius: 3px; position: relative;"
+                                onmouseenter="showAvailColleaguePopup(event, '${escAttr(e.booking_id)}')"
+                                onmouseleave="hideAvailPopup()"
+                                title="${escAttr(tip)}">
+                            </div>
+                        </div>`;
                     } else {
                         html += `<div style="flex: 1; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${dateStr}', '${room}')"></div>`;
                     }
@@ -6964,6 +7107,54 @@ Kelsey`;
             container.innerHTML = html;
         }
         
+        // Hover card for a colleague's booking (not in Kelphi). Uses the Delphi
+        // events fetched for the current date range; looks up by booking_id.
+        function showAvailColleaguePopup(event, bookingId) {
+            let colleagueEvent = null;
+            for (const events of availDelphiCache.values()) {
+                const match = events.find(e => e.booking_id === bookingId);
+                if (match) { colleagueEvent = match; break; }
+            }
+            if (!colleagueEvent) return;
+
+            // Collect all events for this booking across the visible range to list them
+            const allForBooking = [];
+            for (const events of availDelphiCache.values()) {
+                events.forEach(e => { if (e.booking_id === bookingId) allForBooking.push(e); });
+            }
+
+            const popup = document.getElementById('availPopup');
+            const content = document.getElementById('availPopupContent');
+            const c = AVAIL_COLLEAGUE_COLOR;
+            const b = colleagueEvent;
+
+            const eventsList = allForBooking
+                .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
+                .map(e => `<div style="font-size: 0.75rem; padding: 2px 0; color: #aaa;">
+                    <strong style="color:#ccc;">${e.start_date}</strong>
+                    ${e.start_time ? ' · ' + e.start_time : ''}
+                    ${e.room ? ' · <em>' + e.room + '</em>' : ''}
+                </div>`)
+                .join('');
+
+            content.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    <span style="font-size: 0.7rem; padding: 2px 8px; background: ${c.bg}; border: 1px dashed ${c.border}; color: ${c.text}; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Colleague</span>
+                    <span style="font-size: 0.7rem; color: #888;">${b.booking_status}</span>
+                </div>
+                <div style="font-size: 1rem; font-weight: 500; color: #e0e0e0; margin-bottom: 2px;">${b.booking_name || 'Untitled'}</div>
+                ${b.account ? `<div style="font-size: 0.8rem; color: #888; margin-bottom: 8px;">${b.account}</div>` : ''}
+                <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 8px;">Seller: <strong style="color:#ccc;">${b.seller || '—'}</strong></div>
+                ${eventsList ? `<div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px;">${eventsList}</div>` : ''}
+                <div style="font-size: 0.7rem; color: #666; margin-top: 8px; font-style: italic;">Not in Kelphi — view-only from Delphi</div>
+            `;
+
+            const rect = event.target.getBoundingClientRect();
+            popup.style.left = Math.min(rect.left, window.innerWidth - 310) + 'px';
+            popup.style.top = (rect.bottom + 8) + 'px';
+            popup.style.display = 'block';
+        }
+
         function showAvailPopup(event, leadId) {
             const lead = appData.leads.find(l => l.id === leadId);
             if (!lead) return;

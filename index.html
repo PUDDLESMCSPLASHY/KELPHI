@@ -96,6 +96,9 @@
         body.light-mode #availCalendar div[style*="border-left: 1px solid rgba(255,255,255"] { border-left-color: #e1e4e8 !important; }
         body.light-mode #availCalendar div[style*="border: 1px solid rgba(255,255,255"] { border-color: #e1e4e8 !important; }
         body.light-mode #availCalendar div[style*="border-bottom: 1px solid rgba(255,255,255"] { border-bottom-color: #e1e4e8 !important; }
+        body.light-mode #availGantt div[style*="border-bottom: 1px solid rgba(255,255,255"] { border-bottom-color: #e1e4e8 !important; }
+        body.light-mode #availGantt div[style*="border: 1px solid rgba(255,255,255"] { border-color: #e1e4e8 !important; }
+        body.light-mode #availCalendar div[style*="color: #e0e0e0"] { color: #2d3436 !important; }
         body.light-mode #availPopup { background: #fff !important; border-color: #0984e3 !important; color: #2d3436 !important; }
         body.light-mode #availPopup * { background: #fff !important; color: #2d3436 !important; }
         body.light-mode #availPopup div[style*="color: #888"] { color: #636e72 !important; }
@@ -6868,7 +6871,7 @@ Kelsey`;
             
             // Build row for each function room
             FUNCTION_ROOMS.forEach(room => {
-                html += `<div style="display: flex; min-height: 32px; border-bottom: 1px solid rgba(255,255,255,0.03);">`;
+                html += `<div style="display: flex; min-height: 32px; border-bottom: 1px solid rgba(255,255,255,0.12);">`;
                 html += `<div style="width: 180px; padding: 0.5rem; font-size: 0.75rem; color: #888; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center;" title="${room}">${room}</div>`;
                 
                 dates.forEach(d => {

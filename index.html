@@ -6759,8 +6759,20 @@ Kelsey`;
             
             if (availView === 'month') {
                 // MONTHLY VIEW: Calendar grid (7 columns x 5 rows)
-                let html = `<div style="display: grid; grid-template-columns: repeat(7, 1fr);">`;
-                
+                // Month label — shows "September 2026" or "September – October 2026"
+                // if the 35-day range spans two months.
+                const first = dates[0], last = dates[dates.length - 1];
+                let monthLabel;
+                if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
+                    monthLabel = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                } else if (first.getFullYear() === last.getFullYear()) {
+                    monthLabel = `${first.toLocaleDateString('en-US', { month: 'long' })} – ${last.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+                } else {
+                    monthLabel = `${first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} – ${last.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+                }
+                let html = `<div style="padding: 0.5rem 0.75rem; font-size: 1.1rem; font-weight: 500; color: #00d9ff; border-bottom: 1px solid rgba(0,217,255,0.2); margin-bottom: 0.25rem;">${monthLabel}</div>`;
+                html += `<div style="display: grid; grid-template-columns: repeat(7, 1fr);">`;
+
                 // Header row with day names (Sun → Sat)
                 ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
                     html += `<div style="padding: 0.5rem; text-align: center; font-size: 0.75rem; color: #666; background: #12121c; border-bottom: 1px solid rgba(255,255,255,0.1);">${day}</div>`;

@@ -564,6 +564,7 @@
             <div class="nav-tab" data-tab="goals">Goals</div>
             <div class="nav-tab" data-tab="reporting">Reporting</div>
             <div class="nav-tab" data-tab="csm">CSM Timeline</div>
+            <div class="nav-tab" data-tab="dashboard">Team Dashboard</div>
             <div class="nav-tab" data-tab="wrapup">Post Booking</div>
         </nav>
 
@@ -1192,6 +1193,7 @@
                 </div>
                 
                 <div class="tab-content" id="tab-csm"><iframe id="csmFrame" src="https://puddlesmcsplashy.github.io/CSM-TIMELINE/" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
+                <div class="tab-content" id="tab-dashboard"><iframe id="dashboardFrame" src="https://dashboard.kelphi.app/?embed=1" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;"></iframe></div>
                 <div class="tab-content" id="tab-wrapup">
                     <div style="height: calc(100vh - 180px); display: flex; flex-direction: column;">
                         <div class="leads-toolbar" style="margin-bottom: 1rem; flex-shrink: 0;">
@@ -1887,7 +1889,7 @@
         // ============ THEME ============
         function broadcastTheme(theme) {
             const message = { type: 'theme-change', theme: theme };
-            ['quoteGeneratorFrame', 'checklistFrame', 'goalsFrame', 'csmFrame'].forEach(id => {
+            ['quoteGeneratorFrame', 'checklistFrame', 'goalsFrame', 'csmFrame', 'dashboardFrame'].forEach(id => {
                 const frame = document.getElementById(id);
                 if (frame && frame.contentWindow) {
                     frame.contentWindow.postMessage(message, '*');

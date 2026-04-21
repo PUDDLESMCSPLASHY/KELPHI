@@ -663,12 +663,12 @@
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
                             <button class="avail-nav-btn" onclick="availToday()">Today</button>
-                            <button class="avail-nav-btn" onclick="availNav(-7)">◀◀</button>
-                            <button class="avail-nav-btn" onclick="availNav(-1)">◀</button>
+                            <button class="avail-nav-btn" onclick="availNavSmart(-2)">◀◀</button>
+                            <button class="avail-nav-btn" onclick="availNavSmart(-1)">◀</button>
                             <span style="font-size: 1rem; color: #00d9ff; cursor: pointer; padding: 0.25rem 0.5rem;" id="availDateRange" onclick="document.getElementById('availDatePicker').showPicker()"></span>
                             <input type="date" class="form-input" id="availDatePicker" onchange="availJumpToDate()" style="position: absolute; opacity: 0; pointer-events: none;">
-                            <button class="avail-nav-btn" onclick="availNav(1)">▶</button>
-                            <button class="avail-nav-btn" onclick="availNav(7)">▶▶</button>
+                            <button class="avail-nav-btn" onclick="availNavSmart(1)">▶</button>
+                            <button class="avail-nav-btn" onclick="availNavSmart(2)">▶▶</button>
                         </div>
                     </div>
                     
@@ -6619,9 +6619,8 @@ Kelsey`;
         let availGanttStartDate = new Date();
         availStartDate.setHours(0, 0, 0, 0);
         availGanttStartDate.setHours(0, 0, 0, 0);
-        // Start on Monday of current week
-        const dayOfWeekInit = availStartDate.getDay();
-        availStartDate.setDate(availStartDate.getDate() - (dayOfWeekInit === 0 ? 6 : dayOfWeekInit - 1));
+        // Start on Sunday of current week (Sun → Sat layout)
+        availStartDate.setDate(availStartDate.getDate() - availStartDate.getDay());
         availGanttStartDate = new Date(availStartDate);
         
         const AVAIL_STATUS_COLORS = {
@@ -6648,25 +6647,49 @@ Kelsey`;
         function availToday() {
             availStartDate = new Date();
             availStartDate.setHours(0, 0, 0, 0);
-            const dayOfWeek = availStartDate.getDay();
-            availStartDate.setDate(availStartDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            availStartDate.setDate(availStartDate.getDate() - availStartDate.getDay()); // Sunday
             document.getElementById('availDatePicker').value = availStartDate.toISOString().split('T')[0];
             renderAvailability();
         }
-        
+
         function availNav(days) {
             availStartDate.setDate(availStartDate.getDate() + days);
             document.getElementById('availDatePicker').value = availStartDate.toISOString().split('T')[0];
             renderAvailability();
         }
-        
+
+        // Jump the calendar by 1 month (used by the double arrows in Monthly view).
+        // Snaps to the Sunday of the week containing the 1st of the target month.
+        function availNavMonth(months) {
+            const mid = new Date(availStartDate);
+            mid.setDate(mid.getDate() + 17);           // dominant month of current view
+            mid.setMonth(mid.getMonth() + months);
+            const first = new Date(mid.getFullYear(), mid.getMonth(), 1);
+            first.setDate(first.getDate() - first.getDay()); // snap to Sunday
+            availStartDate = first;
+            document.getElementById('availDatePicker').value = availStartDate.toISOString().split('T')[0];
+            renderAvailability();
+        }
+
+        // Smart nav used by the nav arrows. Step is ±1 (single arrow) or ±2 (double arrow).
+        //   Monthly view: single = ±1 week, double = ±1 month
+        //   Weekly view:  single = ±1 day,  double = ±1 week
+        function availNavSmart(step) {
+            const dir = step < 0 ? -1 : 1;
+            const big = Math.abs(step) === 2;
+            if (availView === 'month') {
+                if (big) availNavMonth(dir);
+                else availNav(dir * 7);
+            } else {
+                availNav(dir * (big ? 7 : 1));
+            }
+        }
+
         function availJumpToDate() {
             const picker = document.getElementById('availDatePicker');
             if (picker.value) {
                 availStartDate = new Date(picker.value + 'T00:00:00');
-                // Align to Monday
-                const dayOfWeek = availStartDate.getDay();
-                availStartDate.setDate(availStartDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                availStartDate.setDate(availStartDate.getDate() - availStartDate.getDay()); // Sunday
                 renderAvailability();
             }
         }
@@ -6699,7 +6722,12 @@ Kelsey`;
             
             // Update date range display
             if (availView === 'month') {
-                const monthName = availStartDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                // Use the center date (day 18 of 35) so the label reflects the
+                // dominant month rather than the prior month the first Sunday
+                // might land in.
+                const mid = new Date(availStartDate);
+                mid.setDate(mid.getDate() + 17);
+                const monthName = mid.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
                 document.getElementById('availDateRange').textContent = monthName;
             } else {
                 const startStr = availStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -6733,8 +6761,8 @@ Kelsey`;
                 // MONTHLY VIEW: Calendar grid (7 columns x 5 rows)
                 let html = `<div style="display: grid; grid-template-columns: repeat(7, 1fr);">`;
                 
-                // Header row with day names
-                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
+                // Header row with day names (Sun → Sat)
+                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
                     html += `<div style="padding: 0.5rem; text-align: center; font-size: 0.75rem; color: #666; background: #12121c; border-bottom: 1px solid rgba(255,255,255,0.1);">${day}</div>`;
                 });
                 

@@ -660,6 +660,10 @@
                                 <option value="all">Include Guestrooms</option>
                                 <option value="events">Events Only</option>
                             </select>
+                            <select class="filter-select" id="availSellerFilter" onchange="renderAvailability()" style="width: auto;" title="Whose bookings to show">
+                                <option value="all">All Bookings</option>
+                                <option value="mine">Mine Only</option>
+                            </select>
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
                             <button class="avail-nav-btn" onclick="availToday()">Today</button>
@@ -6893,13 +6897,39 @@ Kelsey`;
             );
             fetchAvailDelphiEvents(startIso, endIso).then(allEvents => {
                 let colleagueEvents = allEvents.filter(e => !kelphiDelphiIds.has(e.booking_id));
-                // Respect the type filter — "events only" should hide guestroom-only views
-                // (Delphi events are inherently event-space bookings, so leave as-is)
+                refreshSellerFilterOptions(colleagueEvents);
+                const sellerFilter = document.getElementById('availSellerFilter')?.value || 'all';
+                if (sellerFilter === 'mine') {
+                    colleagueEvents = [];
+                } else if (sellerFilter !== 'all') {
+                    colleagueEvents = colleagueEvents.filter(e => (e.seller || '') === sellerFilter);
+                }
                 renderAvailCalendar(leads, dates, colleagueEvents);
                 if (availView === 'week') {
                     renderAvailGantt(colleagueEvents);
                 }
             });
+        }
+
+        const availKnownSellers = new Set();
+        function refreshSellerFilterOptions(events) {
+            const select = document.getElementById('availSellerFilter');
+            if (!select) return;
+            let added = false;
+            events.forEach(e => {
+                const s = (e.seller || '').trim();
+                if (s && !availKnownSellers.has(s)) { availKnownSellers.add(s); added = true; }
+            });
+            if (!added && select.options.length > 2) return;
+            const current = select.value;
+            const sorted = [...availKnownSellers].sort((a, b) => a.localeCompare(b));
+            const base = `
+                <option value="all">All Bookings</option>
+                <option value="mine">Mine Only</option>
+            `;
+            const sellers = sorted.map(s => `<option value="${escAttr(s)}">${s}</option>`).join('');
+            select.innerHTML = base + (sorted.length ? `<option disabled>─── By Seller ───</option>${sellers}` : '');
+            if ([...select.options].some(o => o.value === current)) select.value = current;
         }
         
         // Visual treatment for colleagues' bookings (from Delphi, not Kelphi leads).

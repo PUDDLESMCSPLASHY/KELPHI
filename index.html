@@ -4317,7 +4317,7 @@
                         <div class="form-group"><label class="form-label">End Time</label><input type="time" class="form-input event-end" data-idx="${idx}" value="${evt.endTime || ''}"></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label class="form-label">Function Room</label>
+                        <div class="form-group"><label class="form-label">Function Room <span class="conflict-badge" id="conflict-badge-${idx}" data-idx="${idx}"></span></label>
                             <select class="form-select event-room" data-idx="${idx}">
                                 <option value="">Select...</option>
                                 ${FUNCTION_ROOMS.map(r => `<option value="${r}" ${evt.room === r ? 'selected' : ''}>${r}</option>`).join('')}
@@ -4348,6 +4348,7 @@
             });
 
             const fields = ['name', 'date', 'classification', 'startTime:start', 'endTime:end', 'room', 'setup', 'headcount', 'rental', 'fbMin:fb', 'attendance'];
+            const conflictTriggers = new Set(['date', 'startTime', 'endTime', 'room']);
             fields.forEach(f => {
                 const [key, cls] = f.includes(':') ? f.split(':') : [f, f];
                 container.querySelectorAll(`.event-${cls}`).forEach(el => {
@@ -4357,16 +4358,19 @@
                         if (['headcount', 'rental', 'fbMin', 'attendance'].includes(key)) val = parseFloat(val) || 0;
                         currentEvents[idx][key] = val;
                         calculateEventTotals();
+                        if (conflictTriggers.has(key)) updateConflictBadge(idx);
                     });
                     el.addEventListener('change', e => {
                         const idx = parseInt(e.target.dataset.idx);
                         currentEvents[idx][key] = e.target.value;
                         calculateEventTotals();
+                        if (conflictTriggers.has(key)) updateConflictBadge(idx);
                     });
                 });
             });
 
             calculateEventTotals();
+            currentEvents.forEach((_, idx) => updateConflictBadge(idx));
         }
 
         function addEventCard() {
@@ -4384,6 +4388,131 @@
             document.getElementById('totalFbMin').textContent = formatCurrency(totalFb);
             document.getElementById('totalEventRevenue').textContent = formatCurrency(totalRental + totalFb);
             calculateTotalRevenue();
+        }
+
+        // ============ SPACE CONFLICT CHECK ============
+        // Rooms that share physical space — booking one blocks the others.
+        const ROOM_CONFLICT_GROUPS = {
+            'Dogwood Ballroom': ['Dogwood Ballroom A', 'Dogwood Ballroom B'],
+            'Dogwood Ballroom A': ['Dogwood Ballroom'],
+            'Dogwood Ballroom B': ['Dogwood Ballroom'],
+        };
+        function roomsInConflict(room) {
+            if (!room) return [];
+            return [room, ...(ROOM_CONFLICT_GROUPS[room] || [])];
+        }
+        // Normalize "2:00 PM" or "14:00" → "14:00"; empty/invalid → ''.
+        function normalizeTime(t) {
+            if (!t) return '';
+            const s = String(t).trim();
+            const m24 = s.match(/^(\d{1,2}):(\d{2})$/);
+            if (m24) {
+                const h = parseInt(m24[1], 10);
+                return `${String(h).padStart(2, '0')}:${m24[2]}`;
+            }
+            const m12 = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            if (m12) {
+                let h = parseInt(m12[1], 10) % 12;
+                if (m12[3].toUpperCase() === 'PM') h += 12;
+                return `${String(h).padStart(2, '0')}:${m12[2]}`;
+            }
+            return '';
+        }
+        function timesOverlap(aStart, aEnd, bStart, bEnd) {
+            const a1 = normalizeTime(aStart), a2 = normalizeTime(aEnd);
+            const b1 = normalizeTime(bStart), b2 = normalizeTime(bEnd);
+            if (!a1 || !a2 || !b1 || !b2) return true;
+            return a1 < b2 && b1 < a2;
+        }
+
+        const STATUS_RANK = { 'definite': 4, 'contract-out': 3, 'tentative': 2, 'prospect': 1 };
+        const CONFLICT_LEVELS = {
+            0: { emoji: '🟢', label: 'Clear', color: '#22c55e' },
+            1: { emoji: '🟡', label: 'Prospect', color: '#eab308' },
+            2: { emoji: '🟡', label: 'Tentative', color: '#eab308' },
+            3: { emoji: '🟠', label: 'Contract Out', color: '#f97316' },
+            4: { emoji: '🔴', label: 'Definite', color: '#ef4444' },
+        };
+        function normalizeDelphiStatus(s) {
+            return String(s || '').toLowerCase().replace(/\s+/g, '-');
+        }
+
+        async function checkEventConflict(date, startTime, endTime, room) {
+            if (!date || !room) return { level: 0, items: [] };
+            const conflictRooms = new Set(roomsInConflict(room));
+            const items = [];
+
+            (appData.leads || []).forEach(lead => {
+                if (lead.id === currentLeadId) return;
+                if (lead.archived) return;
+                if (!lead.events) return;
+                lead.events.forEach(evt => {
+                    if (!conflictRooms.has(evt.room)) return;
+                    if (evt.date !== date) return;
+                    if (!timesOverlap(startTime, endTime, evt.startTime, evt.endTime)) return;
+                    items.push({
+                        source: 'kelphi',
+                        bookingName: lead.bookingName || 'Untitled',
+                        status: lead.status || 'prospect',
+                        room: evt.room,
+                        startTime: evt.startTime,
+                        endTime: evt.endTime,
+                        seller: 'You',
+                    });
+                });
+            });
+
+            let delphiEvents = availDelphiCache.get(`${date}|${date}`);
+            if (!delphiEvents) {
+                delphiEvents = await fetchAvailDelphiEvents(date, date);
+            }
+            const kelphiDelphiIds = new Set((appData.leads || []).map(l => l.delphiId).filter(Boolean));
+            (delphiEvents || []).forEach(e => {
+                if (!conflictRooms.has(e.room)) return;
+                if (e.start_date !== date) return;
+                if (kelphiDelphiIds.has(e.booking_id)) return;
+                if (!timesOverlap(startTime, endTime, e.start_time, e.end_time)) return;
+                items.push({
+                    source: 'delphi',
+                    bookingName: e.booking_name,
+                    status: normalizeDelphiStatus(e.booking_status),
+                    room: e.room,
+                    startTime: e.start_time,
+                    endTime: e.end_time,
+                    seller: e.seller || '?',
+                });
+            });
+
+            let maxRank = 0;
+            items.forEach(it => {
+                const r = STATUS_RANK[it.status] || 1;
+                if (r > maxRank) maxRank = r;
+            });
+            return { level: maxRank, items };
+        }
+
+        async function updateConflictBadge(idx) {
+            const el = document.getElementById(`conflict-badge-${idx}`);
+            if (!el) return;
+            const evt = currentEvents[idx];
+            if (!evt || !evt.date || !evt.room) {
+                el.innerHTML = '';
+                el.removeAttribute('title');
+                return;
+            }
+            el.innerHTML = '<span style="opacity:0.5;font-size:0.75rem;">checking…</span>';
+            const { level, items } = await checkEventConflict(evt.date, evt.startTime, evt.endTime, evt.room);
+            const info = CONFLICT_LEVELS[level];
+            const lines = items.length
+                ? items.map(i => {
+                    const t = (i.startTime || i.endTime) ? ` ${i.startTime || '?'}–${i.endTime || '?'}` : '';
+                    const statusLabel = i.status.replace(/-/g, ' ');
+                    return `• ${i.bookingName} [${statusLabel}]${t} — ${i.seller}`;
+                }).join('\n')
+                : 'No conflicts found.';
+            const title = `${info.label}${items.length ? ` (${items.length} overlap${items.length === 1 ? '' : 's'})` : ''}\n${lines}`;
+            el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid ${info.color}55;font-size:0.7rem;color:${info.color};font-weight:500;cursor:help;vertical-align:middle;">${info.emoji} ${info.label}${items.length ? ` · ${items.length}` : ''}</span>`;
+            el.setAttribute('title', title);
         }
 
         // ============ TOTAL REVENUE ============

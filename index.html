@@ -6819,6 +6819,10 @@ Kelsey`;
                 }
             }
             if (arrival && !departure) departure = arrival + 86400000;
+            // Single-day bookings sometimes arrive with arrival === departure
+            // (common for events-only Delphi imports). Extend so the arrival
+            // day falls inside the range.
+            if (arrival && departure && departure <= arrival) departure = arrival + 86400000;
             return { arrival, departure };
         }
 

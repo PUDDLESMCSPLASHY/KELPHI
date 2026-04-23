@@ -713,6 +713,11 @@
                     .avail-toggle.active { background: rgba(0,217,255,0.2); font-weight: 500; }
                     .avail-nav-btn { background: transparent; border: none; color: #888; padding: 0.3rem 0.6rem; font-size: 0.85rem; cursor: pointer; border-radius: 4px; }
                     .avail-nav-btn:hover { background: rgba(255,255,255,0.05); color: #00d9ff; }
+                    /* Left-column name contrast: mine bright, colleagues dimmer */
+                    .avail-name-mine { color: #ffffff; }
+                    .avail-name-colleague { color: #9ca3af; }
+                    body.light-mode .avail-name-mine { color: #0f172a; }
+                    body.light-mode .avail-name-colleague { color: #64748b; }
                 </style>
                 
                 <!-- Quote Generator Tab -->
@@ -6798,6 +6803,44 @@ Kelsey`;
             const k = String(s || '').toLowerCase().trim().replace(/\s+/g, '-');
             return AVAIL_STATUS_COLORS[k] ? k : 'working';
         }
+
+        // Derive an arrival/departure window for a lead, falling back to its events
+        // when there's no room block set (events-only bookings like Vermont Family
+        // Dinner have no l.arrival but do have event dates).
+        function getLeadDateSpan(l) {
+            let arrival = l.arrival ? new Date(l.arrival + 'T00:00:00').getTime() : null;
+            let departure = l.departure ? new Date(l.departure + 'T00:00:00').getTime() : null;
+            if (!arrival && Array.isArray(l.events) && l.events.length) {
+                const eventDates = l.events.map(e => e.date).filter(Boolean).sort();
+                if (eventDates.length) {
+                    arrival = new Date(eventDates[0] + 'T00:00:00').getTime();
+                    const last = eventDates[eventDates.length - 1];
+                    departure = new Date(last + 'T00:00:00').getTime() + 86400000;
+                }
+            }
+            if (arrival && !departure) departure = arrival + 86400000;
+            return { arrival, departure };
+        }
+
+        // Per-booking Gantt colors for Definite bookings only. Hash booking ID into
+        // this palette so chunks of the same booking share a color across rooms.
+        const GANTT_DEFINITE_PALETTE = [
+            { bg: 'rgba(34,197,94,0.35)',  border: '#22c55e' },
+            { bg: 'rgba(239,68,68,0.35)',  border: '#ef4444' },
+            { bg: 'rgba(168,85,247,0.35)', border: '#a855f7' },
+            { bg: 'rgba(245,158,11,0.35)', border: '#f59e0b' },
+            { bg: 'rgba(236,72,153,0.35)', border: '#ec4899' },
+            { bg: 'rgba(20,184,166,0.35)', border: '#14b8a6' },
+            { bg: 'rgba(251,113,133,0.35)',border: '#fb7185' },
+            { bg: 'rgba(99,102,241,0.35)', border: '#6366f1' },
+        ];
+        const GANTT_NONDEFINITE_COLOR = { bg: 'rgba(148,163,184,0.12)', border: '#94a3b8' };
+        function getDefiniteBookingColor(bookingId) {
+            const s = String(bookingId || '');
+            let hash = 0;
+            for (let i = 0; i < s.length; i++) hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
+            return GANTT_DEFINITE_PALETTE[Math.abs(hash) % GANTT_DEFINITE_PALETTE.length];
+        }
         
         function setAvailView(view) {
             availView = view;
@@ -6971,10 +7014,9 @@ Kelsey`;
             const endTime = dates[dates.length - 1].getTime() + 86400000;
 
             const relevantLeads = leads.filter(l => {
-                if (!l.arrival) return false;
-                const arrival = new Date(l.arrival + 'T00:00:00').getTime();
-                const departure = l.departure ? new Date(l.departure + 'T00:00:00').getTime() : arrival + 86400000;
-                return arrival < endTime && departure > startTime;
+                const span = getLeadDateSpan(l);
+                if (!span.arrival || !span.departure) return false;
+                return span.arrival < endTime && span.departure > startTime;
             });
             
             if (availView === 'month') {
@@ -7005,9 +7047,9 @@ Kelsey`;
                     
                     // Find bookings on this date
                     const bookingsOnDate = relevantLeads.filter(l => {
-                        const arrival = new Date(l.arrival + 'T00:00:00').getTime();
-                        const departure = l.departure ? new Date(l.departure + 'T00:00:00').getTime() : arrival + 86400000;
-                        return arrival <= d.getTime() && departure > d.getTime();
+                        const span = getLeadDateSpan(l);
+                        if (!span.arrival || !span.departure) return false;
+                        return span.arrival <= d.getTime() && span.departure > d.getTime();
                     });
                     
                     html += `<div style="min-height: 80px; padding: 0.25rem; background: ${isToday ? 'rgba(0,217,255,0.08)' : '#16161f'}; cursor: pointer; border: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${dateStr}')">`;
@@ -7106,11 +7148,12 @@ Kelsey`;
                         const key = normalizeStatusKey(lead.status);
                         const colors = AVAIL_STATUS_COLORS[key];
                         const icon = AVAIL_STATUS_ICONS[key] || '';
-                        const arrival = new Date(lead.arrival + 'T00:00:00');
-                        const departure = lead.departure ? new Date(lead.departure + 'T00:00:00') : new Date(arrival.getTime() + 86400000);
+                        const span = getLeadDateSpan(lead);
+                        const arrival = new Date(span.arrival);
+                        const departure = new Date(span.departure);
 
                         html += `<div style="display: flex; min-height: 40px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
-                        html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.8rem; color: #e0e0e0; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px;" title="${lead.bookingName || 'Untitled'}">${icon ? `<span>${icon}</span>` : ''}${lead.bookingName || 'Untitled'}</div>`;
+                        html += `<div class="avail-name-mine" style="width: 200px; padding: 0.5rem; font-size: 0.8rem; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-weight: 500;" title="${lead.bookingName || 'Untitled'}">${icon ? `<span>${icon}</span>` : ''}${lead.bookingName || 'Untitled'}</div>`;
                         
                         dates.forEach((d, idx) => {
                             const dayStart = d.getTime();
@@ -7145,7 +7188,7 @@ Kelsey`;
                         const departure = new Date(row.end + 'T00:00:00');
                         const tip = `${row.booking_name} · ${row.seller} · ${row.booking_status}`;
                         html += `<div style="display: flex; min-height: 36px; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0.9;">`;
-                        html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.75rem; color: ${c.text}; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-style: italic;" title="${escAttr(tip)}">${row.booking_name || 'Untitled'}</div>`;
+                        html += `<div class="avail-name-colleague" style="width: 200px; padding: 0.5rem; font-size: 0.75rem; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-style: italic;" title="${escAttr(tip)}">${row.booking_name || 'Untitled'}</div>`;
                         dates.forEach(d => {
                             const dayStart = d.getTime();
                             const dayEnd = dayStart + 86400000;
@@ -7260,11 +7303,14 @@ Kelsey`;
                     if (eventsOnDate.length > 0) {
                         const firstEvent = eventsOnDate[0];
                         const key = normalizeStatusKey(firstEvent.lead.status);
-                        const colors = AVAIL_STATUS_COLORS[key];
                         const icon = AVAIL_STATUS_ICONS[key] || '';
+                        const isDef = key === 'definite';
+                        const colors = isDef
+                            ? getDefiniteBookingColor(firstEvent.lead.id)
+                            : GANTT_NONDEFINITE_COLOR;
                         const hasMultiple = firstEvent.lead.events && firstEvent.lead.events.length > 1;
-                        html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06);">
-                            <div style="height: 24px; background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: 3px; cursor: pointer; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;"
+                        html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06); box-sizing: border-box;">
+                            <div style="height: 26px; background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: 3px; cursor: pointer; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box;"
                                 onclick="openLead('${firstEvent.lead.id}')"
                                 onmouseenter="showAvailPopup(event, '${firstEvent.lead.id}')"
                                 onmouseleave="hideAvailPopup()"
@@ -7276,17 +7322,20 @@ Kelsey`;
                     } else if (colleagueInRoom.length > 0) {
                         const e = colleagueInRoom[0];
                         const key = normalizeStatusKey(e.booking_status);
-                        const colors = AVAIL_STATUS_COLORS[key];
+                        const isDef = key === 'definite';
+                        const colors = isDef
+                            ? getDefiniteBookingColor(e.booking_id)
+                            : GANTT_NONDEFINITE_COLOR;
                         const tip = `${e.booking_name}\n${e.seller} · ${e.booking_status}`;
-                        html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06);">
-                            <div style="height: 24px; background: ${colors.bg}; border: 1px dashed ${colors.border}; border-radius: 3px; position: relative;"
+                        html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06); box-sizing: border-box;">
+                            <div style="height: 26px; background: ${colors.bg}; border: 1px dashed ${colors.border}; border-radius: 3px; position: relative; box-sizing: border-box;"
                                 onmouseenter="showAvailColleaguePopup(event, '${escAttr(e.booking_id)}')"
                                 onmouseleave="hideAvailPopup()"
                                 title="${escAttr(tip)}">
                             </div>
                         </div>`;
                     } else {
-                        html += `<div style="flex: 1; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.06);" onclick="createLeadFromAvail('${dateStr}', '${room}')"></div>`;
+                        html += `<div style="flex: 1; padding: 3px; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.06); box-sizing: border-box;" onclick="createLeadFromAvail('${dateStr}', '${room}')"><div style="height: 26px;"></div></div>`;
                     }
                 });
                 html += `</div>`;

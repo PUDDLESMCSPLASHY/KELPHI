@@ -6899,12 +6899,14 @@ Kelsey`;
                 let colleagueEvents = allEvents.filter(e => !kelphiDelphiIds.has(e.booking_id));
                 refreshSellerFilterOptions(colleagueEvents);
                 const sellerFilter = document.getElementById('availSellerFilter')?.value || 'all';
+                let filteredLeads = leads;
                 if (sellerFilter === 'mine') {
                     colleagueEvents = [];
                 } else if (sellerFilter !== 'all') {
                     colleagueEvents = colleagueEvents.filter(e => (e.seller || '') === sellerFilter);
+                    filteredLeads = [];
                 }
-                renderAvailCalendar(leads, dates, colleagueEvents);
+                renderAvailCalendar(filteredLeads, dates, colleagueEvents);
                 if (availView === 'week') {
                     renderAvailGantt(colleagueEvents);
                 }

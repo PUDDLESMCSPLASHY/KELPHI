@@ -6773,12 +6773,31 @@ Kelsey`;
         availStartDate.setDate(availStartDate.getDate() - availStartDate.getDay());
         availGanttStartDate = new Date(availStartDate);
         
+        // Color by normalized status. New = pale yellow (only Kelsey uses "new"),
+        // working/dying/prospect = gray, tentative/contract-out = blue, definite = green.
         const AVAIL_STATUS_COLORS = {
-            'working': { bg: 'rgba(136,136,136,0.3)', border: '#888888', text: '#888' },
-            'tentative': { bg: 'rgba(255,170,0,0.3)', border: '#ffaa00', text: '#ffaa00' },
-            'contract-out': { bg: 'rgba(138,43,226,0.3)', border: '#b366ff', text: '#b366ff' },
-            'definite': { bg: 'rgba(0,217,143,0.3)', border: '#00d98f', text: '#00d98f' }
+            'new':          { bg: 'rgba(253,224,71,0.28)',  border: '#facc15', text: '#fde68a' },
+            'working':      { bg: 'rgba(148,163,184,0.22)', border: '#94a3b8', text: '#cbd5e1' },
+            'dying':        { bg: 'rgba(148,163,184,0.22)', border: '#94a3b8', text: '#cbd5e1' },
+            'prospect':     { bg: 'rgba(148,163,184,0.22)', border: '#94a3b8', text: '#cbd5e1' },
+            'tentative':    { bg: 'rgba(59,130,246,0.25)',  border: '#3b82f6', text: '#93c5fd' },
+            'contract-out': { bg: 'rgba(59,130,246,0.25)',  border: '#3b82f6', text: '#93c5fd' },
+            'definite':     { bg: 'rgba(34,197,94,0.28)',   border: '#22c55e', text: '#86efac' },
         };
+        // Icons only appear on Kelsey's own Kelphi leads — colleague bookings render
+        // without any icon so mine-vs-theirs is instantly readable.
+        const AVAIL_STATUS_ICONS = {
+            'new': '✨',
+            'working': '💪',
+            'dying': '💀',
+            'tentative': '',
+            'contract-out': '📄',
+            'definite': '✅',
+        };
+        function normalizeStatusKey(s) {
+            const k = String(s || '').toLowerCase().trim().replace(/\s+/g, '-');
+            return AVAIL_STATUS_COLORS[k] ? k : 'working';
+        }
         
         function setAvailView(view) {
             availView = view;
@@ -7011,21 +7030,24 @@ Kelsey`;
                     const maxShow = 3;
                     let shown = 0;
 
-                    // Your own leads first (full color)
+                    // Your own leads first (with status icon)
                     bookingsOnDate.slice(0, maxShow).forEach(lead => {
-                        const colors = AVAIL_STATUS_COLORS[lead.status] || AVAIL_STATUS_COLORS['working'];
+                        const key = normalizeStatusKey(lead.status);
+                        const colors = AVAIL_STATUS_COLORS[key];
+                        const icon = AVAIL_STATUS_ICONS[key] || '';
                         html += `<div style="font-size: 0.65rem; padding: 2px 4px; margin-bottom: 2px; background: ${colors.bg}; border-left: 2px solid ${colors.border}; border-radius: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; color: ${colors.text};"
                             onclick="event.stopPropagation(); openLead('${lead.id}')"
                             onmouseenter="showAvailPopup(event, '${lead.id}')"
                             onmouseleave="hideAvailPopup()"
-                            title="${lead.bookingName || 'Untitled'}">${lead.bookingName || 'Untitled'}</div>`;
+                            title="${lead.bookingName || 'Untitled'}">${icon ? icon + ' ' : ''}${lead.bookingName || 'Untitled'}</div>`;
                         shown++;
                     });
-                    // Then colleagues' bookings (muted) up to the remaining slots
+                    // Then colleagues' bookings (status color, dashed border, no icon)
                     colleagueOnDate.slice(0, Math.max(0, maxShow - shown)).forEach(e => {
-                        const c = AVAIL_COLLEAGUE_COLOR;
+                        const key = normalizeStatusKey(e.booking_status);
+                        const colors = AVAIL_STATUS_COLORS[key];
                         const tip = `${e.booking_name}\n${e.seller} · ${e.booking_status}\nRoom: ${e.room || '—'}`;
-                        html += `<div style="font-size: 0.65rem; padding: 2px 4px; margin-bottom: 2px; background: ${c.bg}; border-left: 2px dashed ${c.border}; border-radius: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; color: ${c.text}; font-style: italic;"
+                        html += `<div style="font-size: 0.65rem; padding: 2px 4px; margin-bottom: 2px; background: ${colors.bg}; border-left: 2px dashed ${colors.border}; border-radius: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; color: ${colors.text};"
                             onclick="event.stopPropagation();"
                             onmouseenter="showAvailColleaguePopup(event, '${escAttr(e.booking_id)}')"
                             onmouseleave="hideAvailPopup()"
@@ -7081,12 +7103,14 @@ Kelsey`;
                     html += `<div style="padding: 2rem; text-align: center; color: #666;">No bookings in this date range</div>`;
                 } else {
                     relevantLeads.forEach(lead => {
-                        const colors = AVAIL_STATUS_COLORS[lead.status] || AVAIL_STATUS_COLORS['working'];
+                        const key = normalizeStatusKey(lead.status);
+                        const colors = AVAIL_STATUS_COLORS[key];
+                        const icon = AVAIL_STATUS_ICONS[key] || '';
                         const arrival = new Date(lead.arrival + 'T00:00:00');
                         const departure = lead.departure ? new Date(lead.departure + 'T00:00:00') : new Date(arrival.getTime() + 86400000);
-                        
+
                         html += `<div style="display: flex; min-height: 40px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
-                        html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.8rem; color: #e0e0e0; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center;" title="${lead.bookingName || 'Untitled'}">${lead.bookingName || 'Untitled'}</div>`;
+                        html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.8rem; color: #e0e0e0; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px;" title="${lead.bookingName || 'Untitled'}">${icon ? `<span>${icon}</span>` : ''}${lead.bookingName || 'Untitled'}</div>`;
                         
                         dates.forEach((d, idx) => {
                             const dayStart = d.getTime();
@@ -7113,16 +7137,15 @@ Kelsey`;
                         html += `</div>`;
                     });
 
-                    // Render colleague rows (muted, non-clickable) beneath Kelphi rows
+                    // Render colleague rows (status color, dashed border, no icon)
                     colleagueRows.forEach(row => {
-                        const c = AVAIL_COLLEAGUE_COLOR;
+                        const key = normalizeStatusKey(row.booking_status);
+                        const c = AVAIL_STATUS_COLORS[key];
                         const arrival = new Date(row.start + 'T00:00:00');
                         const departure = new Date(row.end + 'T00:00:00');
                         const tip = `${row.booking_name} · ${row.seller} · ${row.booking_status}`;
-                        html += `<div style="display: flex; min-height: 36px; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0.85;">`;
-                        html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.75rem; color: ${c.text}; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-style: italic;" title="${escAttr(tip)}">
-                            <span style="font-size: 0.7rem; opacity: 0.6;">👥</span>${row.booking_name || 'Untitled'}
-                        </div>`;
+                        html += `<div style="display: flex; min-height: 36px; border-bottom: 1px solid rgba(255,255,255,0.05); opacity: 0.9;">`;
+                        html += `<div style="width: 200px; padding: 0.5rem; font-size: 0.75rem; color: ${c.text}; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-style: italic;" title="${escAttr(tip)}">${row.booking_name || 'Untitled'}</div>`;
                         dates.forEach(d => {
                             const dayStart = d.getTime();
                             const dayEnd = dayStart + 86400000;
@@ -7236,23 +7259,27 @@ Kelsey`;
 
                     if (eventsOnDate.length > 0) {
                         const firstEvent = eventsOnDate[0];
-                        const colors = AVAIL_STATUS_COLORS[firstEvent.lead.status] || AVAIL_STATUS_COLORS['working'];
+                        const key = normalizeStatusKey(firstEvent.lead.status);
+                        const colors = AVAIL_STATUS_COLORS[key];
+                        const icon = AVAIL_STATUS_ICONS[key] || '';
                         const hasMultiple = firstEvent.lead.events && firstEvent.lead.events.length > 1;
                         html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06);">
-                            <div style="height: 24px; background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: 3px; cursor: pointer; position: relative; overflow: hidden;"
+                            <div style="height: 24px; background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: 3px; cursor: pointer; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;"
                                 onclick="openLead('${firstEvent.lead.id}')"
                                 onmouseenter="showAvailPopup(event, '${firstEvent.lead.id}')"
                                 onmouseleave="hideAvailPopup()"
                                 title="${firstEvent.lead.bookingName || 'Untitled'}">
                                 ${hasMultiple ? '<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ' + colors.border + ';"></div>' : ''}
+                                ${icon ? `<span style="font-size: 0.75rem; line-height: 1;">${icon}</span>` : ''}
                             </div>
                         </div>`;
                     } else if (colleagueInRoom.length > 0) {
-                        const c = AVAIL_COLLEAGUE_COLOR;
                         const e = colleagueInRoom[0];
+                        const key = normalizeStatusKey(e.booking_status);
+                        const colors = AVAIL_STATUS_COLORS[key];
                         const tip = `${e.booking_name}\n${e.seller} · ${e.booking_status}`;
                         html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06);">
-                            <div style="height: 24px; background: ${c.bg}; border: 1px dashed ${c.border}; border-radius: 3px; position: relative;"
+                            <div style="height: 24px; background: ${colors.bg}; border: 1px dashed ${colors.border}; border-radius: 3px; position: relative;"
                                 onmouseenter="showAvailColleaguePopup(event, '${escAttr(e.booking_id)}')"
                                 onmouseleave="hideAvailPopup()"
                                 title="${escAttr(tip)}">
@@ -7334,10 +7361,12 @@ Kelsey`;
             const eventRevenue = roomRental + fbMin;
             const totalRevenue = roomRevenue + eventRevenue;
             
-            const colors = AVAIL_STATUS_COLORS[lead.status] || AVAIL_STATUS_COLORS['working'];
-            
+            const key = normalizeStatusKey(lead.status);
+            const colors = AVAIL_STATUS_COLORS[key];
+            const icon = AVAIL_STATUS_ICONS[key] || '';
+
             content.innerHTML = `
-                <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; color: #fff;">${lead.bookingName || 'Untitled'}</div>
+                <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; color: #fff;">${icon ? icon + ' ' : ''}${lead.bookingName || 'Untitled'}</div>
                 <div style="display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: ${colors.bg}; color: ${colors.text}; margin-bottom: 0.75rem;">${formatStatus(lead.status)}</div>
                 <div style="font-size: 0.75rem; color: #888; margin-bottom: 0.75rem;">${daysSinceCreated} days since created</div>
                 <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.75rem; font-size: 0.8rem;">

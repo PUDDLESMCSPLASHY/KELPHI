@@ -6315,10 +6315,42 @@ Kelsey`;
                 return sum + (rate * nights);
             }, 0);
         }
-        
+
+        // Forecast-based room revenue. Uses row.forecast when populated; otherwise
+        // falls back to 80% of Agreed (matches the per-lead UI's auto-fill so the
+        // dashboard total agrees with what Kelsey sees in each room block).
+        function calcForecastRoomRevenue(lead) {
+            if (!lead.roomBlock) return 0;
+            return lead.roomBlock.reduce((sum, row) => {
+                const rate = parseFloat(row.rate) || 0;
+                const qty = row.quantities || [];
+                const fcst = Array.isArray(row.forecast) ? row.forecast : null;
+                let nights = 0;
+                for (let i = 0; i < qty.length; i++) {
+                    const f = fcst && i < fcst.length ? parseInt(fcst[i]) : NaN;
+                    nights += Number.isFinite(f) && f > 0
+                        ? f
+                        : Math.round((parseInt(qty[i]) || 0) * 0.8);
+                }
+                return sum + rate * nights;
+            }, 0);
+        }
+
         function calcEventRevenue(lead) {
             if (!lead.events) return 0;
             return lead.events.reduce((sum, evt) => sum + (parseFloat(evt.rental) || 0) + (parseFloat(evt.fbMin) || 0), 0);
+        }
+
+        // Parse a YYYY-MM-DD (or full ISO) string anchored at local noon so it
+        // sits cleanly inside the calendar day regardless of viewer's timezone.
+        // Without this, "2026-04-01" parses as UTC midnight, which in Central
+        // is March 31 7pm and falls outside Q2 quarter bounds. Drops Q1-end /
+        // Q2-start bookings from totals.
+        function _parseLocalDate(s) {
+            if (!s) return null;
+            const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return new Date(s);
+            return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]), 12, 0, 0);
         }
         
         // View state for the dashboard toggles
@@ -6384,15 +6416,16 @@ Kelsey`;
 
             // Definite Revenue Split — filter by when the lead WENT Definite
             // (definiteDate) in the current quarter or year. "Production by
-            // close-month" matches how Kelsey tracks goals.
+            // close-month" matches how Kelsey tracks goals. Rooms use the
+            // forecast (matches per-lead "Forecasted Revenue" summary).
             const [defStart, defEnd] = definiteView === 'year' ? _currentYearBounds(now) : _currentQuarterBounds(now);
             const _isDefiniteInRange = (l) => {
                 if (!l.definiteDate) return false;
-                const d = new Date(l.definiteDate);
-                return d >= defStart && d <= defEnd;
+                const d = _parseLocalDate(l.definiteDate);
+                return d && d >= defStart && d <= defEnd;
             };
             const definiteLeads = leads.filter(l => l.status === 'definite' && _isDefiniteInRange(l));
-            const definiteRooms = definiteLeads.reduce((sum, l) => sum + calcRoomRevenue(l), 0);
+            const definiteRooms = definiteLeads.reduce((sum, l) => sum + calcForecastRoomRevenue(l), 0);
             const definiteEvents = definiteLeads.reduce((sum, l) => sum + calcEventRevenue(l), 0);
             document.getElementById('stat-definiteRooms').textContent = formatCurrency(definiteRooms);
             document.getElementById('stat-definiteEvents').textContent = formatCurrency(definiteEvents);
@@ -6426,8 +6459,8 @@ Kelsey`;
                 if (l.type !== 'rooms' && l.type !== 'both') return false;
                 if (!l.roomBlock || l.roomBlock.length === 0) return false;
                 if (!l.definiteDate) return false;
-                const dd = new Date(l.definiteDate);
-                return dd >= adrStart && dd <= adrEnd;
+                const dd = _parseLocalDate(l.definiteDate);
+                return dd && dd >= adrStart && dd <= adrEnd;
             });
             let avgADR = 0;
             if (definiteRoomLeads.length > 0) {

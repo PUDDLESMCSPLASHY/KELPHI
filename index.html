@@ -617,13 +617,13 @@
                         </div>
                         <div class="stat-card"><div class="stat-label">Avg Time to Flip</div><div class="stat-value cyan" id="stat-avgFlipTime">— days</div><div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Contract Out → Definite</div></div>
                         <div class="stat-card">
-                            <div class="stat-label">Average Quoted ADR</div>
+                            <div class="stat-label">Average ADR at Definite</div>
                             <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
                                 <button class="toggle-btn active" onclick="toggleADRView('quarter')" id="adrToggleQuarter">This Quarter</button>
                                 <button class="toggle-btn" onclick="toggleADRView('year')" id="adrToggleYear">This Year</button>
                             </div>
                             <div class="stat-value green" style="margin-top: 0.5rem;" id="stat-avgADR">$0</div>
-                            <div style="font-size: 0.7rem; color: #666; margin-top: 4px;">From room leads</div>
+                            <div style="font-size: 0.7rem; color: #666; margin-top: 4px;">Bookings flipped to Definite in period</div>
                         </div>
                     </div>
                     
@@ -6416,20 +6416,26 @@ Kelsey`;
             }
             document.getElementById('stat-avgFlipTime').textContent = avgFlipDays + ' days';
 
-            // Average Quoted ADR (filtered by arrival in current quarter or year)
+            // Average ADR at Definite — for bookings whose definiteDate falls
+            // in the selected period (quarter or year). Same blended-ADR
+            // calc as before: per-lead average across room types, then mean
+            // across leads. Keeps each Definite weighted equally.
             const [adrStart, adrEnd] = adrView === 'year' ? _currentYearBounds(now) : _currentQuarterBounds(now);
-            const roomLeads = leads.filter(l =>
-                (l.type === 'rooms' || l.type === 'both') &&
-                l.roomBlock && l.roomBlock.length > 0 &&
-                _isArrivalInRange(l, adrStart, adrEnd)
-            );
+            const definiteRoomLeads = leads.filter(l => {
+                if (l.status !== 'definite' && l.status !== 'completed') return false;
+                if (l.type !== 'rooms' && l.type !== 'both') return false;
+                if (!l.roomBlock || l.roomBlock.length === 0) return false;
+                if (!l.definiteDate) return false;
+                const dd = new Date(l.definiteDate);
+                return dd >= adrStart && dd <= adrEnd;
+            });
             let avgADR = 0;
-            if (roomLeads.length > 0) {
-                const totalADR = roomLeads.reduce((sum, l) => {
+            if (definiteRoomLeads.length > 0) {
+                const totalADR = definiteRoomLeads.reduce((sum, l) => {
                     const rates = l.roomBlock.map(r => parseFloat(r.rate) || 0).filter(r => r > 0);
                     return sum + (rates.length > 0 ? rates.reduce((s, r) => s + r, 0) / rates.length : 0);
                 }, 0);
-                avgADR = totalADR / roomLeads.length;
+                avgADR = totalADR / definiteRoomLeads.length;
             }
             document.getElementById('stat-avgADR').textContent = formatCurrency(avgADR);
             

@@ -5753,48 +5753,63 @@
             }
             
             // Calculate event info
-            let eventParagraphs = '';
-            let eventTotal = 0;
+            // Single events use a longer, warmer paragraph that mirrors the OG
+            // Rate Calculator (RATE-CALCULATOR/index.html). Multi events keep
+            // the per-day summary lines + a wrap-up "All costs subject to..." paragraph.
+            const eventName = lead.events && lead.events.length > 0 ? (lead.events[0].name || groupName) : groupName;
+            const isSingleEvent = hasEvents && lead.events.length === 1;
             const hasDiscount = hasEvents && lead.events.length >= 3;
-            
+            let eventParagraphs = '';
+            let singleEventPara = '';
+            let eventTotal = 0;
+
             if (hasEvents) {
                 const sortedEvents = [...lead.events].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
-                
-                const eventLines = sortedEvents.map((evt, idx) => {
-                    // Fall back to the rate guide when a field is left blank.
-                    // Any value the user typed (including 0) wins.
+
+                // Resolve pricing for one event (uses rate guide as fallback).
+                // Room Rental: base + 2% A&P + 23% service fee + 9.5% tax on that fee
+                //   = rental × (1 + 0.02 + 0.23 + 0.23 × 0.095) = rental × 1.27185
+                // F&B: base + 10.5% food/drink sales tax + 23% service fee + 9.5% tax on that fee
+                //   = fbMin × (1 + 0.105 + 0.23 + 0.23 × 0.095) = fbMin × 1.35685
+                const resolveEvent = (evt) => {
                     const hasExplicit = (v) => v !== undefined && v !== null && v !== '';
                     const [defaultRental, defaultFb] = getQuoteDefaultPricing(evt.room, evt.date);
                     const rental = hasExplicit(evt.rental) ? (parseFloat(evt.rental) || 0) : defaultRental;
                     const fbMin  = hasExplicit(evt.fbMin)  ? (parseFloat(evt.fbMin)  || 0) : defaultFb;
-                    const subtotal = rental + fbMin;
-                    // Room Rental: base + 2% A&P + 23% service fee + 9.5% tax on that fee
-                    //   = rental × (1 + 0.02 + 0.23 + 0.23 × 0.095) = rental × 1.27185
-                    // F&B: base + 10.5% food/drink sales tax + 23% service fee + 9.5% tax on that fee
-                    //   = fbMin × (1 + 0.105 + 0.23 + 0.23 × 0.095) = fbMin × 1.35685
-                    const total = (rental * 1.27185) + (fbMin * 1.35685);
-                    eventTotal += total;
-                    
+                    return { rental, fbMin, subtotal: rental + fbMin, total: (rental * 1.27185) + (fbMin * 1.35685) };
+                };
+
+                // Tally grand total first so single-event paragraph can include the after-tax number.
+                sortedEvents.forEach(evt => { eventTotal += resolveEvent(evt).total; });
+                if (hasDiscount) eventTotal = eventTotal * 0.75;
+
+                if (isSingleEvent) {
+                    const evt = sortedEvents[0];
+                    const { rental, fbMin, subtotal } = resolveEvent(evt);
                     const headcount = evt.headcount || evt.attendance || '{{Headcount}}';
                     const timeframe = (evt.startTime && evt.endTime) ? `${evt.startTime} - ${evt.endTime}` : '{{Event timeframe}}';
                     const room = evt.room || '{{Event space}}';
                     const isPlural = room.includes(',') || room.includes(' and ');
-                    
-                    const prefix = idx === 0 ? 'For' : 'On';
-                    return `${prefix} ${formatDayName(evt.date)}, ${formatDateLong(evt.date)} from approximately ${timeframe}, I would recommend ${room} for an estimated ${headcount} guests. The room rental${isPlural ? 's combined' : ''} would be ${formatCurrency(rental)} with an ${isPlural ? 'overall ' : ''}F&B minimum of ${formatCurrency(fbMin)}, totaling ${formatCurrency(subtotal)} before taxes and fees.`;
-                });
-                
-                eventParagraphs = eventLines.join('\n\n');
-                
-                if (hasDiscount) {
-                    eventTotal = eventTotal * 0.75; // 25% discount
+                    const dayName = formatDayName(evt.date);
+                    const dateLong = formatDateLong(evt.date);
+                    const intro = (quoteType === 'events') ? `For the ${eventName}` : `As for ${eventName}`;
+                    singleEventPara = `${intro} on ${dayName}, ${dateLong} from approximately ${timeframe} with an estimated headcount of ${headcount}, I would recommend hosting the group in ${room}. For a ${timeframe} block on a ${dayName}, ${room} ${isPlural ? 'have' : 'has'} two prices associated with reserving: a room rental fee and a required food and beverage minimum spend. For this specific request, the room rental${isPlural ? 's combined' : ''} for ${room} ${isPlural ? 'are' : 'is'} ${formatCurrency(rental)} and the F&B minimum is ${formatCurrency(fbMin)}, totaling to a combined ${formatCurrency(subtotal)}. Both costs are subject to applicable taxes and service fees, which would bring the total cost for your event to ${formatCurrency(eventTotal)}. I just want to be transparent and make sure you know what to expect in-full for your event with us.`;
+                } else {
+                    eventParagraphs = sortedEvents.map((evt, idx) => {
+                        const { rental, fbMin, subtotal } = resolveEvent(evt);
+                        const headcount = evt.headcount || evt.attendance || '{{Headcount}}';
+                        const timeframe = (evt.startTime && evt.endTime) ? `${evt.startTime} - ${evt.endTime}` : '{{Event timeframe}}';
+                        const room = evt.room || '{{Event space}}';
+                        const isPlural = room.includes(',') || room.includes(' and ');
+                        const prefix = idx === 0 ? 'For' : 'On';
+                        return `${prefix} ${formatDayName(evt.date)}, ${formatDateLong(evt.date)} from approximately ${timeframe}, I would recommend ${room} for an estimated ${headcount} guests. The room rental${isPlural ? 's combined' : ''} would be ${formatCurrency(rental)} with an ${isPlural ? 'overall ' : ''}F&B minimum of ${formatCurrency(fbMin)}, totaling ${formatCurrency(subtotal)} before taxes and fees.`;
+                    }).join('\n\n');
                 }
             }
-            
+
             // Build email based on quote type
             let quote = '';
-            const eventName = lead.events && lead.events.length > 0 ? (lead.events[0].name || groupName) : groupName;
-            
+
             if (quoteType === 'rooms') {
                 quote = `Hey there, ${firstName},
 
@@ -5808,13 +5823,26 @@ Your friend at The Compton,
 
 Kelsey`;
             } else if (quoteType === 'events') {
-                quote = `Hey there, ${firstName},
+                if (isSingleEvent) {
+                    quote = `Hey there, ${firstName},
 
 I received your request about hosting the ${groupName} here at The Compton, and I'm happy to explore what this could potentially look like. I'd love to understand more about your vision, so if any of the information I've provided sounds incorrect, please just let me know.
 
-${lead.events.length === 1 ? eventParagraphs : `For the ${eventName}, here's what I'm recommending:
+${singleEventPara}
 
-${eventParagraphs}`}
+I would love to know your initial thoughts, as well as answer any questions you have. If there are any details I've left out or stated incorrectly, please just let me know. If this seems like we're on the right track, I'd be happy to send over pictures of the space as well as our full Banquets and Catering menu. I look forward to hopefully hosting ${groupName} at The Compton this ${season}!
+
+Your friend at The Compton,
+
+Kelsey`;
+                } else {
+                    quote = `Hey there, ${firstName},
+
+I received your request about hosting the ${groupName} here at The Compton, and I'm happy to explore what this could potentially look like. I'd love to understand more about your vision, so if any of the information I've provided sounds incorrect, please just let me know.
+
+For the ${eventName}, here's what I'm recommending:
+
+${eventParagraphs}
 
 All costs are subject to applicable taxes and service fees.${hasDiscount ? ' Because this is a 3+ day event, you qualify for our 25% multi-day discount!' : ''} The total cost for your event would be approximately ${formatCurrency(eventTotal)} after taxes${hasDiscount ? ', fees, and the multi-day discount' : ' and fees'}. I just want to be transparent and make sure you know what to expect in-full for your event with us.
 
@@ -5823,9 +5851,25 @@ I would love to know your initial thoughts, as well as answer any questions you 
 Your friend at The Compton,
 
 Kelsey`;
+                }
             } else {
                 // Both
-                quote = `Hey there, ${firstName},
+                if (isSingleEvent) {
+                    quote = `Hey there, ${firstName},
+
+I received your request about hosting the ${groupName} here at The Compton, and I'm happy to explore what this could potentially look like. I'd love to understand more about your vision, so if any of the information I've provided sounds incorrect, please just let me know.
+
+${roomBlockPara}
+
+${singleEventPara}
+
+I would love to know your initial thoughts, as well as answer any questions you have. If there are any details I've left out or stated incorrectly, please just let me know. If this seems like we're on the right track, I'd be happy to send over pictures of the space as well as our full Banquets and Catering menu. I look forward to hopefully hosting ${groupName} at The Compton this ${season}!
+
+Your friend at The Compton,
+
+Kelsey`;
+                } else {
+                    quote = `Hey there, ${firstName},
 
 I received your request about hosting the ${groupName} here at The Compton, and I'm happy to explore what this could potentially look like. I'd love to understand more about your vision, so if any of the information I've provided sounds incorrect, please just let me know.
 
@@ -5842,6 +5886,7 @@ I would love to know your initial thoughts, as well as answer any questions you 
 Your friend at The Compton,
 
 Kelsey`;
+                }
             }
             
             document.getElementById('lead-quoteEmail').value = quote;

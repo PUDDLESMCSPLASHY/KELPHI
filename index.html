@@ -6414,19 +6414,38 @@ Kelsey`;
             );
             document.getElementById('stat-viableRev').textContent = formatCurrency(viableRev);
 
-            // Definite Revenue Split — filter by when the lead WENT Definite
-            // (definiteDate) in the current quarter or year. "Production by
-            // close-month" matches how Kelsey tracks goals. Rooms use the
-            // forecast (matches per-lead "Forecasted Revenue" summary).
-            const [defStart, defEnd] = definiteView === 'year' ? _currentYearBounds(now) : _currentQuarterBounds(now);
-            const _isDefiniteInRange = (l) => {
-                if (!l.definiteDate) return false;
-                const d = _parseLocalDate(l.definiteDate);
-                return d && d >= defStart && d <= defEnd;
+            // Definite Revenue Split — sourced from the Goals tracker's
+            // bookings (same data the Production Preview metric uses). Goals
+            // is Kelsey's manually-curated source of truth; the lead-level
+            // roomBlock/events arrays have gaps and inconsistencies that
+            // throw the totals off when summed. Formula matches Goals app
+            // exactly: rooms = adr × nights × 0.8 (forecast), catering =
+            // roomRental + fnb + av.
+            const _MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+            const _currentQuarterMonthKeys = (() => {
+                const q = Math.floor(now.getMonth() / 3);
+                return _MONTH_KEYS.slice(q * 3, q * 3 + 3);
+            })();
+            const _definiteMonthFilter = (b) => {
+                if (definiteView === 'year') {
+                    if (b.closeDate) {
+                        const cd = _parseLocalDate(b.closeDate);
+                        return cd && cd.getFullYear() === now.getFullYear();
+                    }
+                    return true; // Goals year-scoped already
+                }
+                return _currentQuarterMonthKeys.includes(b.month);
             };
-            const definiteLeads = leads.filter(l => l.status === 'definite' && _isDefiniteInRange(l));
-            const definiteRooms = definiteLeads.reduce((sum, l) => sum + calcForecastRoomRevenue(l), 0);
-            const definiteEvents = definiteLeads.reduce((sum, l) => sum + calcEventRevenue(l), 0);
+
+            let definiteRooms = 0;
+            let definiteEvents = 0;
+            if (goalsData && goalsData.bookings) {
+                goalsData.bookings.forEach(b => {
+                    if (!_definiteMonthFilter(b)) return;
+                    definiteRooms += (b.adr || 0) * (b.roomNights || 0) * 0.8;
+                    definiteEvents += (b.roomRental || 0) + (b.fnb || 0) + (b.av || 0);
+                });
+            }
             document.getElementById('stat-definiteRooms').textContent = formatCurrency(definiteRooms);
             document.getElementById('stat-definiteEvents').textContent = formatCurrency(definiteEvents);
 
@@ -6599,6 +6618,8 @@ Kelsey`;
                 goalsData = event.data.data;
                 localStorage.setItem('kelphi_goalsCache', JSON.stringify(goalsData));
                 updateQuarterlyProduction();
+                // Dashboard's Definite Revenue card also reads goalsData
+                if (typeof updateDashboard === 'function') updateDashboard();
             }
             // Listen for checklist deletion from CHECKLIST app
             if (event.data && event.data.type === 'CHECKLIST_DELETED') {

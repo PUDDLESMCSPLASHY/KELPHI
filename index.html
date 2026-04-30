@@ -721,7 +721,7 @@
                 </style>
                 
                 <!-- Quote Generator Tab -->
-                <div class="tab-content" id="tab-quotes"><iframe id="quoteGeneratorFrame" src="https://puddlesmcsplashy.github.io/RATE-CALCULATOR/" style="width: 100%; height: calc(100vh - 180px); border: none; border-radius: 8px;"></iframe></div>
+                <div class="tab-content" id="tab-quotes"><iframe id="quoteGeneratorFrame" src="https://puddlesmcsplashy.github.io/RATE-CALCULATOR/" style="width: 100%; height: calc(100vh - 180px); border: none; border-radius: 8px;" onload="broadcastTheme(document.body.classList.contains('light-mode') ? 'light' : 'dark')"></iframe></div>
 
                 <!-- Leads Tab -->
                 <div class="tab-content" id="tab-leads">

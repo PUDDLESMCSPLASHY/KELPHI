@@ -3282,7 +3282,13 @@
             document.getElementById('lead-type').addEventListener('change', function() { updatePanelTabs(); autoCalculateCutoff(); });
 
             // Date changes - rebuild room block
-            document.getElementById('lead-arrival').addEventListener('change', function() { rebuildRoomBlock(); autoCalculateCutoff(); });
+            document.getElementById('lead-arrival').addEventListener('change', function() {
+                rebuildRoomBlock();
+                autoCalculateCutoff();
+                if (document.getElementById('lead-billingType')?.value === 'deposit') {
+                    calculateDepositSchedule();
+                }
+            });
             document.getElementById('lead-departure').addEventListener('change', rebuildRoomBlock);
 
             // Same as contact
@@ -4544,6 +4550,10 @@
             }
 
             document.getElementById('lead-revenue').value = formatCurrency(total);
+            // Refresh deposit-schedule preview if it's currently showing.
+            if (document.getElementById('lead-billingType')?.value === 'deposit') {
+                calculateDepositSchedule();
+            }
         }
 
         // ============ LEADS TABLE ============
@@ -7963,82 +7973,83 @@ Kelsey`;
             const arrival = document.getElementById('lead-arrival').value;
             const type = document.getElementById('lead-type').value;
             const revenue = parseCurrency(document.getElementById('lead-revenue').value) || 0;
-            
+
             if (!arrival || !revenue) {
                 document.getElementById('depositScheduleContent').innerHTML = '<span style="color: var(--text-muted);">Enter arrival date and revenue to see schedule</span>';
                 document.getElementById('depositScheduleNote').textContent = '';
                 return;
             }
-            
+
             const today = new Date();
             const arrivalDate = new Date(arrival + 'T12:00:00');
             const daysOut = Math.ceil((arrivalDate - today) / (1000 * 60 * 60 * 24));
-            
-            // Calculate dates
-            const date90 = new Date(arrivalDate);
-            date90.setDate(date90.getDate() - 90);
-            const date30 = new Date(arrivalDate);
-            date30.setDate(date30.getDate() - 30);
-            
-            const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const formatMoney = (amt) => '$' + amt.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
-            
-            let schedule = '';
+
+            const date90 = new Date(arrivalDate); date90.setDate(date90.getDate() - 90);
+            const date30 = new Date(arrivalDate); date30.setDate(date30.getDate() - 30);
+            const date14 = new Date(arrivalDate); date14.setDate(date14.getDate() - 14);
+
+            const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+            const formatMoney = (amt) => '$' + Math.round(amt).toLocaleString();
+
+            // 10% F&B Overage from events (mirrors the contract calc:
+            // F&B with tax = totalFbMin × 1.35685, overage = 10% of that).
+            let fbOverage = 0;
+            const hasEvents = (type === 'events' || type === 'both');
+            if (hasEvents && Array.isArray(currentEvents)) {
+                const totalFbMin = currentEvents.reduce((s, e) => s + (parseFloat(e.fbMin) || 0), 0);
+                fbOverage = totalFbMin * 1.35685 * 0.10;
+            }
+
+            // Build schedule rows: { notes, dueDate, amount }
+            const rows = [];
             let scheduleType = '';
-            
             if (daysOut >= 60) {
-                // Schedule A: 25/50/25
                 scheduleType = 'A';
                 const amt1 = Math.round(revenue * 0.25);
                 const amt2 = Math.round(revenue * 0.50);
                 const amt3 = revenue - amt1 - amt2;
-                schedule = `
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <span><strong>Upon Signing</strong></span>
-                        <span><strong>${formatMoney(amt1)}</strong> <span style="color: var(--text-muted);">· 25% anticipated revenue</span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <span><strong>90 Days Prior</strong> <span style="color: var(--text-muted);">(${formatDate(date90)})</span></span>
-                        <span><strong>${formatMoney(amt2)}</strong> <span style="color: var(--text-muted);">· 50% anticipated revenue</span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                        <span><strong>30 Days Prior</strong> <span style="color: var(--text-muted);">(${formatDate(date30)})</span></span>
-                        <span><strong>${formatMoney(amt3)}</strong> <span style="color: var(--text-muted);">· Remaining balance</span></span>
-                    </div>
-                `;
+                rows.push({ notes: '25%',       dueDate: 'Upon Signing',                       amount: amt1 });
+                rows.push({ notes: '50%',       dueDate: `90 Days Prior · ${formatDate(date90)}`, amount: amt2 });
+                rows.push({ notes: 'Remaining', dueDate: `30 Days Prior · ${formatDate(date30)}`, amount: amt3 });
             } else if (daysOut >= 31) {
-                // Schedule B: 50/50
                 scheduleType = 'B';
                 const amt1 = Math.round(revenue * 0.50);
                 const amt2 = revenue - amt1;
-                schedule = `
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <span><strong>Upon Signing</strong></span>
-                        <span><strong>${formatMoney(amt1)}</strong> <span style="color: var(--text-muted);">· 50% anticipated revenue</span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                        <span><strong>30 Days Prior</strong> <span style="color: var(--text-muted);">(${formatDate(date30)})</span></span>
-                        <span><strong>${formatMoney(amt2)}</strong> <span style="color: var(--text-muted);">· Remaining balance</span></span>
-                    </div>
-                `;
+                rows.push({ notes: '50%',       dueDate: 'Upon Signing',                       amount: amt1 });
+                rows.push({ notes: 'Remaining', dueDate: `30 Days Prior · ${formatDate(date30)}`, amount: amt2 });
             } else {
-                // Schedule C: 100%
                 scheduleType = 'C';
-                schedule = `
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                        <span><strong>Upon Signing</strong></span>
-                        <span><strong>${formatMoney(revenue)}</strong> <span style="color: var(--text-muted);">· 100% anticipated revenue</span></span>
-                    </div>
-                `;
+                rows.push({ notes: 'Remaining', dueDate: 'Upon Signing', amount: revenue });
             }
-            
-            document.getElementById('depositScheduleContent').innerHTML = schedule;
-            
-            // Add note about F&B refund for events
+            if (fbOverage > 0) {
+                rows.push({ notes: '10% Overage', dueDate: `14 Days Prior · ${formatDate(date14)}`, amount: fbOverage });
+            }
+
+            const cellPad = 'padding: 6px 8px;';
+            const tableRows = rows.map((r, i) => {
+                const border = i < rows.length - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.08);' : '';
+                return `<tr style="${border}">
+                    <td style="${cellPad} font-weight: 600;">${r.notes}</td>
+                    <td style="${cellPad} color: var(--text-muted);">${r.dueDate}</td>
+                    <td style="${cellPad} text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">${formatMoney(r.amount)}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('depositScheduleContent').innerHTML = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.15); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <th style="${cellPad} text-align: left;">Notes</th>
+                            <th style="${cellPad} text-align: left;">Due Date</th>
+                            <th style="${cellPad} text-align: right;">Deposit Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            `;
+
             let note = `Schedule ${scheduleType} (${daysOut} days out)`;
-            if (type === 'events' || type === 'both') {
-                note += ' · F&B minimum refund row applies for unused amounts after event';
-            }
+            if (hasEvents) note += ' · 10% Overage from F&B minimum';
             document.getElementById('depositScheduleNote').textContent = note;
         }
         

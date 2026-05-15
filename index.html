@@ -5287,9 +5287,45 @@
             }
         }
         
+        // Self-heal a lead's definiteDate from Delphi.
+        // The auto-import fills this field server-side, but cloud-sync races
+        // have occasionally wiped it. This function refetches the date
+        // from Delphi and persists it locally + to cloud whenever a
+        // Definite/Completed lead is missing it on open.
+        async function _selfHealDefiniteDate(leadId) {
+            try {
+                const lead = appData.leads.find(l => l.id === leadId);
+                if (!lead) return;
+                if (!['definite', 'completed'].includes(lead.status)) return;
+                if (lead.definiteDate) return;
+                if (!lead.delphiId) return;
+                const res = await fetch(`${DELPHI_API}/api/booking/${encodeURIComponent(lead.delphiId)}/definite-date`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.ok || !data.definite_date) return;
+                // Race guard: only set if still empty (user might have manually filled it meanwhile)
+                const fresh = appData.leads.find(l => l.id === leadId);
+                if (!fresh || fresh.definiteDate) return;
+                fresh.definiteDate = data.definite_date;
+                fresh.updatedAt = new Date().toISOString();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                // Update the visible field if the lead is currently open
+                if (currentLeadId === leadId) {
+                    const el = document.getElementById('lead-definiteDate');
+                    if (el && !el.value) el.value = data.definite_date;
+                }
+                // Push back to cloud (fire-and-forget, no blocking)
+                try { syncToCloud(); } catch (e) {}
+            } catch (e) {
+                // Self-healing is best-effort; never throw to UI
+            }
+        }
+
         function openLead(id) {
             const lead = appData.leads.find(l => l.id === id);
             if (!lead) return;
+            // Kick off self-heal — fire-and-forget, doesn't block the open
+            _selfHealDefiniteDate(id);
 
             // If another lead was already open, save its in-progress edits
             // before swapping. Prevents event card edits (and other fields)

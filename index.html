@@ -6914,12 +6914,9 @@ Kelsey`;
         }
         let availView = 'week';
         let availStartDate = new Date();
-        let availGanttStartDate = new Date();
         availStartDate.setHours(0, 0, 0, 0);
-        availGanttStartDate.setHours(0, 0, 0, 0);
         // Start on Sunday of current week (Sun → Sat layout)
         availStartDate.setDate(availStartDate.getDate() - availStartDate.getDay());
-        availGanttStartDate = new Date(availStartDate);
         
         // Color by normalized status. New = pale yellow (only Kelsey uses "new"),
         // working/dying/prospect = gray, tentative/contract-out = blue, definite = green.
@@ -6999,8 +6996,8 @@ Kelsey`;
         }
         
         function availGanttNav(days) {
-            availGanttStartDate.setDate(availGanttStartDate.getDate() + days);
-            renderAvailGantt();
+            // Bottom gantt nav drives the top calendar too — both views stay in sync
+            availNav(days);
         }
         
         function availToday() {
@@ -7383,17 +7380,17 @@ Kelsey`;
             if (statusFilter !== 'all') leads = leads.filter(l => l.status === statusFilter);
             const eventLeads = leads.filter(l => l.type === 'events' || l.type === 'both');
             
-            // Build 7 days from Gantt start date
+            // Build 7 days from the shared availStartDate so the gantt mirrors the top calendar
             const dates = [];
             for (let i = 0; i < 7; i++) {
-                const d = new Date(availGanttStartDate);
+                const d = new Date(availStartDate);
                 d.setDate(d.getDate() + i);
                 dates.push(d);
             }
-            
+
             // Update Gantt date range display
-            const startStr = availGanttStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const endDate = new Date(availGanttStartDate);
+            const startStr = availStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const endDate = new Date(availStartDate);
             endDate.setDate(endDate.getDate() + 6);
             const endStr = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             document.getElementById('availGanttRange').textContent = `${startStr} — ${endStr}`;
@@ -7991,13 +7988,17 @@ Kelsey`;
             const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
             const formatMoney = (amt) => '$' + Math.round(amt).toLocaleString();
 
-            // 10% F&B Overage from events (mirrors the contract calc:
-            // F&B with tax = totalFbMin × 1.35685, overage = 10% of that).
-            let fbOverage = 0;
+            // 10% Overage on all event costs (room rental + F&B, both with tax).
+            // Rental tax = 10.5% sales tax. F&B with tax = totalFbMin × 1.35685
+            // (10.5% sales tax + 23% service + 9.5% tax on service).
+            let eventOverage = 0;
             const hasEvents = (type === 'events' || type === 'both');
             if (hasEvents && Array.isArray(currentEvents)) {
+                const totalRental = currentEvents.reduce((s, e) => s + (parseFloat(e.rental) || 0), 0);
                 const totalFbMin = currentEvents.reduce((s, e) => s + (parseFloat(e.fbMin) || 0), 0);
-                fbOverage = totalFbMin * 1.35685 * 0.10;
+                const rentalWithTaxPrev = totalRental * 1.105;
+                const fbWithTaxPrev = totalFbMin * 1.35685;
+                eventOverage = (rentalWithTaxPrev + fbWithTaxPrev) * 0.10;
             }
 
             // Build schedule rows: { notes, dueDate, amount }
@@ -8021,8 +8022,12 @@ Kelsey`;
                 scheduleType = 'C';
                 rows.push({ notes: 'Remaining', dueDate: 'Upon Signing', amount: revenue });
             }
-            if (fbOverage > 0) {
-                rows.push({ notes: '10% Overage', dueDate: `14 Days Prior · ${formatDate(date14)}`, amount: fbOverage });
+            if (eventOverage > 0) {
+                // Short-lead (Schedule C) keeps 14 days; A & B move to 30 days (same date as Remaining).
+                const overageDate = (scheduleType === 'C')
+                    ? `14 Days Prior · ${formatDate(date14)}`
+                    : `30 Days Prior · ${formatDate(date30)}`;
+                rows.push({ notes: '10% Overage', dueDate: overageDate, amount: eventOverage });
             }
 
             const cellPad = 'padding: 6px 8px;';
@@ -8049,7 +8054,7 @@ Kelsey`;
             `;
 
             let note = `Schedule ${scheduleType} (${daysOut} days out)`;
-            if (hasEvents) note += ' · 10% Overage from F&B minimum';
+            if (hasEvents) note += ' · 10% Overage on all event costs';
             document.getElementById('depositScheduleNote').textContent = note;
         }
         
@@ -8598,18 +8603,18 @@ Sales Manager`;
             
             // Calculate deposit amounts based on total with tax
             const grandTotal = roomRevenueWithTax + rentalWithTax + fbWithTax;
-            const fbOverage = fbWithTax * 0.10; // 10% F&B overage (deposit4)
-            
+            const eventOverage = (rentalWithTax + fbWithTax) * 0.10; // 10% overage on ALL event costs (rental + F&B, both with tax)
+
             data.deposit1_amount = formatCurrencyValue(grandTotal * 0.25);
             data.deposit2_amount = formatCurrencyValue(grandTotal * 0.50);
             data.deposit3_amount = formatCurrencyValue(grandTotal * 0.25);
-            data.deposit4_amount = formatCurrencyValue(fbOverage); // 10% F&B overage
-            data.balance_due = formatCurrencyValue(grandTotal + fbOverage); // 110% if events
-            
+            data.deposit4_amount = formatCurrencyValue(eventOverage); // 10% overage on all event costs
+            data.balance_due = formatCurrencyValue(grandTotal + eventOverage); // 110% if events
+
             // Short schedule deposits
             data.deposit1_short = formatCurrencyValue(grandTotal * 0.50);
             data.deposit2_short = formatCurrencyValue(grandTotal * 0.50);
-            data.deposit3_short = formatCurrencyValue(fbOverage); // 10% F&B overage (only if events)
+            data.deposit3_short = formatCurrencyValue(eventOverage); // 10% overage on all event costs (only if events)
             
             // Calculate deposit dates (90 and 30 days before arrival)
             if (lead.arrival) {
@@ -8623,9 +8628,11 @@ Sales Manager`;
                 deposit3Date.setDate(deposit3Date.getDate() - 30);
                 data.deposit3_date = deposit3Date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
                 
-                // deposit4 for events-only: 14 days before arrival (placeholder for different deposit schedule)
+                // deposit4 (10% overage) on the long-form schedules (A & B) is now due 30 days prior,
+                // same date as the Remaining Balance. Short-form (Schedule C) uses deposit3_short and
+                // its 14-days-prior timing is hardcoded in the template text.
                 const deposit4Date = new Date(arrivalDate);
-                deposit4Date.setDate(deposit4Date.getDate() - 14);
+                deposit4Date.setDate(deposit4Date.getDate() - 30);
                 data.deposit4_date = deposit4Date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
             } else {
                 data.deposit2_date = '';
@@ -8635,13 +8642,13 @@ Sales Manager`;
             
             // Events-only deposit amounts (for IPO room contracts where rooms are paid individually)
             const eventsOnlyTotal = rentalWithTax + fbWithTax;
-            const eventsOnlyOverage = fbWithTax * 0.10;
+            const eventsOnlyOverage = (rentalWithTax + fbWithTax) * 0.10; // 10% overage on all event costs
             data.deposit1_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
             data.deposit2_events = formatCurrencyValue(eventsOnlyTotal * 0.50);
             data.deposit3_events = formatCurrencyValue(eventsOnlyTotal * 0.25);
-            data.deposit4_events = formatCurrencyValue(eventsOnlyOverage); // 10% F&B overage
+            data.deposit4_events = formatCurrencyValue(eventsOnlyOverage); // 10% overage on all event costs
             data.balance_due_events = formatCurrencyValue(eventsOnlyTotal + eventsOnlyOverage);
-            
+
             // Short schedule for events-only (IPO)
             data.deposit1_events_short = formatCurrencyValue(eventsOnlyTotal * 0.50);
             data.deposit2_events_short = formatCurrencyValue(eventsOnlyTotal * 0.50);

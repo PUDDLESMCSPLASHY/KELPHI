@@ -7388,6 +7388,15 @@ Kelsey`;
                 dates.push(d);
             }
 
+            // Precompute which bookings span multiple (date, room) cells — these get a
+            // colored grouping dot so you can visually trace which cells belong together.
+            const colleagueCellsByBooking = new Map();
+            colleagueEvents.forEach(e => {
+                const cellKey = `${e.start_date}|${e.room}`;
+                if (!colleagueCellsByBooking.has(e.booking_id)) colleagueCellsByBooking.set(e.booking_id, new Set());
+                colleagueCellsByBooking.get(e.booking_id).add(cellKey);
+            });
+
             // Update Gantt date range display
             const startStr = availStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const endDate = new Date(availStartDate);
@@ -7447,35 +7456,33 @@ Kelsey`;
                     if (eventsOnDate.length > 0) {
                         const firstEvent = eventsOnDate[0];
                         const key = normalizeStatusKey(firstEvent.lead.status);
-                        const icon = AVAIL_STATUS_ICONS[key] || '';
-                        const isDef = key === 'definite';
-                        const colors = isDef
-                            ? getDefiniteBookingColor(firstEvent.lead.id)
-                            : GANTT_NONDEFINITE_COLOR;
+                        // Bar carries status meaning; dot (if present) carries grouping meaning.
+                        const colors = AVAIL_STATUS_COLORS[key] || AVAIL_STATUS_COLORS['working'];
                         const hasMultiple = firstEvent.lead.events && firstEvent.lead.events.length > 1;
+                        const dotColor = hasMultiple ? getDefiniteBookingColor(firstEvent.lead.id).border : null;
                         html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06); box-sizing: border-box;">
                             <div style="height: 26px; background: ${colors.bg}; border: 1px solid ${colors.border}; border-radius: 3px; cursor: pointer; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box;"
                                 onclick="openLead('${firstEvent.lead.id}')"
                                 onmouseenter="showAvailPopup(event, '${firstEvent.lead.id}')"
                                 onmouseleave="hideAvailPopup()"
                                 title="${firstEvent.lead.bookingName || 'Untitled'}">
-                                ${hasMultiple ? '<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ' + colors.border + ';"></div>' : ''}
-                                ${icon ? `<span style="font-size: 0.75rem; line-height: 1;">${icon}</span>` : ''}
+                                ${dotColor ? `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${dotColor}; box-shadow: 0 0 0 1px rgba(0,0,0,0.35);"></span>` : ''}
                             </div>
                         </div>`;
                     } else if (colleagueInRoom.length > 0) {
                         const e = colleagueInRoom[0];
                         const key = normalizeStatusKey(e.booking_status);
-                        const isDef = key === 'definite';
-                        const colors = isDef
-                            ? getDefiniteBookingColor(e.booking_id)
-                            : GANTT_NONDEFINITE_COLOR;
+                        const colors = AVAIL_STATUS_COLORS[key] || AVAIL_STATUS_COLORS['working'];
+                        const cellSet = colleagueCellsByBooking.get(e.booking_id);
+                        const hasMultiple = cellSet && cellSet.size > 1;
+                        const dotColor = hasMultiple ? getDefiniteBookingColor(e.booking_id).border : null;
                         const tip = `${e.booking_name}\n${e.seller} · ${e.booking_status}`;
                         html += `<div style="flex: 1; padding: 3px; border-left: 1px solid rgba(255,255,255,0.06); box-sizing: border-box;">
-                            <div style="height: 26px; background: ${colors.bg}; border: 1px dashed ${colors.border}; border-radius: 3px; position: relative; box-sizing: border-box;"
+                            <div style="height: 26px; background: ${colors.bg}; border: 1px dashed ${colors.border}; border-radius: 3px; position: relative; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
                                 onmouseenter="showAvailColleaguePopup(event, '${escAttr(e.booking_id)}')"
                                 onmouseleave="hideAvailPopup()"
                                 title="${escAttr(tip)}">
+                                ${dotColor ? `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${dotColor}; box-shadow: 0 0 0 1px rgba(0,0,0,0.35);"></span>` : ''}
                             </div>
                         </div>`;
                     } else {

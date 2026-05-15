@@ -7055,7 +7055,11 @@ Kelsey`;
             const typeFilter = document.getElementById('availTypeFilter')?.value || 'all';
             
             // Get active leads (not completed or lost)
-            let leads = appData.leads.filter(l => !['completed', 'lost', 'turndown', 'cancelled'].includes(l.status));
+            // Delphi-side cancellations: if auto-import flagged the underlying Delphi
+            // booking as Cancelled, treat it like lost/turndown for the availability view
+            // even before Kelsey manually updates the Kelphi status.
+            const _delphiCancelled = (l) => (l.delphiChanges?.currentDelphiData?.delphiStatus || '').toLowerCase() === 'cancelled';
+            let leads = appData.leads.filter(l => !['completed', 'lost', 'turndown', 'cancelled'].includes(l.status) && !_delphiCancelled(l));
             
             // Apply status filter
             if (statusFilter !== 'all') {
@@ -7376,7 +7380,11 @@ Kelsey`;
             const typeFilter = document.getElementById('availTypeFilter')?.value || 'all';
 
             // Get leads with events
-            let leads = appData.leads.filter(l => !['completed', 'lost', 'turndown', 'cancelled'].includes(l.status));
+            // Delphi-side cancellations: if auto-import flagged the underlying Delphi
+            // booking as Cancelled, treat it like lost/turndown for the availability view
+            // even before Kelsey manually updates the Kelphi status.
+            const _delphiCancelled = (l) => (l.delphiChanges?.currentDelphiData?.delphiStatus || '').toLowerCase() === 'cancelled';
+            let leads = appData.leads.filter(l => !['completed', 'lost', 'turndown', 'cancelled'].includes(l.status) && !_delphiCancelled(l));
             if (statusFilter !== 'all') leads = leads.filter(l => l.status === statusFilter);
             const eventLeads = leads.filter(l => l.type === 'events' || l.type === 'both');
             

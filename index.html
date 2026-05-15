@@ -553,7 +553,14 @@
                     <span class="theme-toggle-label" id="themeLabel">Dark</span>
                 </div>
             </div>
-            <div class="header-right" id="headerDate"></div>
+            <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+                <button id="syncNowBtn" onclick="syncNow()" title="Pull the latest from Delphi right now (cooldown: 30s)"
+                    style="background: rgba(0,217,255,0.12); border: 1px solid rgba(0,217,255,0.4); color: #00d9ff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.15s;">
+                    🔄 Sync Now
+                </button>
+                <span id="syncNowStatus" style="font-size: 11px; color: #888; min-width: 0;"></span>
+                <span id="headerDate"></span>
+            </div>
         </header>
 
         <nav class="tab-nav">
@@ -1582,12 +1589,15 @@
                             <div id="delphiSnapshotContent" style="font-size: 13px;">
                                 <div style="color: #666; font-style: italic;">No Delphi data available for this lead.</div>
                             </div>
-                            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
-                                <button class="btn btn-primary" id="pushToDelphiBtn" onclick="pushToDelphi()" style="width: 100%; padding: 10px; font-size: 13px;">
+                            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" id="refreshFromDelphiBtn" onclick="refreshFromDelphi()" style="flex: 1; padding: 10px; font-size: 13px;" title="Pull the latest Delphi data for this booking right now (skips waiting for the hourly sync)">
+                                    🔄 Refresh from Delphi
+                                </button>
+                                <button class="btn btn-primary" id="pushToDelphiBtn" onclick="pushToDelphi()" style="flex: 1; padding: 10px; font-size: 13px;">
                                     Push Kelphi Data to Delphi
                                 </button>
-                                <div id="pushToDelphiStatus" style="margin-top: 8px; font-size: 12px; display: none;"></div>
                             </div>
+                            <div id="pushToDelphiStatus" style="margin-top: 8px; font-size: 12px; display: none;"></div>
                         </div>
 
                         <!-- Contract Details Section -->
@@ -3993,6 +4003,140 @@
             } catch (e) {
                 status.style.color = '#e74c3c';
                 status.textContent = `✗ Connection error: ${e.message}`;
+            }
+        }
+
+        // Global "Sync Now" with a 30-second client-side cooldown so accidental
+        // rapid-fire clicks don't hammer Salesforce. Cooldown persists across
+        // page navigations via localStorage.
+        const SYNC_COOLDOWN_MS = 30000;
+        const SYNC_COOLDOWN_KEY = 'kelphi-sync-now-last';
+        function _syncCooldownRemaining() {
+            const last = parseInt(localStorage.getItem(SYNC_COOLDOWN_KEY) || '0', 10);
+            const elapsed = Date.now() - last;
+            return Math.max(0, SYNC_COOLDOWN_MS - elapsed);
+        }
+        function _updateSyncBtnCooldown() {
+            const btn = document.getElementById('syncNowBtn');
+            const statusEl = document.getElementById('syncNowStatus');
+            if (!btn) return;
+            const remain = _syncCooldownRemaining();
+            if (remain > 0) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                btn.textContent = `🔄 Sync Now (${Math.ceil(remain / 1000)}s)`;
+                setTimeout(_updateSyncBtnCooldown, 1000);
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.style.cursor = 'pointer';
+                btn.textContent = '🔄 Sync Now';
+            }
+        }
+        // Restore cooldown state on page load
+        setTimeout(_updateSyncBtnCooldown, 0);
+
+        async function syncNow() {
+            const btn = document.getElementById('syncNowBtn');
+            const statusEl = document.getElementById('syncNowStatus');
+            if (!btn || btn.disabled) return;
+            if (_syncCooldownRemaining() > 0) return;
+
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'wait';
+            btn.textContent = '🔄 Syncing…';
+            statusEl.textContent = 'Pulling from Salesforce…';
+            statusEl.style.color = '#888';
+
+            try {
+                const res = await fetch(`${DELPHI_API}/api/sync/run-all`, { method: 'POST' });
+                const data = await res.json();
+                if (!data.ok) {
+                    statusEl.style.color = '#e74c3c';
+                    statusEl.textContent = `✗ ${data.step || 'sync'} failed: ${data.error || 'unknown'}`;
+                } else {
+                    const parts = [];
+                    if (data.imported) parts.push(`${data.imported} imported`);
+                    if (data.conflicts_flagged) parts.push(`${data.conflicts_flagged} flagged`);
+                    if (data.csm_pushed) parts.push(`${data.csm_pushed} → CSM`);
+                    const summary = parts.length ? parts.join(' · ') : 'No changes';
+                    statusEl.style.color = '#22c55e';
+                    statusEl.textContent = `✓ ${summary}`;
+                    // Reload Kelphi data from cloud so any newly auto-imported leads + flagged changes appear immediately
+                    try { await loadFromCloud(); renderLeads(); updateDashboard(); } catch (e) {}
+                    if (typeof renderAvailability === 'function') {
+                        availDelphiCache.clear();
+                        renderAvailability();
+                    }
+                }
+                localStorage.setItem(SYNC_COOLDOWN_KEY, String(Date.now()));
+            } catch (e) {
+                statusEl.style.color = '#e74c3c';
+                statusEl.textContent = `✗ ${e.message}`;
+                localStorage.setItem(SYNC_COOLDOWN_KEY, String(Date.now()));
+            } finally {
+                _updateSyncBtnCooldown();
+                setTimeout(() => { if (statusEl.textContent.startsWith('✓')) statusEl.textContent = ''; }, 8000);
+            }
+        }
+
+        // Per-lead refresh: pull just one Delphi booking's latest state without
+        // running the full sync. Updates the Kelphi lead's flagged-changes view if anything diverged.
+        async function refreshFromDelphi() {
+            if (!currentLeadId) return;
+            const lead = appData.leads.find(l => l.id === currentLeadId);
+            if (!lead) return;
+            const delphiId = lead.delphiId;
+            const btn = document.getElementById('refreshFromDelphiBtn');
+            const status = document.getElementById('pushToDelphiStatus');
+            if (!delphiId) {
+                if (status) {
+                    status.style.display = 'block';
+                    status.style.color = '#f59e0b';
+                    status.textContent = 'This lead has no Delphi ID — nothing to refresh.';
+                    setTimeout(() => { status.style.display = 'none'; }, 4000);
+                }
+                return;
+            }
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'wait';
+            btn.textContent = '🔄 Refreshing…';
+            if (status) {
+                status.style.display = 'block';
+                status.style.color = '#888';
+                status.textContent = 'Pulling latest from Delphi…';
+            }
+            try {
+                const res = await fetch(`${DELPHI_API}/api/sync/refresh-booking/${encodeURIComponent(delphiId)}`, { method: 'POST' });
+                const data = await res.json();
+                if (!data.ok) {
+                    if (status) {
+                        status.style.color = '#e74c3c';
+                        status.textContent = `✗ ${data.error || 'Refresh failed'}`;
+                    }
+                } else {
+                    if (status) {
+                        status.style.color = '#22c55e';
+                        status.textContent = `✓ Delphi data refreshed for this booking.`;
+                    }
+                    // Reload cloud data so any newly flagged changes show up on the lead.
+                    try { await loadFromCloud(); openLead(currentLeadId); } catch (e) {}
+                }
+            } catch (e) {
+                if (status) {
+                    status.style.color = '#e74c3c';
+                    status.textContent = `✗ ${e.message}`;
+                }
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.style.cursor = '';
+                btn.textContent = original;
+                if (status) setTimeout(() => { status.style.display = 'none'; }, 5000);
             }
         }
 
